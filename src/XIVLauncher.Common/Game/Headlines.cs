@@ -54,9 +54,11 @@ namespace XIVLauncher.Common.Game
         public static async Task<Headlines> Get(Launcher game, ClientLanguage language)
         {
             var unixTimestamp = Util.GetUnixMillis();
+            if (language == ClientLanguage.ChineseSimplified) language = ClientLanguage.English;
             var langCode = language.GetLangCode();
             var url = $"https://frontier.ffxiv.com/news/headline.json?lang={langCode}&media=pcapp&_={unixTimestamp}";
 
+            //if (language == ClientLanguage.ChineseSimplified) url = $"https://ff.web.sdo.com/inc/newdata.ashx?url=List?gameCode=ff&category=5203&pageIndex=0&pageSize=6";
             var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
 
             return JsonConvert.DeserializeObject<Headlines>(json, Converter.SETTINGS);
