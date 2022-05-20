@@ -153,7 +153,7 @@ namespace XIVLauncher.Common.Game
 
         public void EnsureLoginEntry() {
             // 通过文件版本信息，检测是否存在第三方sdologinentry64.dll以及原版sdologinentry64.dll（被重命名为sdologinentry64.sdo.dll）
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
         public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
              string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)

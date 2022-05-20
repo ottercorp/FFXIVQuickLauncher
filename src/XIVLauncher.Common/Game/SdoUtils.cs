@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.IO;
+using System.Management;
 
 namespace XIVLauncher.Common
 {
@@ -75,7 +76,17 @@ namespace XIVLauncher.Common
             var result = String.Empty;
             try
             {
-                //TODO
+                ManagementObjectSearcher getPartitionsOnDisk = new
+                    ManagementObjectSearcher("select * from Win32_DiskDrive");
+
+                string hardDiskID = "";
+                foreach (ManagementObject mo in getPartitionsOnDisk.Get())
+                {
+                    if (mo["Index"].ToString() != "0") continue;
+                    hardDiskID = mo["SerialNumber"].ToString().Trim();
+                    break;
+                }
+                result = GetMD5(ASCIIEncoding.ASCII.GetBytes(hardDiskID));
             }
             catch
             {
