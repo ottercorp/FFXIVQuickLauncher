@@ -207,16 +207,29 @@
 
                                         <DockPanel
                                             Margin="30,18,30,18">
+                                            <ComboBox
+                                                DockPanel.Dock="Top"
+                                                x:Name="ServerSelection"
+                                                HorizontalAlignment="Stretch"
+                                                Margin="0,14,0,0"
+                                                Height="24"
+                                                VerticalAlignment="Top"
+                                                SelectionChanged="ServerSelection_OnSelectionChanged"
+                                                materialDesign:HintAssist.Hint="选择服务器"
+                                            >
+                                            </ComboBox>
                                             <TextBox
                                                 DockPanel.Dock="Top"
                                                 x:Name="LoginUsername"
                                                 HorizontalAlignment="Stretch"
+                                                Margin="0,14,0,0"
                                                 Height="24"
                                                 TextWrapping="Wrap"
                                                 VerticalAlignment="Top"
-                                                materialDesign:HintAssist.Hint="{Binding LoginUsernameLoc}"
-                                                Text="{Binding Username}" />
+                                                materialDesign:HintAssist.Hint="用户名"
+                                                />
                                             <PasswordBox
+                                                Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
                                                 x:Name="LoginPassword"
                                                 HorizontalAlignment="Stretch"
@@ -227,14 +240,16 @@
                                                 materialDesign:HintAssist.Hint="{Binding LoginPasswordLoc}" />
 
                                             <CheckBox
+                                                Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
                                                 Content="{Binding AutoLoginLoc}"
                                                 HorizontalAlignment="Left"
-                                                Margin="0,14,0,0"
+                                                Margin="0,20,0,0"
                                                 VerticalAlignment="Top"
                                                 x:Name="AutoLoginCheckBox"
                                                 IsChecked="{Binding IsAutoLogin}" />
                                             <CheckBox
+                                                Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
                                                 Content="{Binding OtpLoc}"
                                                 HorizontalAlignment="Left"
@@ -243,6 +258,7 @@
                                                 x:Name="OtpCheckBox"
                                                 IsChecked="{Binding IsOtp}" />
                                             <CheckBox
+                                                Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
                                                 Content="{Binding SteamLoc}"
                                                 HorizontalAlignment="Left"
@@ -250,6 +266,16 @@
                                                 VerticalAlignment="Top"
                                                 x:Name="SteamCheckBox"
                                                 IsChecked="{Binding IsSteam}" />
+                                            <TextBlock
+                                                Visibility="Visible"
+                                                DockPanel.Dock="Top"
+                                                HorizontalAlignment="Center"
+                                                Margin="0,40,0,0"
+                                                VerticalAlignment="Top"
+                                                x:Name="LoginMessage"
+                                                >
+                                            登录器似乎爆炸了
+                                            </TextBlock>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Bottom"
@@ -257,7 +283,8 @@
                                                 <Button
                                                     Content="{Binding LoginLoc}"
                                                     Command="{Binding Path=StartLoginCommand}"
-                                                    Margin="0,0,7,0" Width="84"
+                                                    Margin="0,0,0,0" Width="142"
+                                                    HorizontalAlignment="Center"
                                                     ToolTip="{Binding LoginTooltipLoc}">
 
                                                     <Button.ContextMenu>
@@ -273,6 +300,7 @@
 
                                                 </Button>
                                                 <Button HorizontalAlignment="Left"
+                                                        Visibility="Collapsed"
                                                         x:Name="AccountSwitcherButton" Margin="0 0 0 0"
                                                         Background="#FF0096DB"
                                                         BorderBrush="#FF0096DB"

@@ -19,6 +19,7 @@ using XIVLauncher.Common.Game;
 using XIVLauncher.Common.Game.Patch.Acquisition;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
+using MenuItem = System.Windows.Controls.MenuItem;
 using Timer = System.Timers.Timer;
 
 namespace XIVLauncher.Windows
@@ -262,6 +263,10 @@ namespace XIVLauncher.Windows
                 SwitchAccount(savedAccount, false);
 
             Model.IsAutoLogin = App.Settings.AutologinEnabled;
+
+
+            ServerSelection.ItemsSource = System.Enum.GetValues(typeof(CNServer));
+            ServerSelection.SelectedIndex = App.Settings.SelectedServer.GetValueOrDefault(0);
 
             if (App.Settings.UniqueIdCacheEnabled && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
@@ -544,6 +549,11 @@ namespace XIVLauncher.Windows
         {
             if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).Password = ((PasswordBox)sender).Password;
+        }
+
+        private void ServerSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
         }
     }
 }
