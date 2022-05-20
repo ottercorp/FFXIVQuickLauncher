@@ -97,6 +97,7 @@ public partial class Launcher
         public PatchListEntry[] PendingPatches { get; set; }
         public OauthLoginResult OauthLogin { get; set; }
         public string UniqueId { get; set; }
+        public SdoArea Area { get; set; }
     }
 
     public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial)

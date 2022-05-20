@@ -102,6 +102,29 @@ namespace XIVLauncher.Windows
             }
         }
 
+        private async Task SetupServers()
+        {
+            try
+            {
+                var _areas = await SdoAreas.Get();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    ServerSelection.ItemsSource = _areas.Servers;
+                    ServerSelection.DisplayMemberPath = "AreaName";
+                    ServerSelection.SelectedValuePath = "Areaid";
+                    ServerSelection.SelectedIndex = App.Settings.SelectedServer.GetValueOrDefault(0);                   
+                }));
+
+            }
+            catch (Exception)
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    ServerSelection.ItemsSource = new List<SdoArea> { new SdoArea{ AreaName = "获取服务器失败"} };
+                }));
+            }
+        }
+
         private async Task SetupHeadlines()
         {
             try
@@ -130,7 +153,7 @@ namespace XIVLauncher.Windows
 
                 Dispatcher.BeginInvoke(new Action(() => { BannerImage.Source = _bannerBitmaps[0]; }));
 
-                _bannerChangeTimer = new Timer {Interval = 5000};
+                _bannerChangeTimer = new Timer { Interval = 5000 };
 
                 _bannerChangeTimer.Elapsed += (o, args) =>
                 {
@@ -154,7 +177,7 @@ namespace XIVLauncher.Windows
             {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    NewsListView.ItemsSource = new List<News> {new News {Title = Loc.Localize("NewsDlFailed", "Could not download news data."), Tag = "DlError"}};
+                    NewsListView.ItemsSource = new List<News> { new News { Title = Loc.Localize("NewsDlFailed", "Could not download news data."), Tag = "DlError" } };
                 }));
             }
         }
@@ -176,7 +199,7 @@ namespace XIVLauncher.Windows
             if (App.Settings.AddonList != null)
                 App.Settings.AddonList = App.Settings.AddonList.Where(x => !string.IsNullOrEmpty(x.Addon.Path)).ToList();
 
-            
+
             App.Settings.AskBeforePatchInstall ??= true;
 
             App.Settings.DpiAwareness ??= DpiAwareness.Unaware;
@@ -242,13 +265,14 @@ namespace XIVLauncher.Windows
             var worldStatusBrushOk = WorldStatusPackIcon.Foreground;
             // grey out world status icon while deferred check is running
             WorldStatusPackIcon.Foreground = new SolidColorBrush(Color.FromRgb(38, 38, 38));
+            Model.IsAutoLogin = App.Settings.AutologinEnabled;
 
             _launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English)).ContinueWith((resultTask) =>
             {
                 try
                 {
                     var brushToSet = resultTask.Result.Status ? worldStatusBrushOk : null;
-                    Dispatcher.InvokeAsync(() =>  WorldStatusPackIcon.Foreground = brushToSet ?? new SolidColorBrush(Color.FromRgb(242, 24, 24)));
+                    Dispatcher.InvokeAsync(() => WorldStatusPackIcon.Foreground = brushToSet ?? new SolidColorBrush(Color.FromRgb(242, 24, 24)));
                 }
                 catch
                 {
@@ -262,12 +286,6 @@ namespace XIVLauncher.Windows
 
             if (savedAccount != null)
                 SwitchAccount(savedAccount, false);
-
-            Model.IsAutoLogin = App.Settings.AutologinEnabled;
-
-
-            ServerSelection.ItemsSource = System.Enum.GetValues(typeof(CNServer));
-            ServerSelection.SelectedIndex = App.Settings.SelectedServer.GetValueOrDefault(0);
 
             if (App.Settings.UniqueIdCacheEnabled && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
@@ -313,6 +331,7 @@ namespace XIVLauncher.Windows
 
             Task.Run(async () =>
             {
+                await SetupServers();
                 await SetupHeadlines();
                 Troubleshooting.LogTroubleshooting();
             });
@@ -555,6 +574,7 @@ namespace XIVLauncher.Windows
         private void ServerSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
+            Model.SelectArea = (SdoArea)ServerSelection.SelectedItem;
         }
     }
 }

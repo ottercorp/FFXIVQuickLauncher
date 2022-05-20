@@ -46,6 +46,7 @@ namespace XIVLauncher.Windows.ViewModel
         public Action ReloadHeadlines;
 
         public string Password { get; set; }
+        public SdoArea SelectArea { get; set; }
 
         public enum AfterLoginAction
         {
@@ -234,6 +235,8 @@ namespace XIVLauncher.Windows.ViewModel
 
             Log.Verbose(
                 $"[LR] {loginResult.State} {loginResult.PendingPatches != null} {loginResult.OauthLogin?.Playable}");
+
+            loginResult.Area = SelectArea;
 
             if (await TryProcessLoginResult(loginResult, isSteam, action).ConfigureAwait(false))
             {
@@ -466,7 +469,6 @@ namespace XIVLauncher.Windows.ViewModel
 
         private async Task<bool> TryProcessLoginResult(Launcher.LoginResult loginResult, bool isSteam, AfterLoginAction action)
         {
-            return false;
             if (loginResult.State == Launcher.LoginState.NoService)
             {
                 CustomMessageBox.Show(
@@ -1013,17 +1015,29 @@ namespace XIVLauncher.Windows.ViewModel
             var gameRunner = new WindowsGameRunner(dalamudLauncher, dalamudOk, App.Settings.InGameAddonLoadMethod.GetValueOrDefault(DalamudLoadMethod.DllInject));
 
             // We won't do any sanity checks here anymore, since that should be handled in StartLogin
-            var launched = this.Launcher.LaunchGame(gameRunner,
-                loginResult.UniqueId,
-                loginResult.OauthLogin.Region,
-                loginResult.OauthLogin.MaxExpansion,
-                isSteam,
-                App.Settings.AdditionalLaunchArgs,
-                App.Settings.GamePath,
-                App.Settings.IsDx11,
-                App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
-                App.Settings.EncryptArguments.GetValueOrDefault(false),
-                App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
+            //var launched = this.Launcher.LaunchGame(gameRunner,
+            //    loginResult.UniqueId,
+            //    loginResult.OauthLogin.Region,
+            //    loginResult.OauthLogin.MaxExpansion,
+            //    isSteam,
+            //    App.Settings.AdditionalLaunchArgs,
+            //    App.Settings.GamePath,
+            //    App.Settings.IsDx11,
+            //    App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
+            //    App.Settings.EncryptArguments.GetValueOrDefault(false),
+            //    App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
+            var launched = this.Launcher.LaunchGameSdo(gameRunner,
+                    loginResult.OauthLogin.SessionId,
+                    loginResult.OauthLogin.SndaId,
+                    SelectArea.Areaid,
+                    SelectArea.AreaLobby,
+                    SelectArea.AreaGm,
+                    SelectArea.AreaConfigUpload,
+                    App.Settings.AdditionalLaunchArgs,
+                    App.Settings.GamePath,
+                    App.Settings.IsDx11,
+                    App.Settings.EncryptArguments.GetValueOrDefault(false),
+                    App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
 
             Troubleshooting.LogTroubleshooting();
 

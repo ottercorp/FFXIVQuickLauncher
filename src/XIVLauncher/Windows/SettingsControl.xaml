@@ -37,7 +37,7 @@
                     <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
                                Foreground="Red" Text="{Binding GamePathSafeguardLoc}" x:Name="GamePathSafeguardText" Visibility="Collapsed"/>
 
-                    <CheckBox Foreground="{DynamicResource MaterialDesignBody}"
+                    <CheckBox Foreground="{DynamicResource MaterialDesignBody}"  IsEnabled="False"
                               x:Name="OtpServerCheckBox" Margin="0,15,0,0" Content="{Binding OtpServerCheckBoxLoc}" />
 
                     <TextBox Width="500" VerticalAlignment="Center"
@@ -64,7 +64,7 @@
                                  x:Name="Dx11RadioButton" Foreground="{DynamicResource MaterialDesignBody}">
                         DirectX 11
                     </RadioButton>
-                    <RadioButton GroupName="dx" x:Name="Dx9RadioButton"
+                    <RadioButton GroupName="dx" x:Name="Dx9RadioButton"  IsEnabled="False"
                                  Foreground="{DynamicResource MaterialDesignBody}" Checked="Dx9RadioButton_OnChecked"
                                  Unchecked="Dx9RadioButton_OnUnchecked">
                         DirectX 9
@@ -75,7 +75,7 @@
                                Margin="0,0,0,0" Text="{Binding DirectX9NoticeLoc}" />
                     <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
                                Foreground="{DynamicResource MaterialDesignBody}" Text="{Binding ChooseLanguageLoc}" />
-                    <ComboBox SelectedIndex="1" Margin="0, 3, 0, 0" x:Name="LanguageComboBox"
+                    <ComboBox SelectedIndex="1" Margin="0, 3, 0, 0" x:Name="LanguageComboBox" IsEnabled="False"
                               Foreground="{DynamicResource MaterialDesignBody}">
                         <ComboBoxItem>日本語</ComboBoxItem>
                         <ComboBoxItem>English</ComboBoxItem>

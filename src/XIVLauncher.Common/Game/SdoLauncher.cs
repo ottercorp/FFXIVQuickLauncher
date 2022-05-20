@@ -83,7 +83,7 @@ namespace XIVLauncher.Common.Game
             var tgt = String.Empty;
             var ticket = String.Empty;
             var retryTimes = 30;
-            while (retryTimes-->0)
+            while (retryTimes-- > 0)
             {
                 jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
                 var error_code = jsonObj["return_code"].Value<int>();
@@ -101,7 +101,7 @@ namespace XIVLauncher.Common.Game
                     if (error_code == -10516808)
                     {
                         Log.Information("等待用户确认...");
-                        await Task.Delay(1000).ConfigureAwait(false);           
+                        await Task.Delay(1000).ConfigureAwait(false);
                         continue;
                     }
                     return null;
@@ -149,6 +149,55 @@ namespace XIVLauncher.Common.Game
             var response = await this.client.SendAsync(request);
             var reply = await response.Content.ReadAsStringAsync();
             return (JObject)JsonConvert.DeserializeObject(reply);
+        }
+
+        public void EnsureLoginEntry() {
+            // 通过文件版本信息，检测是否存在第三方sdologinentry64.dll以及原版sdologinentry64.dll（被重命名为sdologinentry64.sdo.dll）
+            throw new NotImplementedException();
+        }
+        public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
+             string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)
+        {
+            Log.Information(
+                $"XivGame::LaunchGame(args:{additionalArguments})");
+            EnsureLoginEntry();
+            var exePath = Path.Combine(gamePath.FullName, "game", "ffxiv_dx11.exe");
+            if (!isDx11)
+                exePath = Path.Combine(gamePath.FullName, "game", "ffxiv.exe");
+
+            var environment = new Dictionary<string, string>();
+
+            var argumentBuilder = new ArgumentBuilder()
+                                  .Append("-AppID", "100001900")
+                                  .Append("-AreaID", areaId)
+                                  .Append("Dev.LobbyHost01", lobbyHost)
+                                  .Append("Dev.LobbyPort01", "54994")
+                                  .Append("Dev.GMServerHost", gmHost)
+                                  .Append("Dev.SaveDataBankHost", dbHost)
+                                  .Append("resetConfig", "0")
+                                  .Append("DEV.MaxEntitledExpansionID", "1")
+                                  .Append("DEV.TestSID", sessionId)
+                                  .Append("XL.SndaId", sndaId);
+
+
+            // This is a bit of a hack; ideally additionalArguments would be a dictionary or some KeyValue structure
+            if (!string.IsNullOrEmpty(additionalArguments))
+            {
+                var regex = new Regex(@"\s*(?<key>[^=]+)\s*=\s*(?<value>[^\s]+)\s*", RegexOptions.Compiled);
+                foreach (Match match in regex.Matches(additionalArguments))
+                    argumentBuilder.Append(match.Groups["key"].Value, match.Groups["value"].Value);
+            }
+
+            if (!File.Exists(exePath))
+                throw new BinaryNotPresentException(exePath);
+
+            var workingDir = Path.Combine(gamePath.FullName, "game");
+
+            var arguments = encryptArguments
+                ? argumentBuilder.BuildEncrypted()
+                : argumentBuilder.Build();
+
+            return runner.Start(exePath, workingDir, arguments, environment, dpiAwareness);
         }
     }
 }
