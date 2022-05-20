@@ -73,8 +73,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         private Action<object> GetLoginFunc(AfterLoginAction action)
         {
-            return p =>
-            {
+            return p => {
                 if (this.IsLoggingIn)
                     return;
 
@@ -134,8 +133,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             IsLoggingIn = true;
 
-            Task.Run(() =>
-            {
+            Task.Run(() => {
                 try
                 {
                     Login(username, password, isOtp, isSteam, doingAutoLogin, action).Wait();
@@ -150,7 +148,6 @@ namespace XIVLauncher.Windows.ViewModel
                 IsLoggingIn = false;
                 IsEnabled = true;
                 LoginCardTransitionerIndex = 1;
-
                 ReloadHeadlines();
                 Activate();
             });
@@ -160,8 +157,8 @@ namespace XIVLauncher.Windows.ViewModel
         {
             ProblemCheck.RunCheck(_window);
 
-            var bootRes = await HandleBootCheck().ConfigureAwait(false);
-
+            //var bootRes = await HandleBootCheck().ConfigureAwait(false);
+            var bootRes = true;
             if (!bootRes)
                 return;
 
@@ -174,28 +171,27 @@ namespace XIVLauncher.Windows.ViewModel
                 return;
             }
 
-            if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
-            {
-                CustomMessageBox.Show(
-                    Loc.Localize("EmailUsernameError", "Please enter your SE account name, not your email address."),
-                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            //if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
+            //{
+            //    CustomMessageBox.Show(
+            //        Loc.Localize("EmailUsernameError", "Please enter your SE account name, not your email address."),
+            //        "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-                return;
-            }
+            //    return;
+            //}
 
-            if (string.IsNullOrEmpty(password) && App.Settings.Language != ClientLanguage.ChineseSimplified)
-            {
-                CustomMessageBox.Show(
-                    Loc.Localize("EmptyPasswordError", "Please enter a password."),
-                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            //if (string.IsNullOrEmpty(password) && App.Settings.Language != ClientLanguage.ChineseSimplified)
+            //{
+            //    CustomMessageBox.Show(
+            //        Loc.Localize("EmptyPasswordError", "Please enter a password."),
+            //        "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-                App.Settings.AutologinEnabled = false;
-                IsAutoLogin = false;
-                return;
-            }
+            //    App.Settings.AutologinEnabled = false;
+            //    IsAutoLogin = false;
+            //    return;
+            //}
 
             username = username.Replace(" ", string.Empty); // Remove whitespace
-
             if (Repository.Ffxiv.GetVer(App.Settings.GamePath) == Constants.BASE_GAME_VERSION &&
                 App.Settings.UniqueIdCacheEnabled)
             {
@@ -213,8 +209,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (isOtp && (!hasValidCache || action == AfterLoginAction.Repair))
             {
-                otp = OtpInputDialog.AskForOtp((otpDialog, result) =>
-                {
+                otp = OtpInputDialog.AskForOtp((otpDialog, result) => {
                     if (AccountManager.CurrentAccount != null && result != null && AccountManager.CurrentAccount.LastSuccessfulOtp == result)
                     {
                         otpDialog.IgnoreCurrentResult(Loc.Localize("DuplicateOtpAfterSuccess",
@@ -360,10 +355,11 @@ namespace XIVLauncher.Windows.ViewModel
                 var enableUidCache = App.Settings.UniqueIdCacheEnabled;
                 var gamePath = App.Settings.GamePath;
 
-                if (action == AfterLoginAction.Repair)
-                    return await this.Launcher.Login(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-                else
-                    return await this.Launcher.Login(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+                //if (action == AfterLoginAction.Repair)
+                //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+                //else
+                //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+                return await Launcher.LoginSdo(username, (state, msg) => { LoginMessage = msg; Log.Information(msg); }).ConfigureAwait(false); 
             }
             catch (Exception ex)
             {
@@ -470,6 +466,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         private async Task<bool> TryProcessLoginResult(Launcher.LoginResult loginResult, bool isSteam, AfterLoginAction action)
         {
+            return false;
             if (loginResult.State == Launcher.LoginState.NoService)
             {
                 CustomMessageBox.Show(
@@ -819,8 +816,7 @@ namespace XIVLauncher.Windows.ViewModel
                 Hide();
                 IsEnabled = false;
 
-                var progressDialog = _window.Dispatcher.Invoke(() =>
-                {
+                var progressDialog = _window.Dispatcher.Invoke(() => {
                     var d = new GameRepairProgressWindow(verify);
                     if (_window.IsVisible)
                         d.Owner = _window;
@@ -1190,8 +1186,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             Hide();
 
-            PatchDownloadDialog progressDialog = _window.Dispatcher.Invoke(() =>
-            {
+            PatchDownloadDialog progressDialog = _window.Dispatcher.Invoke(() => {
                 var d = new PatchDownloadDialog(patcher);
                 if (_window.IsVisible)
                     d.Owner = _window;
@@ -1239,8 +1234,7 @@ namespace XIVLauncher.Windows.ViewModel
             }
             finally
             {
-                progressDialog.Dispatcher.Invoke(() =>
-                {
+                progressDialog.Dispatcher.Invoke(() => {
                     progressDialog.Hide();
                     progressDialog.Close();
                 });
@@ -1362,6 +1356,16 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
+        private string _loginMessage;
+        public string LoginMessage
+        {
+            get => _loginMessage;
+            set
+            {
+                _loginMessage = value;
+                OnPropertyChanged(nameof(LoginMessage));
+            }
+        }
         #endregion
 
         #region Localization

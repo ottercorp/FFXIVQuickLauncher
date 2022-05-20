@@ -25,7 +25,7 @@ using XIVLauncher.Common.PlatformAbstractions;
 
 namespace XIVLauncher.Common.Game;
 
-public class Launcher
+public partial class Launcher
 {
     private readonly ISteam? steam;
     private readonly byte[]? steamTicket;
@@ -116,7 +116,7 @@ public class Launcher
         {
             if (this.steamTicket != null)
             {
-                steamTicket = Ticket.EncryptAuthSessionTicket(this.steamTicket, (uint) DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                steamTicket = Ticket.EncryptAuthSessionTicket(this.steamTicket, (uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 Log.Information("Using predefined steam ticket");
             }
             else
@@ -466,6 +466,7 @@ public class Launcher
     public class OauthLoginResult
     {
         public string SessionId { get; set; }
+        public string SndaId { get; set; }
         public int Region { get; set; }
         public bool TermsAccepted { get; set; }
         public bool Playable { get; set; }
@@ -605,7 +606,7 @@ public class Launcher
 
         Array.Copy(sha1.ComputeHash(Encoding.Unicode.GetBytes(hashString)), 0, bytes, 1, 4);
 
-        var checkSum = (byte) -(bytes[1] + bytes[2] + bytes[3] + bytes[4]);
+        var checkSum = (byte)-(bytes[1] + bytes[2] + bytes[3] + bytes[4]);
         bytes[0] = checkSum;
 
         return BitConverter.ToString(bytes).Replace("-", "").ToLower();
@@ -656,7 +657,7 @@ public class Launcher
 
     private static string GenerateUserAgent()
     {
-        return string.Format(USER_AGENT_TEMPLATE, MakeComputerId());
+        return "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; InfoPath.2; .NET CLR 2.0.50727; MS-RTC LM 8; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET CLR 1.1.4322; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)";
     }
 }
 

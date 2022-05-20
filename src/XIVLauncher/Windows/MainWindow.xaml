@@ -189,6 +189,12 @@
                                                        VerticalAlignment="Top"
                                                        TextAlignment="Center"
                                                        Margin="0,50,0,0"/>
+                                            <TextBlock Text="{Binding LoginMessage}"
+                                                       DockPanel.Dock="Top"
+                                                       HorizontalAlignment="Stretch"
+                                                       VerticalAlignment="Top"
+                                                       TextAlignment="Center"
+                                                       Margin="0,50,0,0"/>
                                             <ProgressBar
                                                 DockPanel.Dock="Top"
                                                 HorizontalAlignment="Stretch"
@@ -274,9 +280,8 @@
                                                 Margin="0,40,0,0"
                                                 VerticalAlignment="Top"
                                                 x:Name="LoginMessage"
-                                                >
-                                            登录器似乎爆炸了
-                                            </TextBlock>
+                                                TextWrapping="Wrap"
+                                                Text="{Binding LoginMessage}"/>                                        
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Bottom"
