@@ -174,7 +174,7 @@ namespace XIVLauncher.Windows.ViewModel
                 return;
             }
 
-            if (username.Contains("@"))
+            if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
             {
                 CustomMessageBox.Show(
                     Loc.Localize("EmailUsernameError", "Please enter your SE account name, not your email address."),
@@ -183,7 +183,7 @@ namespace XIVLauncher.Windows.ViewModel
                 return;
             }
 
-            if (string.IsNullOrEmpty(password))
+            if (string.IsNullOrEmpty(password) && App.Settings.Language != ClientLanguage.ChineseSimplified)
             {
                 CustomMessageBox.Show(
                     Loc.Localize("EmptyPasswordError", "Please enter a password."),

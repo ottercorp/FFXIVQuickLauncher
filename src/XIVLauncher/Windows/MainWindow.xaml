@@ -226,7 +226,8 @@
                                                 Height="24"
                                                 TextWrapping="Wrap"
                                                 VerticalAlignment="Top"
-                                                materialDesign:HintAssist.Hint="用户名"
+                                                materialDesign:HintAssist.Hint="{Binding LoginUsernameLoc}"
+                                                Text="{Binding Username}" Cursor="IBeam"
                                                 />
                                             <PasswordBox
                                                 Visibility="Collapsed"
@@ -283,7 +284,7 @@
                                                 <Button
                                                     Content="{Binding LoginLoc}"
                                                     Command="{Binding Path=StartLoginCommand}"
-                                                    Margin="0,0,0,0" Width="142"
+                                                    Margin="0,0,7,0" Width="84"
                                                     HorizontalAlignment="Center"
                                                     ToolTip="{Binding LoginTooltipLoc}">
 
@@ -300,7 +301,7 @@
 
                                                 </Button>
                                                 <Button HorizontalAlignment="Left"
-                                                        Visibility="Collapsed"
+                                                        Visibility="Visible"
                                                         x:Name="AccountSwitcherButton" Margin="0 0 0 0"
                                                         Background="#FF0096DB"
                                                         BorderBrush="#FF0096DB"

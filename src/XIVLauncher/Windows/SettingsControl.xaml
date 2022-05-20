@@ -299,6 +299,7 @@
                             </Button>
                             <Button Style="{DynamicResource MaterialDesignFlatButton}"
                                     HorizontalAlignment="Left"
+                                    Visibility="Collapsed"
                                     x:Name="BackupToolButton" Click="BackupToolButton_OnClick">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Wrench" />
@@ -315,9 +316,11 @@
                             </Button>
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox x:Name="UidCacheCheckBox"
+                                          IsEnabled="False"
                                           Content="{Binding EnabledUidCacheLoc}"
                                           HorizontalAlignment="Left" Margin="0,0,0,0" Foreground="DarkGray" />
                                 <Button Style="{DynamicResource MaterialDesignFlatButton}"
+                                        IsEnabled="False"
                                         HorizontalAlignment="Left"
                                         Click="ResetCacheButton_OnClick" Margin="0 0 0 0">
                                     <Button.ToolTip>
@@ -332,6 +335,7 @@
                                 </Button>
                             </StackPanel>
                             <CheckBox x:Name="EncryptedArgumentsCheckbox"
+                                      IsEnabled="False"
                                           Content="{Binding EnableEncryptionLoc}"
                                           HorizontalAlignment="Left" Margin="0,0,0,7" Foreground="DarkGray" />
                             <CheckBox x:Name="ExitLauncherAfterGameExitCheckbox"
@@ -341,6 +345,7 @@
                                           Content="{Binding TreatNonZeroExitCodeAsFailureLoc}"
                                           HorizontalAlignment="Left" Margin="0,0,0,7" Foreground="DarkGray" />
                             <CheckBox x:Name="IsFreeTrialCheckbox"
+                                      IsEnabled="False"
                                       Content="{Binding IsFreeTrialLoc}"
                                       HorizontalAlignment="Left" Margin="0,0,0,7" Foreground="DarkGray" />
                         </StackPanel>

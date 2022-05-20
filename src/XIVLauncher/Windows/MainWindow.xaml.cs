@@ -177,7 +177,7 @@ namespace XIVLauncher.Windows
             if (App.Settings.AddonList != null)
                 App.Settings.AddonList = App.Settings.AddonList.Where(x => !string.IsNullOrEmpty(x.Addon.Path)).ToList();
 
-            App.Settings.EncryptArguments ??= true;
+            
             App.Settings.AskBeforePatchInstall ??= true;
 
             App.Settings.DpiAwareness ??= DpiAwareness.Unaware;
@@ -185,7 +185,9 @@ namespace XIVLauncher.Windows
             App.Settings.TreatNonZeroExitCodeAsFailure ??= false;
             App.Settings.ExitLauncherAfterGameExit ??= true;
 
-            App.Settings.IsFt ??= false;
+            App.Settings.IsFt = false;
+            App.Settings.UniqueIdCacheEnabled = false;
+            App.Settings.EncryptArguments = false;
 
             var versionLevel = App.Settings.VersionUpgradeLevel.GetValueOrDefault(0);
 
