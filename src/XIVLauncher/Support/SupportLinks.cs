@@ -7,12 +7,12 @@ namespace XIVLauncher.Support
     {
         public static void OpenDiscord(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://discord.gg/3NMcUV5");
+            Process.Start("https://discord.gg/QSDmvXG");
         }
 
         public static void OpenFaq(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://goatcorp.github.io/faq/");
+            Process.Start("https://ottercorp.github.io/faq/who_we_are");
         }
     }
 }

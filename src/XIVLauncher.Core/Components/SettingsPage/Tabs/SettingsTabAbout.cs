@@ -37,12 +37,12 @@ public class SettingsTabAbout : SettingsTab
 
         if (ImGui.Button("Open GitHub"))
         {
-            AppUtil.OpenBrowser("https://github.com/goatcorp/FFXIVQuickLauncher");
+            AppUtil.OpenBrowser("https://github.com/ottercorp/FFXIVQuickLauncher");
         }
 
         if (ImGui.Button("Join our Discord"))
         {
-            AppUtil.OpenBrowser("https://discord.gg/3NMcUV5");
+            AppUtil.OpenBrowser("https://discord.gg/QSDmvXG");
         }
 
         if (ImGui.Button("See software licenses"))

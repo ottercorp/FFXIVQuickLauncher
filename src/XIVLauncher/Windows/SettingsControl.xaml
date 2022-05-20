@@ -81,7 +81,7 @@
                         <ComboBoxItem>English</ComboBoxItem>
                         <ComboBoxItem>Deutsch</ComboBoxItem>
                         <ComboBoxItem>Français</ComboBoxItem>
-                        <ComboBoxItem>中文</ComboBoxItem>
+                        <ComboBoxItem>中文(国服)</ComboBoxItem>
                     </ComboBox>
 
                     <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0, 20, 0, 0"

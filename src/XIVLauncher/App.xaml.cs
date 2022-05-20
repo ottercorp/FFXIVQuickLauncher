@@ -29,7 +29,7 @@ namespace XIVLauncher
     /// </summary>
     public partial class App : Application
     {
-        public const string REPO_URL = "https://github.com/goatcorp/FFXIVQuickLauncher";
+        public const string REPO_URL = "https://github.com/ottercorp/FFXIVQuickLauncher";
 
         public static ILauncherSettingsV3 Settings;
         public static ISteam Steam;

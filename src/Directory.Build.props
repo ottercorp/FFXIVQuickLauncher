@@ -41,8 +41,8 @@
     <IsPackable>false</IsPackable>
     <Authors>XIVLauncher Contributors</Authors>
     <PackageLicenseExpression>GPLv3</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/goatcorp/FFXIVQuickLauncher</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/goatcorp/FFXIVQuickLauncher</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ottercorp/FFXIVQuickLauncher</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ottercorp/FFXIVQuickLauncher</RepositoryUrl>
     <PackageReleaseNotes>Automated release</PackageReleaseNotes>
     <Company>goatsoft</Company>
     <Copyright>Copyright (c) goatsoft</Copyright>

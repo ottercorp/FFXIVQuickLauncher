@@ -158,7 +158,7 @@ namespace XIVLauncher.Windows
 
         private void GitHubButton_OnClick(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://github.com/goaaats/FFXIVQuickLauncher");
+            Process.Start("https://github.com/ottercorp/FFXIVQuickLauncher");
         }
 
         private void BackupToolButton_OnClick(object sender, RoutedEventArgs e)
@@ -526,7 +526,7 @@ namespace XIVLauncher.Windows
                 GamePathSafeguardText.Text = ViewModel.GamePathSafeguardLoc;
                 GamePathSafeguardText.Visibility = Visibility.Visible;
             }
-            else if (mightBeNonInternationalVersion)
+            else if (mightBeNonInternationalVersion && App.Settings.Language != ClientLanguage.ChineseSimplified)
             {
                 GamePathSafeguardText.Text = ViewModel.GamePathSafeguardRegionLoc;
                 GamePathSafeguardText.Visibility = Visibility.Visible;

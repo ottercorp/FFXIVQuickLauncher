@@ -110,6 +110,7 @@
     <ProjectReference Include="..\XIVLauncher.Common\XIVLauncher.Common.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common.Unix\XIVLauncher.Common.Unix.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common.Windows\XIVLauncher.Common.Windows.csproj" />
+    <ProjectReference Include="..\XIVLauncher\XIVLauncher.csproj" />
   </ItemGroup>
 
   <!-- Git -->

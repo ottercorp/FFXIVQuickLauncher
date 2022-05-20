@@ -343,6 +343,7 @@ namespace XIVLauncher.Windows
             else
             {
                 string url;
+
                 switch (App.Settings.Language)
                 {
                     case ClientLanguage.Japanese:
@@ -365,6 +366,10 @@ namespace XIVLauncher.Windows
                         url = "https://fr.finalfantasyxiv.com/lodestone/news/detail/";
                         break;
 
+                    case ClientLanguage.ChineseSimplified:
+                        url = "https://na.finalfantasyxiv.com/lodestone/news/detail/";
+                        break;
+
                     default:
                         url = "https://eu.finalfantasyxiv.com/lodestone/news/detail/";
                         break;
@@ -376,7 +381,8 @@ namespace XIVLauncher.Windows
 
         private void WorldStatusButton_Click(object sender, RoutedEventArgs e)
         {
-            Process.Start("https://is.xivup.com/");
+            if (App.Settings.Language == ClientLanguage.ChineseSimplified) Process.Start("https://ff.web.sdo.com/web8/index.html#/servers");
+            else Process.Start("https://is.xivup.com/");
         }
 
         private void QueueButton_OnClick(object sender, RoutedEventArgs e)

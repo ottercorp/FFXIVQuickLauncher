@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -36,7 +37,7 @@ namespace XIVLauncher.Common
             if (string.IsNullOrEmpty(path))
                 return false;
 
-            return Directory.Exists(Path.Combine(path, "game")) && Directory.Exists(Path.Combine(path, "boot"));
+            return Directory.Exists(Path.Combine(path, "game")) && (Directory.Exists(Path.Combine(path, "boot")) || Directory.Exists(Path.Combine(path,"sdo")));
         }
 
         public static bool CanFfxivMightNotBeInternationalClient(string path) {
@@ -71,7 +72,7 @@ namespace XIVLauncher.Common
             return (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
         }
 
-        public static FileInfo GetOfficialLauncherPath(DirectoryInfo gamePath) => new(Path.Combine(gamePath.FullName, "boot", "ffxivboot.exe"));
+        public static FileInfo GetOfficialLauncherPath(DirectoryInfo gamePath) => new(File.Exists(Path.Combine(gamePath.FullName, "boot", "ffxivboot.exe")) ? Path.Combine(gamePath.FullName, "boot", "ffxivboot.exe") : Path.Combine(gamePath.FullName, "ffxivboot.exe"));
 
         public static void StartOfficialLauncher(DirectoryInfo gamePath, bool isSteam, bool isFreeTrial)
         {
@@ -87,6 +88,7 @@ namespace XIVLauncher.Common
             }
 
             Process.Start(GetOfficialLauncherPath(gamePath).FullName, args);
+            
         }
 
         public static string BytesToString(double byteCount) => BytesToString(Convert.ToInt64(Math.Floor(byteCount)));
