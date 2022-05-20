@@ -96,14 +96,14 @@ namespace XIVLauncher.Windows
                     }
                 }
 
-                if (Util.CanFfxivMightNotBeInternationalClient(GamePathEntry.Text) && App.Settings.Language != ClientLanguage.ChineseSimplified)
-                {
-                    if (CustomMessageBox.Show(Loc.Localize("GamePathRegionConfirm", "The folder you selected might be the Chinese or Korean release of the game. XIVLauncher only supports international release of the game.\nIs the folder you've selected indeed for the international version?"), "XIVLauncher",
-                        MessageBoxButton.YesNo, MessageBoxImage.Warning, parentWindow: this) != MessageBoxResult.Yes)
-                    {
-                        return;
-                    }
-                }
+                //if (Util.CanFfxivMightNotBeInternationalClient(GamePathEntry.Text) && App.Settings.Language != ClientLanguage.ChineseSimplified)
+                //{
+                //    if (CustomMessageBox.Show(Loc.Localize("GamePathRegionConfirm", "The folder you selected might be the Chinese or Korean release of the game. XIVLauncher only supports international release of the game.\nIs the folder you've selected indeed for the international version?"), "XIVLauncher",
+                //        MessageBoxButton.YesNo, MessageBoxImage.Warning, parentWindow: this) != MessageBoxResult.Yes)
+                //    {
+                //        return;
+                //    }
+                //}
             }
 
             if (SetupTabControl.SelectedIndex == 2)

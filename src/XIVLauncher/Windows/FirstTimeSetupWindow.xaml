@@ -75,6 +75,7 @@
                             <ComboBoxItem>English</ComboBoxItem>
                             <ComboBoxItem>Deutsch</ComboBoxItem>
                             <ComboBoxItem>Français</ComboBoxItem>
+                            <ComboBoxItem>中文(国服)</ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
                     <Button Content="{Binding NextLoc}" Width="79" VerticalAlignment="Bottom"

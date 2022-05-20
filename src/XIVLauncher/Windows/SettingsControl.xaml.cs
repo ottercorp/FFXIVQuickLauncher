@@ -270,7 +270,7 @@ namespace XIVLauncher.Windows
             {
                 window.Dispatcher.Invoke(() => window.Close());
 
-                string saveIntegrityPath = Path.Combine(Paths.RoamingPath, "integrityreport.txt");
+                string saveIntegrityPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "integrityreport.txt");
 #if DEBUG
                 Log.Information("Saving integrity to " + saveIntegrityPath);
 #endif
@@ -349,7 +349,7 @@ namespace XIVLauncher.Windows
         {
             string selectedPath = null;
 
-            var definitionFiles = Directory.GetFiles(Path.Combine(Paths.RoamingPath, "installedPlugins"), "*.json", SearchOption.AllDirectories);
+            var definitionFiles = Directory.GetFiles(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins"), "*.json", SearchOption.AllDirectories);
             foreach (var path in definitionFiles)
             {
                 dynamic definition = JObject.Parse(File.ReadAllText(path));
@@ -417,7 +417,7 @@ namespace XIVLauncher.Windows
             var pluginDirectory = Directory.GetParent(pluginVersionPath);
 
             //Just to be safe
-            if (pluginDirectory.Parent.FullName != Path.Combine(Paths.RoamingPath, "installedPlugins"))
+            if (pluginDirectory.Parent.FullName != Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins"))
             {
                 CustomMessageBox.Show(Loc.Localize("PluginPathNotFound", "Couldn't find plugin directory path."), "XIVLauncher Problem", parentWindow: Window.GetWindow(this));
                 return;
@@ -434,7 +434,7 @@ namespace XIVLauncher.Windows
 
             try
             {
-                var pluginsDirectory = new DirectoryInfo(Path.Combine(Paths.RoamingPath, "installedPlugins"));
+                var pluginsDirectory = new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins"));
 
                 if (!pluginsDirectory.Exists)
                     return;
@@ -486,7 +486,7 @@ namespace XIVLauncher.Windows
 
         private void PluginsFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            var pluginsPath = Path.Combine(Paths.RoamingPath, "installedPlugins");
+            var pluginsPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins");
 
             try
             {

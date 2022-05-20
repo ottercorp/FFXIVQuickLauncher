@@ -960,7 +960,7 @@ namespace XIVLauncher.Windows.ViewModel
         {
             var dalamudLauncher = new DalamudLauncher(new WindowsDalamudRunner(), App.DalamudUpdater, App.Settings.InGameAddonLoadMethod.GetValueOrDefault(DalamudLoadMethod.DllInject),
                 App.Settings.GamePath,
-                new DirectoryInfo(Paths.RoamingPath),
+                new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming")),
                 App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
                 (int)App.Settings.DalamudInjectionDelayMs);
 
@@ -1129,7 +1129,7 @@ namespace XIVLauncher.Windows.ViewModel
                     App.Settings.PatchPath = null;
                 }
 
-                App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(Paths.RoamingPath, "patches"));
+                App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patches"));
 
                 PatchListEntry[] bootPatches = null;
                 try
@@ -1202,7 +1202,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             try
             {
-                await patcher.PatchAsync(new FileInfo(Path.Combine(Paths.RoamingPath, "aria2.log"))).ConfigureAwait(false);
+                await patcher.PatchAsync(new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "aria2.log"))).ConfigureAwait(false);
                 return true;
             }
             catch (PatchInstallerException ex)

@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -77,7 +78,7 @@ namespace XIVLauncher.Accounts
 
         #region SaveLoad
 
-        private static readonly string ConfigPath = Path.Combine(Paths.RoamingPath, "accountsList.json");
+        private static readonly string ConfigPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "accountsList.json");
 
         public void Save()
         {
