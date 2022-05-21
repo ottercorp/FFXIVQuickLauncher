@@ -75,9 +75,10 @@ namespace XIVLauncher.Common.Game
             var sndaId = String.Empty;
             var tgt = String.Empty;
             var retryTimes = 60;
+            var returnCode = jsonObj["return_code"].Value<int>();
 
-            //首次登陆扫码
-            if (jsonObj["return_code"].Value<int>() == -10242296 && jsonObj["error_type"].Value<int>() == 0 || forceQR)
+            //首次登陆/频繁登录扫码
+            if ((returnCode == -10242296 || returnCode == -1602726) && jsonObj["error_type"].Value<int>() == 0 || forceQR)
             {
                 // /authen/getCodeKey.json
                 var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
@@ -164,6 +165,7 @@ namespace XIVLauncher.Common.Game
                 logEvent?.Invoke(false, $"登录失败");
                 return null;
             }
+
             if (File.Exists(qrPath)) File.Delete(qrPath);
 
             // /authen/getPromotion.json 不知道为什么要有,但就是有

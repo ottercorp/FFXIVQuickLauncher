@@ -378,11 +378,14 @@ namespace XIVLauncher.Windows.ViewModel
                     LoginMessage = msg;
                     Log.Information(msg);
                     // FIXME
-                    // 会卡住登陆线程
-                    //if (msg.StartsWith("等待用户扫码"))
-                    //{
-                    //    QRDialog.AskForQR(_window);
-                    //}
+                    // 登陆成功窗口还在
+                    if (msg.StartsWith("等待用户扫码"))
+                    {
+                        new Task(() =>
+                        {
+                            QRDialog.OpenQRWindow(_window);
+                        }).Start();
+                    }
                 }, action == AfterLoginAction.ForceQR).ConfigureAwait(false);
             }
             catch (Exception ex)

@@ -21,17 +21,25 @@ namespace XIVLauncher.Windows
     /// </summary>
     public partial class QRDialog : Window
     {
-        public event Action<string> OnResult;
+        //public event Action<string> OnResult;
 
         private static QRDialog dialog;
 
-        private OtpInputDialogViewModel ViewModel => DataContext as OtpInputDialogViewModel;
+        //private OtpInputDialogViewModel ViewModel => DataContext as OtpInputDialogViewModel;
 
         //private OtpListener _otpListener;
         //private bool _ignoreCurrentOtp;
 
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
-
+        public static BitmapImage BitmapFromUri(Uri source)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = source;
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            return bitmap;
+        }
         public QRDialog()
         {
             InitializeComponent();
@@ -50,7 +58,11 @@ namespace XIVLauncher.Windows
             QRImage.Focus();
             if (File.Exists(qrPath))
             {
-                QRImage.Source = new BitmapImage(new Uri(qrPath));
+                QRImage.Source = BitmapFromUri(new Uri(qrPath));
+            }
+            else
+            {
+                QRImage.Source = null;
             }
 
             return base.ShowDialog();
@@ -74,9 +86,10 @@ namespace XIVLauncher.Windows
 
         private void Cancel()
         {
-            OnResult?.Invoke(null);
+            //OnResult?.Invoke(null);
             //_otpListener?.Stop();
             DialogResult = false;
+            Reset();
             Hide();
         }
 
@@ -129,11 +142,11 @@ namespace XIVLauncher.Windows
             Process.Start($"https://www.daoyu8.com/");
         }
 
-        public static void AskForQR(Window parentWindow)
+        public static void OpenQRWindow(Window parentWindow)
         {
             if (Dispatcher.CurrentDispatcher != parentWindow.Dispatcher)
             {
-                parentWindow.Dispatcher.Invoke(() => AskForQR(parentWindow));
+                parentWindow.Dispatcher.Invoke(() => OpenQRWindow(parentWindow));
                 return;
             }
             if (dialog == null)
