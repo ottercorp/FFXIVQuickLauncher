@@ -367,7 +367,14 @@ namespace XIVLauncher.Windows.ViewModel
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
                 //else
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-                return await Launcher.LoginSdo(username, (state, msg) => { LoginMessage = msg; Log.Information(msg); }).ConfigureAwait(false); 
+                return await Launcher.LoginSdo(username, (state, msg) => {
+                    LoginMessage = msg;
+                    Log.Information(msg);
+                    if(msg.StartsWith("等待用户扫码"))
+                    {
+                        QRDialog.AskForQR(_window);
+                    }
+                }).ConfigureAwait(false); 
             }
             catch (Exception ex)
             {
