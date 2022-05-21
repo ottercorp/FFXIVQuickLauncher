@@ -74,11 +74,11 @@ public partial class Launcher
     private static readonly string[] FilesToHash =
     {
         "ffxivboot.exe",
-        "ffxivboot64.exe",
-        "ffxivlauncher.exe",
-        "ffxivlauncher64.exe",
-        "ffxivupdater.exe",
-        "ffxivupdater64.exe"
+        //"ffxivboot64.exe",
+        //"ffxivlauncher.exe",
+        //"ffxivlauncher64.exe",
+        //"ffxivupdater.exe",
+        //"ffxivupdater64.exe"
     };
 
     public enum LoginState
@@ -101,7 +101,7 @@ public partial class Launcher
         public SdoArea Area { get; set; }
     }
 
-    public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial)
+    public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial,SdoArea a)
     {
         string uid;
         PatchListEntry[] pendingPatches = null;
@@ -330,6 +330,8 @@ public partial class Launcher
     /// <returns>String of hashed EXE files.</returns>
     private static string GetBootVersionHash(DirectoryInfo gamePath)
     {
+        // FIXME
+        return "ffxivboot.exe/149504/5f2a70612aa58378eb347869e75adeb8f5581a1b";
         var result = Repository.Boot.GetVer(gamePath) + "=";
 
         for (var i = 0; i < FilesToHash.Length; i++)
@@ -346,6 +348,8 @@ public partial class Launcher
 
     public async Task<PatchListEntry[]> CheckBootVersion(DirectoryInfo gamePath)
     {
+        //CN
+        return null; ;
         var request = new HttpRequestMessage(HttpMethod.Get,
             $"http://patch-bootver.ffxiv.com/http/win32/ffxivneo_release_boot/{Repository.Boot.GetVer(gamePath)}/?time=" +
             GetLauncherFormattedTimeLongRounded());
@@ -367,7 +371,7 @@ public partial class Launcher
     private async Task<(string Uid, LoginState result, PatchListEntry[] PendingGamePatches)> RegisterSession(OauthLoginResult loginResult, DirectoryInfo gamePath, bool forceBaseVersion)
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
-            $"https://patch-gamever.ffxiv.com/http/win32/ffxivneo_release_game/{(forceBaseVersion ? Constants.BASE_GAME_VERSION : Repository.Ffxiv.GetVer(gamePath))}/{loginResult.SessionId}");
+            $"{loginResult}/http/win32/shanda_release_chs_game/{(forceBaseVersion ? Constants.BASE_GAME_VERSION : Repository.Ffxiv.GetVer(gamePath))}");
 
         request.Headers.AddWithoutValidation("X-Hash-Check", "enabled");
         request.Headers.AddWithoutValidation("User-Agent", Constants.PatcherUserAgent);
@@ -402,7 +406,7 @@ public partial class Launcher
         var request = new HttpRequestMessage(HttpMethod.Post, "http://patch-gamever.ffxiv.com/gen_token");
 
         request.Headers.AddWithoutValidation("Connection", "Keep-Alive");
-        request.Headers.AddWithoutValidation("X-Patch-Unique-Id", uniqueId);
+        //request.Headers.AddWithoutValidation("X-Patch-Unique-Id", uniqueId);
         request.Headers.AddWithoutValidation("User-Agent", Constants.PatcherUserAgent);
 
         request.Content = new StringContent(patchUrl);

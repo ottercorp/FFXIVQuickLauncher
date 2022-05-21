@@ -373,12 +373,14 @@ namespace XIVLauncher.Windows.ViewModel
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
                 //else
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+                var checkResult = await Launcher.CheckGameUpdate(SelectArea, gamePath, false);
+                if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
+                    return checkResult;
+
                 return await Launcher.LoginSdo(username, (state, msg) =>
                 {
                     LoginMessage = msg;
                     Log.Information(msg);
-                    // FIXME
-                    // 登陆成功窗口还在
                     if (state == Launcher.SdoLoginState.GotQRCode)
                     {
                         new Task(() =>
@@ -386,7 +388,8 @@ namespace XIVLauncher.Windows.ViewModel
                             QRDialog.OpenQRWindow(_window, () => Launcher.CancelLogin());
                         }).Start();
                     }
-                    else if (state == Launcher.SdoLoginState.LoginSucess||state==Launcher.SdoLoginState.LoginFail || state == Launcher.SdoLoginState.OutTime) {
+                    else if (state == Launcher.SdoLoginState.LoginSucess || state == Launcher.SdoLoginState.LoginFail || state == Launcher.SdoLoginState.OutTime)
+                    {
                         QRDialog.CloseQRWindow(_window);
                     }
                 }, action == AfterLoginAction.ForceQR).ConfigureAwait(false);

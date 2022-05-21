@@ -11,8 +11,11 @@ namespace XIVLauncher.Common
 
         public static string PatcherUserAgent => GetPatcherUserAgent(Util.GetPlatform());
 
+        public const int MaxExpansion = 4;
+
         private static string GetPatcherUserAgent(Platform platform)
         {
+            return "FFXIV_Patch";
             switch (platform)
             {
                 case Platform.Win32:

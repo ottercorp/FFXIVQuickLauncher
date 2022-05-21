@@ -56,7 +56,8 @@ namespace XIVLauncher.Common.Game
 
         public delegate void LogEventHandler(SdoLoginState state, string logMsg);
         private static CancellationTokenSource CTS;
-        public enum SdoLoginState { 
+        public enum SdoLoginState
+        {
             GotQRCode,
             WaitingScanQRCode,
             LoginSucess,
@@ -200,6 +201,7 @@ namespace XIVLauncher.Common.Game
             {
                 SessionId = ticket,
                 SndaId = sndaId,
+                MaxExpansion = Constants.MaxExpansion
             };
         }
 
@@ -209,7 +211,8 @@ namespace XIVLauncher.Common.Game
 
         public void CancelLogin()
         {
-            if (CTS != null) {
+            if (CTS != null)
+            {
                 Log.Information("取消登陆");
                 CTS.Cancel();
             }
@@ -347,6 +350,38 @@ namespace XIVLauncher.Common.Game
                 File.Copy(entryDll, Path.Combine(bootPath, "sdologinentry.sdo.dll"), true);
                 File.Copy(Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll"), entryDll, true);
             }
+        }
+
+        public async Task<LoginResult> CheckGameUpdate(SdoArea area, DirectoryInfo gamePath, bool forceBaseVersion)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post,
+                $"http://{area.AreaPatch}/http/win32/shanda_release_chs_game/{(forceBaseVersion ? Constants.BASE_GAME_VERSION : Repository.Ffxiv.GetVer(gamePath))}");
+
+            request.Headers.AddWithoutValidation("X-Hash-Check", "enabled");
+            request.Headers.AddWithoutValidation("User-Agent", Constants.PatcherUserAgent);
+
+            EnsureVersionSanity(gamePath, Constants.MaxExpansion);
+            request.Content = new StringContent(GetVersionReport(gamePath, Constants.MaxExpansion, forceBaseVersion));
+
+            var resp = await this.client.SendAsync(request);
+            var text = await resp.Content.ReadAsStringAsync();
+
+            // Conflict indicates that boot needs to update, we do not get a patch list or a unique ID to download patches with in this case
+            if (resp.StatusCode == HttpStatusCode.Conflict)
+                return new LoginResult { PendingPatches=null, State=LoginState.NeedsPatchBoot, OauthLogin=null };
+
+            if (!resp.Headers.TryGetValues("X-Patch-Unique-Id", out var uidVals))
+                throw new InvalidResponseException("Could not get X-Patch-Unique-Id.", text);
+
+            var uid = uidVals.First();
+
+            if (string.IsNullOrEmpty(text))
+                return new LoginResult { PendingPatches = null, State = LoginState.Ok, OauthLogin = null };
+
+            Log.Verbose("Game Patching is needed... List:\n{PatchList}", text);
+
+            var pendingPatches = PatchListParser.Parse(text);
+            return new LoginResult { PendingPatches = pendingPatches, State = LoginState.NeedsPatchGame, OauthLogin = null };
         }
     }
 }
