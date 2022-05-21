@@ -88,7 +88,8 @@ public partial class Launcher
         NeedsPatchGame,
         NeedsPatchBoot,
         NoService,
-        NoTerms
+        NoTerms,
+        NeedRetry
     }
 
     public class LoginResult

@@ -490,6 +490,11 @@ namespace XIVLauncher.Windows.ViewModel
                 return false;
             }
 
+            if (loginResult.State == Launcher.LoginState.NeedRetry)
+            {
+                // Do nothing
+                return false;
+            }
             /*
              * The server requested us to patch Boot, even though in order to get to this code, we just checked for boot patches.
              *
@@ -579,7 +584,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                 return false;
             }
-
+            
             if (CustomMessageBox.AssertOrShowError(loginResult.State == Launcher.LoginState.Ok, "TryProcessLoginResult: loginResult.State should have been Launcher.LoginState.Ok", parentWindow: _window))
                 return false;
 

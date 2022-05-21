@@ -43,7 +43,7 @@ namespace XIVLauncher.Common.Game
 
             if (oauthLoginResult != null)
                 loginState = LoginState.Ok;
-            else loginState = LoginState.NoService;
+            else loginState = LoginState.NeedRetry;
 
             return new LoginResult
             {
@@ -80,8 +80,8 @@ namespace XIVLauncher.Common.Game
             {
                 // /authen/getCodeKey.json
                 var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
-                
-                 // /authen/codeKeyLogin.json
+
+                // /authen/codeKeyLogin.json
                 while (retryTimes-- > 0)
                 {
                     jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
@@ -192,6 +192,8 @@ namespace XIVLauncher.Common.Game
         }
 
         private static string deviceId;
+        private static string CASCID;
+        private static string SECURE_CASCID;
         public async Task<JObject> LoginAsLauncher(string endPoint, List<string> para)
         {
             if (deviceId == null)
@@ -215,9 +217,17 @@ namespace XIVLauncher.Common.Game
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("User-Agent", _userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
+            if (CASCID != null && SECURE_CASCID != null) {
+                request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
+            }
             var response = await this.client.SendAsync(request);
-            
             var reply = await response.Content.ReadAsStringAsync();
+            var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+            if (cookies != null)
+            {
+                CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
+                SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
+            }
             return (JObject)JsonConvert.DeserializeObject(reply);
         }
 
@@ -258,7 +268,8 @@ namespace XIVLauncher.Common.Game
             return cookie;
         }
 
-        public void EnsureLoginEntry() {
+        public void EnsureLoginEntry()
+        {
             // 通过文件版本信息，检测是否存在第三方sdologinentry64.dll以及原版sdologinentry64.dll（被重命名为sdologinentry64.sdo.dll）
             //throw new NotImplementedException();
         }
