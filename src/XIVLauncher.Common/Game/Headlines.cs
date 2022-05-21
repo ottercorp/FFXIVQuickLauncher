@@ -63,6 +63,10 @@ namespace XIVLauncher.Common.Game
 
             return JsonConvert.DeserializeObject<Headlines>(json, Converter.SETTINGS);
         }
+
+        private static async Task<Banner> GetBanner() { 
+        
+        }
     }
 
     internal static class Converter
