@@ -22,14 +22,13 @@ namespace XIVLauncher.Windows
     public partial class QRDialog : Window
     {
         //public event Action<string> OnResult;
-
+        public event Action OnCancel;
         private static QRDialog dialog;
 
         //private OtpInputDialogViewModel ViewModel => DataContext as OtpInputDialogViewModel;
 
         //private OtpListener _otpListener;
         //private bool _ignoreCurrentOtp;
-
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
         public static BitmapImage BitmapFromUri(Uri source)
         {
@@ -64,7 +63,6 @@ namespace XIVLauncher.Windows
             {
                 QRImage.Source = null;
             }
-
             return base.ShowDialog();
         }
 
@@ -83,14 +81,13 @@ namespace XIVLauncher.Windows
             // OtpInputPrompt.Foreground = Brushes.Red;
             //_ignoreCurrentOtp = true;
         }
-
-        private void Cancel()
+        public void Cancel()
         {
             //OnResult?.Invoke(null);
             //_otpListener?.Stop();
             DialogResult = false;
             Reset();
-            Hide();
+            Close();          
         }
 
         private void OtpInputDialog_OnMouseMove(object sender, MouseEventArgs e)
@@ -129,6 +126,7 @@ namespace XIVLauncher.Windows
         private void OkButton_OnClick(object sender, RoutedEventArgs e)
         {
             //TryAcceptOtp(this.QRImage.Text);
+            dialog.OnCancel?.Invoke();
             Cancel();
         }
 
@@ -142,11 +140,24 @@ namespace XIVLauncher.Windows
             Process.Start($"https://www.daoyu8.com/");
         }
 
-        public static void OpenQRWindow(Window parentWindow)
+        public static void CloseQRWindow(Window parentWindow) {
+            if (Dispatcher.CurrentDispatcher != parentWindow.Dispatcher)
+            {
+                parentWindow.Dispatcher.Invoke(() => CloseQRWindow(parentWindow));
+                return;
+            }
+            if (dialog == null)
+            {
+                return;
+            }
+            dialog.Hide();
+        }
+
+        public static void OpenQRWindow(Window parentWindow,Action onCancel)
         {
             if (Dispatcher.CurrentDispatcher != parentWindow.Dispatcher)
             {
-                parentWindow.Dispatcher.Invoke(() => OpenQRWindow(parentWindow));
+                parentWindow.Dispatcher.Invoke(() => OpenQRWindow(parentWindow,onCancel));
                 return;
             }
             if (dialog == null)
@@ -158,7 +169,7 @@ namespace XIVLauncher.Windows
                 dialog.Owner = parentWindow;
                 dialog.ShowInTaskbar = false;
             }
-
+            dialog.OnCancel += onCancel;
             dialog.ShowDialog();
         }
     }

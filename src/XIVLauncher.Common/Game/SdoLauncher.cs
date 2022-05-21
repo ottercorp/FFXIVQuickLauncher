@@ -54,8 +54,16 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public delegate void LogEventHandler(bool? isSucceed, string logMsg);
+        public delegate void LogEventHandler(SdoLoginState state, string logMsg);
         private static CancellationTokenSource CTS;
+        public enum SdoLoginState { 
+            GotQRCode,
+            WaitingScanQRCode,
+            LoginSucess,
+            LoginFail,
+            WaitingConfirm,
+            OutTime
+        }
         private async Task<OauthLoginResult> OauthLoginSdo(string userName, LogEventHandler logEvent, bool forceQR)
         {
             // /authen/getGuid.json
@@ -82,7 +90,7 @@ namespace XIVLauncher.Common.Game
             {
                 // /authen/getCodeKey.json
                 var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
-
+                logEvent?.Invoke(SdoLoginState.GotQRCode, null);
                 // /authen/codeKeyLogin.json
                 CTS = new CancellationTokenSource();
                 while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
@@ -99,7 +107,7 @@ namespace XIVLauncher.Common.Game
                     else
                     {
                         var failReason = jsonObj["data"]["failReason"].Value<string>();
-                        logEvent?.Invoke(false, $"等待用户扫码...");
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, failReason);
 
                         if (error_code == -10515805)
                         {
@@ -117,12 +125,12 @@ namespace XIVLauncher.Common.Game
                 if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
                 {
                     var failReason = jsonObj["data"]["failReason"].Value<string>();
-                    logEvent?.Invoke(false, failReason);
+                    logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
                     return null;
                 }
                 var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
                 var pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
-                logEvent?.Invoke(null, $"操作码:{pushMsgSerialNum}");
+                logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
 
                 // /authen/pushMessageLogin.json
                 CTS = new CancellationTokenSource();
@@ -141,7 +149,7 @@ namespace XIVLauncher.Common.Game
                     {
                         var failReason = jsonObj["data"]["failReason"].Value<string>();
                         if (failReason == "用户未确认") failReason = "等待用户确认...";
-                        logEvent?.Invoke(false, $"确认码:{pushMsgSerialNum},{failReason}");
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, $"确认码:{pushMsgSerialNum},{failReason}");
 
                         if (error_code == -10516808)
                         {
@@ -157,12 +165,12 @@ namespace XIVLauncher.Common.Game
             //超时 tgt或ID空白则返回
             if (retryTimes <= 0)
             {
-                logEvent?.Invoke(false, $"登录超时");
+                logEvent?.Invoke(SdoLoginState.OutTime, $"登录超时");
                 return null;
             }
             if (string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId))
             {
-                logEvent?.Invoke(false, $"登录失败");
+                logEvent?.Invoke(SdoLoginState.LoginFail, $"登录失败");
                 return null;
             }
 
@@ -172,7 +180,7 @@ namespace XIVLauncher.Common.Game
             jsonObj = await LoginAsLauncher("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
             if (jsonObj["return_code"].Value<int>() != 0)
             {
-                logEvent?.Invoke(false, jsonObj["data"]["failReason"].Value<string>());
+                logEvent?.Invoke(SdoLoginState.LoginFail, jsonObj["data"]["failReason"].Value<string>());
                 return null;
             }
 
@@ -185,7 +193,7 @@ namespace XIVLauncher.Common.Game
             {
                 ticket = jsonObj["data"]["ticket"].Value<string>();
             }
-            if (!string.IsNullOrEmpty(ticket)) logEvent?.Invoke(true, "登陆成功");
+            if (!string.IsNullOrEmpty(ticket)) logEvent?.Invoke(SdoLoginState.LoginSucess, "登陆成功");
             else return null;
 
             return new OauthLoginResult
@@ -201,8 +209,10 @@ namespace XIVLauncher.Common.Game
 
         public void CancelLogin()
         {
-            if (CTS != null)
+            if (CTS != null) {
+                Log.Information("取消登陆");
                 CTS.Cancel();
+            }
         }
         public async Task<JObject> LoginAsLauncher(string endPoint, List<string> para)
         {

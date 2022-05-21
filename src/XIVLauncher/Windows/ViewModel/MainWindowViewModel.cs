@@ -379,12 +379,15 @@ namespace XIVLauncher.Windows.ViewModel
                     Log.Information(msg);
                     // FIXME
                     // 登陆成功窗口还在
-                    if (msg.StartsWith("等待用户扫码"))
+                    if (state == Launcher.SdoLoginState.GotQRCode)
                     {
                         new Task(() =>
                         {
-                            QRDialog.OpenQRWindow(_window);
+                            QRDialog.OpenQRWindow(_window, () => Launcher.CancelLogin());
                         }).Start();
+                    }
+                    else if (state == Launcher.SdoLoginState.LoginSucess||state==Launcher.SdoLoginState.LoginFail || state == Launcher.SdoLoginState.OutTime) {
+                        QRDialog.CloseQRWindow(_window);
                     }
                 }, action == AfterLoginAction.ForceQR).ConfigureAwait(false);
             }
