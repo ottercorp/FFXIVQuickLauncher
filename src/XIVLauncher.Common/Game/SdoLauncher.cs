@@ -22,11 +22,14 @@ using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.PlatformAbstractions;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using Microsoft.Win32.SafeHandles;
 
 namespace XIVLauncher.Common.Game
 {
     public partial class Launcher
     {
+        private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
+
         public async Task<LoginResult> LoginSdo(string userName, LogEventHandler logEvent = null)
         {
             PatchListEntry[] pendingPatches = null;
@@ -70,7 +73,7 @@ namespace XIVLauncher.Common.Game
 
             var sndaId = String.Empty;
             var tgt = String.Empty;
-            var retryTimes = 30;
+            var retryTimes = 60;
 
             //首次登陆扫码
             if (jsonObj["return_code"].Value<int>() == -10242296 && jsonObj["error_type"].Value<int>() == 0)
@@ -93,7 +96,7 @@ namespace XIVLauncher.Common.Game
                     else
                     {
                         var failReason = jsonObj["data"]["failReason"].Value<string>();
-                        logEvent?.Invoke(false, $"{failReason}");
+                        logEvent?.Invoke(false, $"等待用户扫码...");
 
                         if (error_code == -10515805)
                         {
@@ -159,6 +162,7 @@ namespace XIVLauncher.Common.Game
                 logEvent?.Invoke(false, $"登录失败");
                 return null;
             }
+            if (File.Exists(qrPath)) File.Delete(qrPath);
 
             // /authen/getPromotion.json 不知道为什么要有,但就是有
             jsonObj = await LoginAsLauncher("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
@@ -212,6 +216,7 @@ namespace XIVLauncher.Common.Game
             request.Headers.AddWithoutValidation("User-Agent", _userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
             var response = await this.client.SendAsync(request);
+            
             var reply = await response.Content.ReadAsStringAsync();
             return (JObject)JsonConvert.DeserializeObject(reply);
         }
@@ -242,9 +247,14 @@ namespace XIVLauncher.Common.Game
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
             var cookie = response.Cookies[0].Value;
             var stream = response.GetResponseStream();
-            
-            //TODO stream 转图片+显示问题
-
+            if (File.Exists(qrPath)) File.Delete(qrPath);
+            using (var fileStream = File.Create(qrPath))
+            {
+                //stream.Seek(0, SeekOrigin.Begin);
+                stream.CopyTo(fileStream);
+                fileStream.Close();
+                fileStream.Dispose();
+            }
             return cookie;
         }
 
