@@ -43,7 +43,7 @@ namespace AheadLib
                 pszProcName = szProcName;
             }
 
-            wsprintf(tzTemp, TEXT("无法找到函数 %hs，程序无法正常运行。"), pszProcName);
+            wsprintf(tzTemp, TEXT("无法找到%s"), pszProcName);
             MessageBox(NULL, tzTemp, title, MB_ICONSTOP);
             ExitProcess(-2);
         }
@@ -71,7 +71,7 @@ namespace AheadLib
         m_hModule = LoadLibrary(tzPath);
         if (m_hModule == NULL)
         {
-            wsprintf(tzTemp, TEXT("无法加载 %s，程序无法正常运行。"), tzPath);
+            wsprintf(tzTemp, TEXT("无法加载%s"), tzPath);
             MessageBox(NULL, tzTemp, title, MB_ICONSTOP);
             ExitProcess(-2);
         }
