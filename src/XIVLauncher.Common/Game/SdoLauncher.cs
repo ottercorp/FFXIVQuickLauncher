@@ -67,55 +67,85 @@ namespace XIVLauncher.Common.Game
 
             // /authen/sendPushMessage.json
             jsonObj = await LoginAsLauncher("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" });
-            if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
-            {
-                if (jsonObj["return_code"].Value<int>() == -10242296)
-                {
-                    string[] IDs = deviceId.Split(':');
-                    // if the disk serial in sdoLogin is empty
-                    if (IDs.Length == 3 && IDs[2].Length != 0)
-                    {
-                        IDs[2] = "";
-                        deviceId = string.Join(":", IDs);
-                        await OauthLoginSdo(userName, logEvent);
-                        return null;
-                    }
-                }
-                var failReason = jsonObj["data"]["failReason"].Value<string>();
-                logEvent?.Invoke(false, failReason);
-                return null;
-            }
 
-            var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
-            var pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
-            logEvent?.Invoke(null, $"操作码:{pushMsgSerialNum}");
-
-            // /authen/pushMessageLogin.json
             var sndaId = String.Empty;
             var tgt = String.Empty;
             var retryTimes = 30;
-            while (retryTimes-- > 0)
+
+            //首次登陆扫码
+            if (jsonObj["return_code"].Value<int>() == -10242296 && jsonObj["error_type"].Value<int>() == 0)
             {
-                jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
-                var error_code = jsonObj["return_code"].Value<int>();
-                if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
+                // /authen/getCodeKey.json
+                var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
+                
+                 // /authen/codeKeyLogin.json
+                while (retryTimes-- > 0)
                 {
-                    sndaId = jsonObj["data"]["sndaId"].Value<string>();
-                    tgt = jsonObj["data"]["tgt"].Value<string>();
-                    break;
+                    jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
+                    var error_code = jsonObj["return_code"].Value<int>();
+
+                    if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
+                    {
+                        sndaId = jsonObj["data"]["sndaId"].Value<string>();
+                        tgt = jsonObj["data"]["tgt"].Value<string>();
+                        break;
+                    }
+                    else
+                    {
+                        var failReason = jsonObj["data"]["failReason"].Value<string>();
+                        logEvent?.Invoke(false, $"{failReason}");
+
+                        if (error_code == -10515805)
+                        {
+                            Log.Information("等待用户扫码...");
+                            await Task.Delay(1000).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        return null;
+                    }
                 }
-                else
+            }
+            else //叨鱼一键登录
+            {
+                if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
                 {
                     var failReason = jsonObj["data"]["failReason"].Value<string>();
-                    if (failReason == "用户未确认") failReason = "等待用户确认...";
-                    logEvent?.Invoke(false, $"确认码:{pushMsgSerialNum},{failReason}");
-                    if (error_code == -10516808)
-                    {
-                        Log.Information("等待用户确认...");
-                        await Task.Delay(1000).ConfigureAwait(false);
-                        continue;
-                    }
+                    logEvent?.Invoke(false, failReason);
                     return null;
+                }
+
+                var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
+                var pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
+                logEvent?.Invoke(null, $"操作码:{pushMsgSerialNum}");
+
+                // /authen/pushMessageLogin.json
+                while (retryTimes-- > 0)
+                {
+                    jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
+                    var error_code = jsonObj["return_code"].Value<int>();
+
+                    if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
+                    {
+                        sndaId = jsonObj["data"]["sndaId"].Value<string>();
+                        tgt = jsonObj["data"]["tgt"].Value<string>();
+                        break;
+                    }
+                    else
+                    {
+                        var failReason = jsonObj["data"]["failReason"].Value<string>();
+                        if (failReason == "用户未确认") failReason = "等待用户确认...";
+                        logEvent?.Invoke(false, $"确认码:{pushMsgSerialNum},{failReason}");
+
+                        if (error_code == -10516808)
+                        {
+                            Log.Information("等待用户确认...");
+                            await Task.Delay(1000).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        return null;
+                    }
                 }
             }
             //超时 tgt或ID空白则返回
@@ -184,6 +214,38 @@ namespace XIVLauncher.Common.Game
             var response = await this.client.SendAsync(request);
             var reply = await response.Content.ReadAsStringAsync();
             return (JObject)JsonConvert.DeserializeObject(reply);
+        }
+
+        public async Task<string> GetQRCode(string endPoint, List<string> para)
+        {
+            if (deviceId == null)
+                deviceId = SdoUtils.GetDeviceId();
+            var commonParas = new List<string>();
+            commonParas.Add("authenSource=1");
+            commonParas.Add("appId=100001900");
+            commonParas.Add("areaId=7");
+            commonParas.Add("appIdSite=100001900");
+            commonParas.Add("locale=zh_CN");
+            commonParas.Add("productId=4");
+            commonParas.Add("frameType=1");
+            commonParas.Add("endpointOS=1");
+            commonParas.Add("version=21");
+            commonParas.Add("customSecurityLevel=2");
+            commonParas.Add($"deviceId={deviceId}");
+            commonParas.Add($"thirdLoginExtern=0");
+            commonParas.Add($"productVersion=2%2e0%2e1%2e4");
+            commonParas.Add($"tag=0");
+            para.AddRange(commonParas);
+            var request = (HttpWebRequest)WebRequest.Create($"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
+            request.Method = "GET";
+            request.CookieContainer = new CookieContainer(10);
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            var cookie = response.Cookies[0].Value;
+            var stream = response.GetResponseStream();
+            
+            //TODO stream 转图片+显示问题
+
+            return cookie;
         }
 
         public void EnsureLoginEntry() {

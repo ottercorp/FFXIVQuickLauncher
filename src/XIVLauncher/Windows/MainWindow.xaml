@@ -189,7 +189,15 @@
                                                        VerticalAlignment="Top"
                                                        TextAlignment="Center"
                                                        Margin="0,20,0,0"/>
+                                            <Image 
+                                                Visibility="Collapsed"
+                                                DockPanel.Dock="Top"
+                                                x:Name="QRCode"
+                                                VerticalAlignment="Top"
+                                                Margin="0 18 0 0"
+                                            ></Image>
                                             <ProgressBar
+                                                x:Name="ProgressBar"
                                                 DockPanel.Dock="Top"
                                                 HorizontalAlignment="Stretch"
                                                 VerticalAlignment="Top"
