@@ -54,7 +54,8 @@ namespace XIVLauncher.Windows.ViewModel
             StartWithoutDalamud,
             UpdateOnly,
             Repair,
-            CancelLogin
+            CancelLogin,
+            ForceQR
         };
 
         public MainWindowViewModel(Window window)
@@ -62,12 +63,13 @@ namespace XIVLauncher.Windows.ViewModel
             _window = window;
 
             SetupLoc();
-                
+
             StartLoginCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.Start), () => !IsLoggingIn);
             LoginNoStartCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.UpdateOnly), () => !IsLoggingIn);
             LoginNoDalamudCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.StartWithoutDalamud), () => !IsLoggingIn);
             LoginRepairCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.Repair), () => !IsLoggingIn);
             LoginCancelCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.CancelLogin));
+            LoginForceQRCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.ForceQR));
             Launcher = App.GlobalSteamTicket == null ?
                 new(App.Steam, App.UniqueIdCache, CommonSettings.Instance) :
                 new(App.GlobalSteamTicket, App.UniqueIdCache, CommonSettings.Instance);
@@ -75,8 +77,10 @@ namespace XIVLauncher.Windows.ViewModel
 
         private Action<object> GetLoginFunc(AfterLoginAction action)
         {
-            return p => {
-                if (action == AfterLoginAction.CancelLogin) {
+            return p =>
+            {
+                if (action == AfterLoginAction.CancelLogin)
+                {
                     Launcher.CancelLogin();
                     return;
                 }
@@ -139,7 +143,8 @@ namespace XIVLauncher.Windows.ViewModel
 
             IsLoggingIn = true;
 
-            Task.Run(() => {
+            Task.Run(() =>
+            {
                 try
                 {
                     Login(username, password, isOtp, isSteam, doingAutoLogin, action).Wait();
@@ -215,7 +220,8 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (isOtp && (!hasValidCache || action == AfterLoginAction.Repair))
             {
-                otp = OtpInputDialog.AskForOtp((otpDialog, result) => {
+                otp = OtpInputDialog.AskForOtp((otpDialog, result) =>
+                {
                     if (AccountManager.CurrentAccount != null && result != null && AccountManager.CurrentAccount.LastSuccessfulOtp == result)
                     {
                         otpDialog.IgnoreCurrentResult(Loc.Localize("DuplicateOtpAfterSuccess",
@@ -367,14 +373,17 @@ namespace XIVLauncher.Windows.ViewModel
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
                 //else
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-                return await Launcher.LoginSdo(username, (state, msg) => {
+                return await Launcher.LoginSdo(username, (state, msg) =>
+                {
                     LoginMessage = msg;
                     Log.Information(msg);
-                    if(msg.StartsWith("等待用户扫码"))
-                    {
-                        QRDialog.AskForQR(_window);
-                    }
-                }).ConfigureAwait(false); 
+                    // FIXME
+                    // 会卡住登陆线程
+                    //if (msg.StartsWith("等待用户扫码"))
+                    //{
+                    //    QRDialog.AskForQR(_window);
+                    //}
+                }, action == AfterLoginAction.ForceQR).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -596,7 +605,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                 return false;
             }
-            
+
             if (CustomMessageBox.AssertOrShowError(loginResult.State == Launcher.LoginState.Ok, "TryProcessLoginResult: loginResult.State should have been Launcher.LoginState.Ok", parentWindow: _window))
                 return false;
 
@@ -835,7 +844,8 @@ namespace XIVLauncher.Windows.ViewModel
                 Hide();
                 IsEnabled = false;
 
-                var progressDialog = _window.Dispatcher.Invoke(() => {
+                var progressDialog = _window.Dispatcher.Invoke(() =>
+                {
                     var d = new GameRepairProgressWindow(verify);
                     if (_window.IsVisible)
                         d.Owner = _window;
@@ -1217,7 +1227,8 @@ namespace XIVLauncher.Windows.ViewModel
 
             Hide();
 
-            PatchDownloadDialog progressDialog = _window.Dispatcher.Invoke(() => {
+            PatchDownloadDialog progressDialog = _window.Dispatcher.Invoke(() =>
+            {
                 var d = new PatchDownloadDialog(patcher);
                 if (_window.IsVisible)
                     d.Owner = _window;
@@ -1265,7 +1276,8 @@ namespace XIVLauncher.Windows.ViewModel
             }
             finally
             {
-                progressDialog.Dispatcher.Invoke(() => {
+                progressDialog.Dispatcher.Invoke(() =>
+                {
                     progressDialog.Hide();
                     progressDialog.Close();
                 });
@@ -1285,6 +1297,8 @@ namespace XIVLauncher.Windows.ViewModel
         public ICommand LoginRepairCommand { get; set; }
 
         public ICommand LoginCancelCommand { get; set; }
+
+        public ICommand LoginForceQRCommand { get; set; }
 
         #endregion
 

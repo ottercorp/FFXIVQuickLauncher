@@ -318,6 +318,8 @@
                                                                       Command="{Binding Path=LoginNoDalamudCommand}" />
                                                             <MenuItem Header="{Binding LoginNoStartLoc}"
                                                                       Command="{Binding Path=LoginNoStartCommand}" />
+                                                            <MenuItem Header="扫码登陆"
+                                                                      Command="{Binding Path=LoginForceQRCommand}" />
                                                         </ContextMenu>
                                                     </Button.ContextMenu>
 

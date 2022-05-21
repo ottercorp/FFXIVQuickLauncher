@@ -30,7 +30,7 @@ namespace XIVLauncher.Common.Game
     {
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
 
-        public async Task<LoginResult> LoginSdo(string userName, LogEventHandler logEvent = null)
+        public async Task<LoginResult> LoginSdo(string userName, LogEventHandler logEvent = null, bool forceQr = false)
         {
             PatchListEntry[] pendingPatches = null;
 
@@ -39,7 +39,7 @@ namespace XIVLauncher.Common.Game
             LoginState loginState;
 
 
-            oauthLoginResult = await OauthLoginSdo(userName, logEvent);
+            oauthLoginResult = await OauthLoginSdo(userName, logEvent, forceQr);
 
             if (oauthLoginResult != null)
                 loginState = LoginState.Ok;
@@ -56,7 +56,7 @@ namespace XIVLauncher.Common.Game
 
         public delegate void LogEventHandler(bool? isSucceed, string logMsg);
         private static CancellationTokenSource CTS;
-        private async Task<OauthLoginResult> OauthLoginSdo(string userName, LogEventHandler logEvent)
+        private async Task<OauthLoginResult> OauthLoginSdo(string userName, LogEventHandler logEvent, bool forceQR)
         {
             // /authen/getGuid.json
             var jsonObj = await LoginAsLauncher("getGuid.json", new List<string>() { "generateDynamicKey=1" });
@@ -77,7 +77,7 @@ namespace XIVLauncher.Common.Game
             var retryTimes = 60;
 
             //首次登陆扫码
-            if (jsonObj["return_code"].Value<int>() == -10242296 && jsonObj["error_type"].Value<int>() == 0)
+            if (jsonObj["return_code"].Value<int>() == -10242296 && jsonObj["error_type"].Value<int>() == 0 || forceQR)
             {
                 // /authen/getCodeKey.json
                 var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
