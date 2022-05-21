@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Í·ÎÄ¼ş
+// å¤´æ–‡ä»¶
 #include "dllmain.h"
 #include <cstdio>
 #include <filesystem>
@@ -12,21 +12,20 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Ô­º¯ÊıµØÖ·Ö¸Õë
-int(*pfnSDOLGetModule)(UINT64* a, UINT64* b);
-int(*pfnSDOLInitialize)(UINT64* a);
-int(*pfnSDOLTerminal)();
+// åŸå‡½æ•°åœ°å€æŒ‡é’ˆ
+int (*pfnSDOLGetModule)(UINT64 *a, UINT64 *b);
+int (*pfnSDOLInitialize)(UINT64 *a);
+int (*pfnSDOLTerminal)();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const LPCWSTR title = TEXT("DalamudLoginEntry64");
-// AheadLib ÃüÃû¿Õ¼ä
+// AheadLib å‘½åç©ºé—´
 namespace AheadLib
 {
-    HMODULE m_hModule = NULL;	// Ô­Ê¼Ä£¿é¾ä±ú
-    DWORD m_dwReturn[3] = { 0 }; // Ô­Ê¼º¯Êı·µ»ØµØÖ·
+    HMODULE m_hModule = NULL;  // åŸå§‹æ¨¡å—å¥æŸ„
+    DWORD m_dwReturn[3] = {0}; // åŸå§‹å‡½æ•°è¿”å›åœ°å€
 
-    // »ñÈ¡Ô­Ê¼º¯ÊıµØÖ·
+    // è·å–åŸå§‹å‡½æ•°åœ°å€
     FARPROC WINAPI GetAddress(PCSTR pszProcName)
     {
         FARPROC fpAddress;
@@ -44,7 +43,7 @@ namespace AheadLib
                 pszProcName = szProcName;
             }
 
-            wsprintf(tzTemp, TEXT("ÎŞ·¨ÕÒµ½º¯Êı %hs£¬³ÌĞòÎŞ·¨Õı³£ÔËĞĞ¡£"), pszProcName);
+            wsprintf(tzTemp, TEXT("æ— æ³•æ‰¾åˆ°å‡½æ•° %hsï¼Œç¨‹åºæ— æ³•æ­£å¸¸è¿è¡Œã€‚"), pszProcName);
             MessageBox(NULL, tzTemp, title, MB_ICONSTOP);
             ExitProcess(-2);
         }
@@ -52,15 +51,15 @@ namespace AheadLib
         return fpAddress;
     }
 
-    // ³õÊ¼»¯Ô­Ê¼º¯ÊıµØÖ·Ö¸Õë
+    // åˆå§‹åŒ–åŸå§‹å‡½æ•°åœ°å€æŒ‡é’ˆ
     inline VOID WINAPI InitializeAddresses()
     {
-        pfnSDOLGetModule = (int (*)(UINT64*, UINT64*))GetAddress("SDOLGetModule");
-        pfnSDOLInitialize = (int (*)(UINT64*))GetAddress("SDOLInitialize");
+        pfnSDOLGetModule = (int (*)(UINT64 *, UINT64 *))GetAddress("SDOLGetModule");
+        pfnSDOLInitialize = (int (*)(UINT64 *))GetAddress("SDOLInitialize");
         pfnSDOLTerminal = (int (*)())GetAddress("SDOLTerminal");
     }
 
-    // ¼ÓÔØÔ­Ê¼Ä£¿é
+    // åŠ è½½åŸå§‹æ¨¡å—
     inline BOOL WINAPI Load(HMODULE hMod)
     {
         TCHAR tzPath[MAX_PATH];
@@ -72,7 +71,7 @@ namespace AheadLib
         m_hModule = LoadLibrary(tzPath);
         if (m_hModule == NULL)
         {
-            wsprintf(tzTemp, TEXT("ÎŞ·¨¼ÓÔØ %s£¬³ÌĞòÎŞ·¨Õı³£ÔËĞĞ¡£"), tzPath);
+            wsprintf(tzTemp, TEXT("æ— æ³•åŠ è½½ %sï¼Œç¨‹åºæ— æ³•æ­£å¸¸è¿è¡Œã€‚"), tzPath);
             MessageBox(NULL, tzTemp, title, MB_ICONSTOP);
             ExitProcess(-2);
         }
@@ -84,7 +83,7 @@ namespace AheadLib
         return (m_hModule != NULL);
     }
 
-    // ÊÍ·ÅÔ­Ê¼Ä£¿é
+    // é‡Šæ”¾åŸå§‹æ¨¡å—
     inline VOID WINAPI Free()
     {
         if (m_hModule)
@@ -96,8 +95,9 @@ namespace AheadLib
 using namespace AheadLib;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-FILE* fpstdin = stdin, * fpstdout = stdout, * fpstderr = stderr;
-void SetupConsole() {
+FILE *fpstdin = stdin, *fpstdout = stdout, *fpstderr = stderr;
+void SetupConsole()
+{
     AllocConsole();
     freopen_s(&fpstdin, "CONIN$", "r", stdin);
     freopen_s(&fpstdout, "CONOUT$", "w", stdout);
@@ -105,10 +105,10 @@ void SetupConsole() {
 }
 
 BOOL IsSdo = true;
-char* SessionId = NULL;
-char* SndaId = NULL;
+char *SessionId = NULL;
+char *SndaId = NULL;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Èë¿Úº¯Êı
+// å…¥å£å‡½æ•°
 BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, PVOID pvReserved)
 {
     if (dwReason == DLL_PROCESS_ATTACH)
@@ -117,28 +117,34 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, PVOID pvReserved)
 #ifdef _DEBUG
         SetupConsole();
 #endif // _DEBUG
-        auto cmd = (char*)GetCommandLine();
-        //printf_s("cmdline=%ls\n", cmd)
+        auto cmd = (char *)GetCommandLine();
+        // printf_s("cmdline=%ls\n", cmd)
         int numArgs = 0;
-        LPWSTR* argv = CommandLineToArgvW(GetCommandLine(), &numArgs);;
-        while (numArgs--) {
+        LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &numArgs);
+        ;
+        while (numArgs--)
+        {
             auto cmd = argv[numArgs];
             printf_s("%ls\n", cmd);
-            if (wcsstr(cmd, L"DEV.TestSID=")) {
+            if (wcsstr(cmd, L"DEV.TestSID="))
+            {
                 SessionId = new char[wcslen(cmd) + 1];
-                memset((void*)SessionId, 0, sizeof(char) * (wcslen(cmd) + 1));
+                memset((void *)SessionId, 0, sizeof(char) * (wcslen(cmd) + 1));
                 WideCharToMultiByte(CP_ACP, 0, cmd + wcslen(L"DEV.TestSID="), -1, SessionId, wcslen(cmd), NULL, NULL);
             }
-            else {
-                if (wcsstr(cmd, L"XL.SndaId=")) {
+            else
+            {
+                if (wcsstr(cmd, L"XL.SndaId="))
+                {
                     SessionId = new char[wcslen(cmd) + 1];
-                    memset((void*)SessionId, 0, sizeof(char) * (wcslen(cmd) + 1));
+                    memset((void *)SessionId, 0, sizeof(char) * (wcslen(cmd) + 1));
                     WideCharToMultiByte(CP_ACP, 0, cmd + wcslen(L"XL.SndaId="), -1, SessionId, wcslen(cmd), NULL, NULL);
                 }
             }
         }
         LocalFree(argv);
-        if (SessionId == NULL) {
+        if (SessionId == NULL)
+        {
             IsSdo = true;
         }
         else
@@ -156,15 +162,15 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, PVOID pvReserved)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// µ¼³öº¯Êı
-extern "C" __declspec(dllexport) int SDOLGetModule(UINT64 * a, UINT64 * jb)
+// å¯¼å‡ºå‡½æ•°
+extern "C" __declspec(dllexport) int SDOLGetModule(UINT64 *a, UINT64 *jb)
 {
     printf_s("%s\n", "SDOLGetModule");
     printf_s("%p\n", a);
     printf_s("%p\n", jb);
-    if (IsSdo) {
+    if (IsSdo)
+    {
         return pfnSDOLGetModule(a, jb);
     }
     //.text:0000000140058DE7 48 89 6C 24 30                                mov[rsp + 28h + arg_0], rbp
@@ -173,17 +179,17 @@ extern "C" __declspec(dllexport) int SDOLGetModule(UINT64 * a, UINT64 * jb)
     //.text:0000000140058DF4 48 89 7C 24 40                                mov[rsp + 28h + arg_10], rdi
     //.text:0000000140058DF9 E8 32 FD FF FF                                call    sub_140058B30
     //.text:0000000140058DFE 48 83 7B 20 00                                cmp     qword ptr[rbx + 20h], 0
-    //  ±ğµë¼ÇÄãÕâÆÆ¹´°ËCOMÁË
-    // rbx+20 ¾ÍÊÇjb
-     //²»ÖÃÁãºóÃæ»áÖ´ĞĞÒ»¶ÑÂÒÆß°ËÔã¶«Î÷£¬´ó¸ÅÂÊcrash
+    //  åˆ«æƒ¦è®°ä½ è¿™ç ´å‹¾å…«COMäº†
+    // rbx+20 å°±æ˜¯jb
+    //ä¸ç½®é›¶åé¢ä¼šæ‰§è¡Œä¸€å †ä¹±ä¸ƒå…«ç³Ÿä¸œè¥¿ï¼Œå¤§æ¦‚ç‡crash
     *jb = 0;
-    //jb - 0x20 + 0x38 : token
-    //jb - 0x20 + 0x40 : sndID
-    //jb - 0x20 + 0x50 : cmdLine prams
+    // jb - 0x20 + 0x38 : token
+    // jb - 0x20 + 0x40 : sndID
+    // jb - 0x20 + 0x50 : cmdLine prams
 
-    auto cmd_line = (char**)(jb - 0x20 / 8 + 0x58 / 8);
+    auto cmd_line = (char **)(jb - 0x20 / 8 + 0x58 / 8);
 
-    //scanf_s("%s", sid, 0x50);
+    // scanf_s("%s", sid, 0x50);
     auto pSID = jb - 0x20 / 8 + 0x38 / 8;
     *pSID = (UINT64)SessionId;
     printf_s("SessionId@%p\n", pSID);
@@ -194,14 +200,14 @@ extern "C" __declspec(dllexport) int SDOLGetModule(UINT64 * a, UINT64 * jb)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// µ¼³öº¯Êı
+// å¯¼å‡ºå‡½æ•°
 extern "C" __declspec(dllexport) int SDOLTerminal()
 {
     printf_s("%s\n", "SDOLTerminal");
     auto ret = 1;
-    if (IsSdo) {
+    if (IsSdo)
+    {
         ret = pfnSDOLTerminal();
     }
     return ret;
@@ -209,20 +215,22 @@ extern "C" __declspec(dllexport) int SDOLTerminal()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// µ¼³öº¯Êı
-extern "C" __declspec(dllexport) int SDOLInitialize(UINT64 * a)
+// å¯¼å‡ºå‡½æ•°
+extern "C" __declspec(dllexport) int SDOLInitialize(UINT64 *a)
 {
     printf_s("%s\n", "SDOLInitialize");
     auto ret = 0;
-    if (IsSdo) {
+    if (IsSdo)
+    {
 #if _DEBUG
-        //MessageBox(NULL, TEXT("À¬»øÊ¢È¤£¬ÁïÁË"), title, MB_ICONSTOP);
-        //SDOLTerminal();
+        // MessageBox(NULL, TEXT("åƒåœ¾ç››è¶£ï¼Œæºœäº†"), title, MB_ICONSTOP);
+        // SDOLTerminal();
 #endif
         ret = pfnSDOLInitialize(a);
         printf_s("%x\n", ret);
-        if (ret == 0xFFFFFFFF) {
-            MessageBox(NULL, TEXT("³¢ÊÔÊ¢È¤·½Ê½Æô¶¯Ê§°Ü"), title, MB_ICONSTOP);
+        if (ret == 0xFFFFFFFF)
+        {
+            MessageBox(NULL, TEXT("å°è¯•ç››è¶£æ–¹å¼å¯åŠ¨å¤±è´¥"), title, MB_ICONSTOP);
             SDOLTerminal();
             ExitProcess(-2);
         }
@@ -230,4 +238,3 @@ extern "C" __declspec(dllexport) int SDOLInitialize(UINT64 * a)
     return ret;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-

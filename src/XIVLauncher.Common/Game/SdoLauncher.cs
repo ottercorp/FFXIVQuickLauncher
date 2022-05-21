@@ -84,7 +84,7 @@ namespace XIVLauncher.Common.Game
 
                 // /authen/codeKeyLogin.json
                 CTS = new CancellationTokenSource();
-                while (retryTimes-- > 0&&!CTS.IsCancellationRequested)
+                while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
                 {
                     jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
                     var error_code = jsonObj["return_code"].Value<int>();
@@ -276,18 +276,12 @@ namespace XIVLauncher.Common.Game
             }
             return cookie;
         }
-
-        public void EnsureLoginEntry()
-        {
-            // 通过文件版本信息，检测是否存在第三方sdologinentry64.dll以及原版sdologinentry64.dll（被重命名为sdologinentry64.sdo.dll）
-            //throw new NotImplementedException();
-        }
         public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
              string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)
         {
             Log.Information(
                 $"XivGame::LaunchGame(args:{additionalArguments})");
-            EnsureLoginEntry();
+            EnsureLoginEntry(gamePath);
             var exePath = Path.Combine(gamePath.FullName, "game", "ffxiv_dx11.exe");
             if (!isDx11)
                 exePath = Path.Combine(gamePath.FullName, "game", "ffxiv.exe");
@@ -325,6 +319,22 @@ namespace XIVLauncher.Common.Game
                 : argumentBuilder.Build();
 
             return runner.Start(exePath, workingDir, arguments, environment, dpiAwareness);
+        }
+        public void EnsureLoginEntry(DirectoryInfo gamePath)
+        {
+            // 通过文件版本信息，检测是否存在第三方sdologinentry64.dll以及原版sdologinentry64.dll（被重命名为sdologinentry64.sdo.dll）
+            var bootPath = Path.Combine(gamePath.FullName, "sdo", "sdologin");
+            var entryDll = Path.Combine(bootPath, "sdologinentry64.dll");
+            var sdoEntryDll = Path.Combine(bootPath, "sdologinentry64.sdo.dll");
+            if (!File.Exists(entryDll) || !File.Exists(sdoEntryDll))
+                throw new BinaryNotPresentException(entryDll);
+            var fileVersion = FileVersionInfo.GetVersionInfo(entryDll);
+            if (fileVersion.CompanyName == "ottercorp") { return; }
+            else
+            {
+                File.Copy(entryDll, Path.Combine(bootPath, "sdologinentry.sdo.dll"), true);
+                File.Copy(Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll"), entryDll, true);
+            }
         }
     }
 }
