@@ -564,7 +564,7 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginNoServiceMessage": {
-    "message": "该账户无法游玩 FINAL FANTASY XIV。\n\n如果您的 FFXIV 在 Steam 上购买，请确保您在登入时勾选了「使用 Steam 账户」。\n如果您启用了自动登入，请在启动时按住 Shift 键以访问设置。",
+    "message": "该账户无法游玩 FINAL FANTASY XIV。\n请检查账户信息。",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LoginAcceptTermsMessage": {

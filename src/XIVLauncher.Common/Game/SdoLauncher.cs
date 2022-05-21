@@ -81,7 +81,6 @@ namespace XIVLauncher.Common.Game
             // /authen/pushMessageLogin.json
             var sndaId = String.Empty;
             var tgt = String.Empty;
-            var ticket = String.Empty;
             var retryTimes = 30;
             while (retryTimes-- > 0)
             {
@@ -91,13 +90,13 @@ namespace XIVLauncher.Common.Game
                 {
                     sndaId = jsonObj["data"]["sndaId"].Value<string>();
                     tgt = jsonObj["data"]["tgt"].Value<string>();
-                    ticket = jsonObj["data"]["ticket"].Value<string>();
                     break;
                 }
                 else
                 {
                     var failReason = jsonObj["data"]["failReason"].Value<string>();
-                    logEvent?.Invoke(false, failReason);
+                    if (failReason == "用户未确认") failReason = "等待用户确认...";
+                    logEvent?.Invoke(false, $"确认码:{pushMsgSerialNum},{failReason}");
                     if (error_code == -10516808)
                     {
                         Log.Information("等待用户确认...");
@@ -107,13 +106,28 @@ namespace XIVLauncher.Common.Game
                     return null;
                 }
             }
+            //超时 tgt或ID空白则返回
+            if (retryTimes <= 0 || string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId)) return null;
 
+            // /authen/getPromotion.json 不知道为什么要有,但就是有
             jsonObj = await LoginAsLauncher("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
             if (jsonObj["return_code"].Value<int>() != 0)
             {
                 logEvent?.Invoke(false, jsonObj["data"]["failReason"].Value<string>());
+                return null;
             }
-            logEvent?.Invoke(true, "登陆成功");
+
+            // /authen/ssoLogin.json 抓包的ticket=SID
+            var ticket = string.Empty;
+            jsonObj = await LoginAsLauncher("ssoLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
+            if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
+                throw new OauthLoginException(jsonObj.ToString());
+            else
+            {
+                ticket = jsonObj["data"]["ticket"].Value<string>();
+            }
+            if (!string.IsNullOrEmpty(ticket)) logEvent?.Invoke(true, "登陆成功");
+            else return null;
 
             return new OauthLoginResult
             {
