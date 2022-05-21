@@ -130,7 +130,6 @@ namespace XIVLauncher.Windows
             try
             {
                 _bannerChangeTimer?.Stop();
-
                 _headlines = await Headlines.Get(_launcher, App.Settings.Language.GetValueOrDefault(ClientLanguage.English));
 
                 _bannerBitmaps = new BitmapImage[_headlines.Banner.Length];

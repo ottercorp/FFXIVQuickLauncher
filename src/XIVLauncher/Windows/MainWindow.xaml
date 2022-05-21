@@ -12,7 +12,7 @@
     xmlns:game="clr-namespace:XIVLauncher.Common.Game;assembly=XIVLauncher.Common"
     mc:Ignorable="d"
     Title="XIVLauncher"
-    Width="845"
+    Width="700"
     Height="376"
     ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
     Icon="pack://application:,,,/Resources/dalamud_icon.ico"
@@ -23,7 +23,7 @@
     d:DataContext="{d:DesignInstance viewModel:MainWindowViewModel}">
 
     <Window.Resources>
-        <system:Double x:Key="BannerCardWidth">544</system:Double>
+        <system:Double x:Key="BannerCardWidth">399</system:Double>
         <system:Double x:Key="BannerCardHeight">213</system:Double>
     </Window.Resources>
 
@@ -212,7 +212,8 @@
                                                        Margin="0,18,0,0"/>
                                             <Button
                                                 Content="取消登录"
-                                                Command="{Binding Path=LoginCancelCommand}"
+                                                Command="{Binding Path=StartLoginCommand}"
+                                                IsEnabled="False"
                                                 Margin="0,0,7,0" Width="142"
                                                 HorizontalAlignment="Center"
                                                 ToolTip="取消登录">

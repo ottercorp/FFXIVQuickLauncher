@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using Serilog;
 
 namespace XIVLauncher.Common.Game
 {
@@ -24,48 +28,69 @@ namespace XIVLauncher.Common.Game
 
     public class Banner
     {
-        [JsonProperty("lsb_banner")]
+        [JsonProperty("HomeImagePath")]
         public Uri LsbBanner { get; set; }
 
-        [JsonProperty("link")]
+        [JsonProperty("OutLink")]
         public Uri Link { get; set; }
     }
 
     public class News
     {
-        [JsonProperty("date")]
+        [JsonProperty("PublishDate")]
         public DateTimeOffset Date { get; set; }
 
-        [JsonProperty("title")]
+        [JsonProperty("Title")]
         public string Title { get; set; }
 
-        [JsonProperty("url")]
+        [JsonProperty("Author")]
         public string Url { get; set; }
 
-        [JsonProperty("id")]
+        [JsonProperty("Id")]
         public string Id { get; set; }
 
         [JsonProperty("tag", NullValueHandling = NullValueHandling.Ignore)]
         public string Tag { get; set; }
     }
 
+    public class SdoBanner {
+        public Banner[] Data { get; set; }
+    }
+
+    public class SdoNews
+    {
+        public News[] Data { get; set; }
+    }
+
     public partial class Headlines
     {
         public static async Task<Headlines> Get(Launcher game, ClientLanguage language)
         {
-            var unixTimestamp = Util.GetUnixMillis();
-            if (language == ClientLanguage.ChineseSimplified) language = ClientLanguage.English;
-            var langCode = language.GetLangCode();
-            var url = $"https://frontier.ffxiv.com/news/headline.json?lang={langCode}&media=pcapp&_={unixTimestamp}";
-
-            //if (language == ClientLanguage.ChineseSimplified) url = $"https://ff.web.sdo.com/inc/newdata.ashx?url=List?gameCode=ff&category=5203&pageIndex=0&pageSize=6";
-            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
-
-            return JsonConvert.DeserializeObject<Headlines>(json, Converter.SETTINGS);
+            var headlines = new Headlines();
+            headlines.Banner = await GetBanner(game);
+            headlines.News = await GetNews(game);
+            return headlines;
         }
 
-        private static async Task<Banner> GetBanner() { 
-        
+        private static async Task<Banner[]> GetBanner(Launcher game) {
+            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher("https://ff.web.sdo.com/inc/newdata.ashx?url=List?gameCode=ff&category=5203&pageIndex=0&pageSize=6&callback=lundivFun", ClientLanguage.ChineseSimplified, "*/*").ConfigureAwait(false));
+            json = json.Trim();
+            json = json.Substring("lundivFun(".Length);
+            json = json.Substring(0, json.Length - 1);
+            //json = $"{{\"banner\":{json}}}";
+            var sdoBanner = JsonConvert.DeserializeObject<SdoBanner>(json);
+            return sdoBanner.Data;
+        }
+
+        private static async Task<News[]> GetNews(Launcher game)
+        {
+            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher("https://ff.web.sdo.com/inc/newdata.ashx?url=List?gameCode=ff&category=5310,5311,5312,5313,5316&pageIndex=0&pageSize=12&callback=boxscrollFun", ClientLanguage.ChineseSimplified, "*/*").ConfigureAwait(false));
+            json = json.Trim();
+            json = json.Substring("boxscrollFun(".Length);
+            json = json.Substring(0, json.Length - 1);
+            //json = $"{{\"banner\":{json}}}";
+            var sdoNews = JsonConvert.DeserializeObject<SdoNews>(json);
+            return sdoNews.Data;
         }
     }
 
@@ -81,4 +106,5 @@ namespace XIVLauncher.Common.Game
             }
         };
     }
+
 }

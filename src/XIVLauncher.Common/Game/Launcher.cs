@@ -617,20 +617,17 @@ public partial class Launcher
     public async Task<byte[]> DownloadAsLauncher(string url, ClientLanguage language, string contentType = "")
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-
-        request.Headers.AddWithoutValidation("User-Agent", _userAgent);
-
+        //request.Headers.AddWithoutValidation("Accept", "*/*");
         if (!string.IsNullOrEmpty(contentType))
         {
             request.Headers.AddWithoutValidation("Accept", contentType);
         }
 
         request.Headers.AddWithoutValidation("Accept-Encoding", "gzip, deflate");
-        request.Headers.AddWithoutValidation("Accept-Language", this.settings.AcceptLanguage);
-
-        request.Headers.AddWithoutValidation("Origin", "https://launcher.finalfantasyxiv.com");
-
-        request.Headers.AddWithoutValidation("Referer", GenerateFrontierReferer(language));
+        request.Headers.AddWithoutValidation("Accept-Language", "zh-CN");
+        request.Headers.AddWithoutValidation("User-Agent", "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.2; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729)");
+        request.Headers.AddWithoutValidation("Referer", "https://ff.web.sdo.com/project/launcher0904/index.html");
+        //request.Headers.AddWithoutValidation("Host", "ff.web.sdo.com");
 
         var resp = await this.client.SendAsync(request);
         return await resp.Content.ReadAsByteArrayAsync();
