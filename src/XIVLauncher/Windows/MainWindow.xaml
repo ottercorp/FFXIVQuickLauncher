@@ -188,13 +188,7 @@
                                                        HorizontalAlignment="Stretch"
                                                        VerticalAlignment="Top"
                                                        TextAlignment="Center"
-                                                       Margin="0,50,0,0"/>
-                                            <TextBlock Text="{Binding LoginMessage}"
-                                                       DockPanel.Dock="Top"
-                                                       HorizontalAlignment="Stretch"
-                                                       VerticalAlignment="Top"
-                                                       TextAlignment="Center"
-                                                       Margin="0,50,0,0"/>
+                                                       Margin="0,20,0,0"/>
                                             <ProgressBar
                                                 DockPanel.Dock="Top"
                                                 HorizontalAlignment="Stretch"
@@ -202,6 +196,20 @@
                                                 Style="{StaticResource MaterialDesignCircularProgressBar}"
                                                 Value="0"
                                                 IsIndeterminate="True" Height="30" Width="30" Margin="0 18 0 0" />
+                                            <TextBlock Text="{Binding LoginMessage}"
+                                                       DockPanel.Dock="Top"
+                                                       HorizontalAlignment="Stretch"
+                                                       VerticalAlignment="Top"
+                                                       TextAlignment="Center"
+                                                       Margin="0,18,0,0"/>
+                                            <Button
+                                                Content="取消登录"
+                                                IsEnabled="False"
+                                                Margin="0,0,7,0" Width="142"
+                                                HorizontalAlignment="Center"
+                                                ToolTip="取消登录">
+                                            </Button>
+
                                         </DockPanel>
 
                                     </materialDesign:TransitionerSlide>

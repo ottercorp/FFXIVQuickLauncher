@@ -107,7 +107,16 @@ namespace XIVLauncher.Common.Game
                 }
             }
             //超时 tgt或ID空白则返回
-            if (retryTimes <= 0 || string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId)) return null;
+            if (retryTimes <= 0)
+            {
+                logEvent?.Invoke(false, $"登录超时");
+                return null;
+            }
+            if (string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId))
+            {
+                logEvent?.Invoke(false, $"登录失败");
+                return null;
+            }
 
             // /authen/getPromotion.json 不知道为什么要有,但就是有
             jsonObj = await LoginAsLauncher("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
