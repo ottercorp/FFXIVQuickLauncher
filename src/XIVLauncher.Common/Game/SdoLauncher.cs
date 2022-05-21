@@ -55,6 +55,7 @@ namespace XIVLauncher.Common.Game
         }
 
         public delegate void LogEventHandler(bool? isSucceed, string logMsg);
+        private static CancellationTokenSource CTS;
         private async Task<OauthLoginResult> OauthLoginSdo(string userName, LogEventHandler logEvent)
         {
             // /authen/getGuid.json
@@ -82,7 +83,8 @@ namespace XIVLauncher.Common.Game
                 var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
 
                 // /authen/codeKeyLogin.json
-                while (retryTimes-- > 0)
+                CTS = new CancellationTokenSource();
+                while (retryTimes-- > 0&&!CTS.IsCancellationRequested)
                 {
                     jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
                     var error_code = jsonObj["return_code"].Value<int>();
@@ -117,13 +119,13 @@ namespace XIVLauncher.Common.Game
                     logEvent?.Invoke(false, failReason);
                     return null;
                 }
-
                 var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
                 var pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
                 logEvent?.Invoke(null, $"操作码:{pushMsgSerialNum}");
 
                 // /authen/pushMessageLogin.json
-                while (retryTimes-- > 0)
+                CTS = new CancellationTokenSource();
+                while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
                 {
                     jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
                     var error_code = jsonObj["return_code"].Value<int>();
@@ -194,6 +196,12 @@ namespace XIVLauncher.Common.Game
         private static string deviceId;
         private static string CASCID;
         private static string SECURE_CASCID;
+
+        public void CancelLogin()
+        {
+            if (CTS != null)
+                CTS.Cancel();
+        }
         public async Task<JObject> LoginAsLauncher(string endPoint, List<string> para)
         {
             if (deviceId == null)
@@ -217,7 +225,8 @@ namespace XIVLauncher.Common.Game
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("User-Agent", _userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
-            if (CASCID != null && SECURE_CASCID != null) {
+            if (CASCID != null && SECURE_CASCID != null)
+            {
                 request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
             }
             var response = await this.client.SendAsync(request);

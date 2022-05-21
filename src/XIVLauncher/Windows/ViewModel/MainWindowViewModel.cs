@@ -54,6 +54,7 @@ namespace XIVLauncher.Windows.ViewModel
             StartWithoutDalamud,
             UpdateOnly,
             Repair,
+            CancelLogin
         };
 
         public MainWindowViewModel(Window window)
@@ -61,12 +62,12 @@ namespace XIVLauncher.Windows.ViewModel
             _window = window;
 
             SetupLoc();
-
+                
             StartLoginCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.Start), () => !IsLoggingIn);
             LoginNoStartCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.UpdateOnly), () => !IsLoggingIn);
             LoginNoDalamudCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.StartWithoutDalamud), () => !IsLoggingIn);
             LoginRepairCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.Repair), () => !IsLoggingIn);
-
+            LoginCancelCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.CancelLogin));
             Launcher = App.GlobalSteamTicket == null ?
                 new(App.Steam, App.UniqueIdCache, CommonSettings.Instance) :
                 new(App.GlobalSteamTicket, App.UniqueIdCache, CommonSettings.Instance);
@@ -75,6 +76,10 @@ namespace XIVLauncher.Windows.ViewModel
         private Action<object> GetLoginFunc(AfterLoginAction action)
         {
             return p => {
+                if (action == AfterLoginAction.CancelLogin) {
+                    Launcher.CancelLogin();
+                    return;
+                }
                 if (this.IsLoggingIn)
                     return;
 
@@ -1271,6 +1276,8 @@ namespace XIVLauncher.Windows.ViewModel
         public ICommand LoginNoDalamudCommand { get; set; }
 
         public ICommand LoginRepairCommand { get; set; }
+
+        public ICommand LoginCancelCommand { get; set; }
 
         #endregion
 
