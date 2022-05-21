@@ -69,6 +69,18 @@ namespace XIVLauncher.Common.Game
             jsonObj = await LoginAsLauncher("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" });
             if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
             {
+                if (jsonObj["return_code"].Value<int>() == -10242296)
+                {
+                    string[] IDs = deviceId.Split(':');
+                    // if the disk serial in sdoLogin is empty
+                    if (IDs.Length == 3 && IDs[2].Length != 0)
+                    {
+                        IDs[2] = "";
+                        deviceId = string.Join(":", IDs);
+                        await OauthLoginSdo(userName, logEvent);
+                        return null;
+                    }
+                }
                 var failReason = jsonObj["data"]["failReason"].Value<string>();
                 logEvent?.Invoke(false, failReason);
                 return null;
