@@ -87,6 +87,8 @@ namespace XIVLauncher.Windows.ViewModel
                 if (this.IsLoggingIn)
                     return;
 
+                if (action == AfterLoginAction.Start) LoginMessage = String.Empty;
+
                 if (IsAutoLogin && App.Settings.HasShownAutoLaunchDisclaimer.GetValueOrDefault(false) == false)
                 {
                     CustomMessageBox.Builder

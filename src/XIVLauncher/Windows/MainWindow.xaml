@@ -189,13 +189,6 @@
                                                        VerticalAlignment="Top"
                                                        TextAlignment="Center"
                                                        Margin="0,20,0,0"/>
-                                            <Image 
-                                                Visibility="Collapsed"
-                                                DockPanel.Dock="Top"
-                                                x:Name="QRCode"
-                                                VerticalAlignment="Top"
-                                                Margin="0 18 0 0"
-                                            ></Image>
                                             <ProgressBar
                                                 x:Name="ProgressBar"
                                                 DockPanel.Dock="Top"
@@ -213,7 +206,6 @@
                                             <Button
                                                 Content="取消登录"
                                                 Command="{Binding Path=LoginCancelCommand}"
-                                                IsEnabled="False"
                                                 Margin="0,0,7,0" Width="142"
                                                 HorizontalAlignment="Center"
                                                 ToolTip="取消登录">
@@ -296,7 +288,6 @@
                                                 HorizontalAlignment="Center"
                                                 Margin="0,40,0,0"
                                                 VerticalAlignment="Top"
-                                                x:Name="LoginMessage"
                                                 TextWrapping="Wrap"
                                                 Text="{Binding LoginMessage}"/>                                        
                                             <StackPanel Orientation="Horizontal"
