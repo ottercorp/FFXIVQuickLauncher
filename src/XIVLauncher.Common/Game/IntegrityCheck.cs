@@ -114,6 +114,9 @@ namespace XIVLauncher.Common.Game
                 if (!relativePath.StartsWith("\\game"))
                     continue;
 
+                if (relativePath.StartsWith("\\game\\My Games"))
+                    continue;
+
                 if (onlyIndex && (!relativePath.EndsWith(".index") && !relativePath.EndsWith(".index2")))
                     continue;
 
