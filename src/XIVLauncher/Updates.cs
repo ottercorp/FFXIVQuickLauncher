@@ -18,7 +18,7 @@ namespace XIVLauncher
             // GitHub requires TLS 1.2, we need to hardcode this for Windows 7
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            var url = "https://kamori.goats.dev/Proxy/Update";
+            var url = "https://xlasset-1253720819.cos.ap-nanjing.myqcloud.com";
             if (downloadPrerelease)
                 url += "/Prerelease";
             else

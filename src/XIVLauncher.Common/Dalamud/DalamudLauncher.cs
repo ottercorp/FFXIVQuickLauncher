@@ -29,7 +29,7 @@ namespace XIVLauncher.Common.Dalamud
             this.injectionDelay = injectionDelay;
         }
 
-        public const string REMOTE_BASE = "https://raw.githubusercontent.com/wozaiha/DalamudPlugins/CustomRepo/dalamud/data.json";
+        public const string REMOTE_BASE = "https://xlasset-1253720819.cos.ap-nanjing.myqcloud.com/DalamudVersion.json";
 
         public bool HoldForUpdate(DirectoryInfo gamePath)
         {
