@@ -119,7 +119,7 @@ namespace XIVLauncher.Common.Dalamud
                 NoCache = true,
             };
 
-            var versionInfoJsonRelease = await client.GetStringAsync(DalamudLauncher.REMOTE_BASE + "release").ConfigureAwait(false);
+            var versionInfoJsonRelease = await client.GetStringAsync(DalamudLauncher.REMOTE_BASE).ConfigureAwait(false);
 
             DalamudVersionInfo versionInfoRelease = JsonConvert.DeserializeObject<DalamudVersionInfo>(versionInfoJsonRelease);
 

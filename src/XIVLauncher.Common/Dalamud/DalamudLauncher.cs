@@ -29,7 +29,7 @@ namespace XIVLauncher.Common.Dalamud
             this.injectionDelay = injectionDelay;
         }
 
-        public const string REMOTE_BASE = "https://kamori.goats.dev/Dalamud/Release/VersionInfo?track=";
+        public const string REMOTE_BASE = "https://raw.githubusercontent.com/wozaiha/DalamudPlugins/CustomRepo/dalamud/data.json";
 
         public bool HoldForUpdate(DirectoryInfo gamePath)
         {
@@ -122,7 +122,7 @@ namespace XIVLauncher.Common.Dalamud
         {
             using var client = new WebClient();
 
-            var versionInfoJson = client.DownloadString(REMOTE_BASE + "release");
+            var versionInfoJson = client.DownloadString(REMOTE_BASE);
             var remoteVersionInfo = JsonConvert.DeserializeObject<DalamudVersionInfo>(versionInfoJson);
 
             if (Repository.Ffxiv.GetVer(gamePath) != remoteVersionInfo.SupportedGameVer)
