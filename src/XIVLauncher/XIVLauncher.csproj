@@ -37,6 +37,7 @@
 
   <PropertyGroup>
     <ApplicationIcon>Resources\dalamud_icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
