@@ -804,7 +804,7 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "InGameAddonDescription": {
-    "message": "这些选项影响由 Dalamud 提供的游戏内功能。只有在您勾选了下方的单选框，且使用 DirectX 11 启动游戏时，相关功能才会正常工作。",
+    "message": "这些选项影响由 Dalamud 提供的游戏内功能。\n只有在您勾选了下方的单选框，且使用 DirectX 11 启动游戏时，相关功能才会正常工作。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "InGameAddonCommandHint": {
