@@ -41,8 +41,6 @@ jobs:
           cp .\XIVLauncher\Resources\CHANGELOG.txt .\Releases\
            ~\.nuget\packages\squirrel.windows\1.9.1\tools\Squirrel.exe --no-msi --releasify .\XIVLauncherCN.$refver.nupkg --setupIcon=.\XIVLauncher\Resources\dalamud_icon.ico --icon=.\XIVLauncher\Resources\dalamud_icon.ico
           Start-Sleep -s 60
-          rm ".\Releases\$($delta_file.name)"
-          rm ".\Releases\$($full_file.name)"
       - name: Create Release
         uses: softprops/action-gh-release@91409e712cf565ce9eff10c87a8d1b11b81757ae
         env:
