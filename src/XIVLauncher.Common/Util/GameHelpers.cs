@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace XIVLauncher.Common.Util;
 
@@ -21,7 +22,7 @@ public static class GameHelpers
         if (string.IsNullOrEmpty(path))
             return false;
 
-        return Directory.Exists(Path.Combine(path, "game")) && Directory.Exists(Path.Combine(path, "boot"));
+        return Directory.Exists(Path.Combine(path, "game")) && Directory.Exists(Path.Combine(path, "boot")) || Directory.Exists(Path.Combine(path, "sdo"));
     }
 
     public static bool CanFfxivMightNotBeInternationalClient(string path) 
@@ -54,7 +55,7 @@ public static class GameHelpers
         return true;
     }
 
-    public static FileInfo GetOfficialLauncherPath(DirectoryInfo gamePath) => new(Path.Combine(gamePath.FullName, "boot", "ffxivboot.exe"));
+    public static FileInfo GetOfficialLauncherPath(DirectoryInfo gamePath) => new(File.Exists(Path.Combine(gamePath.FullName, "boot", "ffxivboot.exe")) ? Path.Combine(gamePath.FullName, "boot", "ffxivboot.exe") : Path.Combine(gamePath.FullName, "ffxivboot.exe"));
 
     public static void StartOfficialLauncher(DirectoryInfo gamePath, bool isSteam, bool isFreeTrial)
     {
@@ -69,7 +70,10 @@ public static class GameHelpers
             args = "-issteam";
         }
 
-        Process.Start(GetOfficialLauncherPath(gamePath).FullName, args);
+        var sdoLauncher = new Process();
+        sdoLauncher.StartInfo.WorkingDirectory = gamePath.FullName;
+        sdoLauncher.StartInfo.FileName = GetOfficialLauncherPath(gamePath).FullName;
+        sdoLauncher.Start();
     }
 
     public static bool CheckIsGameOpen()
