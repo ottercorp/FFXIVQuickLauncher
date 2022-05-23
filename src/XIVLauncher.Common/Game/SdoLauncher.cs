@@ -354,9 +354,9 @@ namespace XIVLauncher.Common.Game
                 }
                 else
                 {
-                    if (GetFileHash(sdoEntryDll) != GetFileHash(xlEntryDll))
+                    if (GetFileHash(entryDll) != GetFileHash(xlEntryDll))
                     {
-                        Log.Information($"xlEntryDll:{sdoEntryDll}版本不一致，{entryDllVersion.FileVersion}->{xlEntryDllVersion.FileVersion}");
+                        Log.Information($"xlEntryDll:{entryDll}版本不一致，{entryDllVersion.FileVersion}->{xlEntryDllVersion.FileVersion}");
                         File.Copy(xlEntryDll, entryDll, true);
                     }
                 }
