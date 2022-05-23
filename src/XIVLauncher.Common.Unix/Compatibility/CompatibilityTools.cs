@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
+using XIVLauncher.Common.Util;
 
 #if FLATPAK
 #warning THIS IS A FLATPAK BUILD!!!
@@ -89,7 +90,7 @@ public class CompatibilityTools
 
         await File.WriteAllBytesAsync(tempFilePath, await client.GetByteArrayAsync(WINE_XIV_RELEASE_URL).ConfigureAwait(false)).ConfigureAwait(false);
 
-        Util.Untar(tempFilePath, this.toolDirectory.FullName);
+        PlatformHelpers.Untar(tempFilePath, this.toolDirectory.FullName);
 
         Log.Information("Compatibility tool successfully extracted to {Path}", this.toolDirectory.FullName);
 
@@ -116,6 +117,8 @@ public class CompatibilityTools
     {
         var psi = new ProcessStartInfo(Wine64Path);
         psi.Arguments = command;
+
+        Log.Verbose("Running in prefix: {FileName} {Arguments}", psi.FileName, command);
         return RunInPrefix(psi, workingDirectory, environment, redirectOutput);
     }
 
@@ -125,6 +128,7 @@ public class CompatibilityTools
         foreach (var arg in args)
             psi.ArgumentList.Add(arg);
 
+        Log.Verbose("Running in prefix: {FileName} {Arguments}", psi.FileName, psi.ArgumentList.Aggregate(string.Empty, (a, b) => a + " " + b));
         return RunInPrefix(psi, workingDirectory, environment, redirectOutput);
     }
 
@@ -204,8 +208,6 @@ public class CompatibilityTools
         }
 #endif
 
-        Log.Verbose("Running in prefix: {FileName} {Arguments}", psi.FileName, psi.ArgumentList.Aggregate(string.Empty, (a, b) => a + " " + b));
-
         Process helperProcess = new();
         helperProcess.StartInfo = psi;
         helperProcess.ErrorDataReceived += new DataReceivedEventHandler((_, errLine) =>
@@ -259,7 +261,8 @@ public class CompatibilityTools
 
     public string UnixToWinePath(string unixPath)
     {
-        var winePath = RunInPrefix($"winepath --windows {unixPath}", redirectOutput: true);
+        var launchArguments = new string[] { "winepath", "--windows", unixPath };
+        var winePath = RunInPrefix(launchArguments, redirectOutput: true);
         var output = winePath.StandardOutput.ReadToEnd();
         return output.Split('\n', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
     }

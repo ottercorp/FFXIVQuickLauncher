@@ -22,4 +22,9 @@ public class DalamudOverlayInfoProxy : IDalamudLoadingOverlay
     {
         this.IsVisible = true;
     }
+
+    public void ReportProgress(long? size, long downloaded, double? progress)
+    {
+        // TODO
+    }
 }

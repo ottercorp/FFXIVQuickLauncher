@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
-using Serilog;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Common.PlatformAbstractions;
@@ -10,32 +12,36 @@ public class WindowsGameRunner : IGameRunner
 {
     private readonly DalamudLauncher dalamudLauncher;
     private readonly bool dalamudOk;
-    private readonly DalamudLoadMethod loadMethod;
+    private readonly DirectoryInfo dotnetRuntimePath;
 
-    public WindowsGameRunner(DalamudLauncher dalamudLauncher, bool dalamudOk, DalamudLoadMethod loadMethod)
+    public WindowsGameRunner(DalamudLauncher dalamudLauncher, bool dalamudOk, DirectoryInfo dotnetRuntimePath)
     {
         this.dalamudLauncher = dalamudLauncher;
         this.dalamudOk = dalamudOk;
-        this.loadMethod = loadMethod;
+        this.dotnetRuntimePath = dotnetRuntimePath;
     }
 
-    public object? Start(string path, string workingDirectory, string arguments, IDictionary<string, string> environment, DpiAwareness dpiAwareness)
+    public Process Start(string path, string workingDirectory, string arguments, IDictionary<string, string> environment, DpiAwareness dpiAwareness)
     {
-        var gameProcess = NativeAclFix.LaunchGame(workingDirectory, path, arguments, environment, dpiAwareness, process =>
+        if (dalamudOk)
         {
-            if (this.dalamudOk && this.loadMethod == DalamudLoadMethod.EntryPoint)
-            {
-                Log.Verbose("[WindowsGameRunner] Now running OEP rewrite");
-                this.dalamudLauncher.Run(process.Id);
-            }
-        });
+            var compat = "RunAsInvoker ";
+            compat += dpiAwareness switch {
+                DpiAwareness.Aware => "HighDPIAware",
+                DpiAwareness.Unaware => "DPIUnaware",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            environment.Add("__COMPAT_LAYER", compat);
 
-        if (this.dalamudOk && this.loadMethod == DalamudLoadMethod.DllInject)
-        {
-            Log.Verbose("[WindowsGameRunner] Now running DLL inject");
-            this.dalamudLauncher.Run(gameProcess.Id);
+            var prevDalamudRuntime = Environment.GetEnvironmentVariable("DALAMUD_RUNTIME");
+            if (string.IsNullOrWhiteSpace(prevDalamudRuntime))
+                environment.Add("DALAMUD_RUNTIME", dotnetRuntimePath.FullName);
+
+            return this.dalamudLauncher.Run(new FileInfo(path), arguments, environment);
         }
-
-        return gameProcess;
+        else
+        {
+            return NativeAclFix.LaunchGame(workingDirectory, path, arguments, environment, dpiAwareness, process => { });
+        }
     }
 }

@@ -17,6 +17,7 @@ using XIVLauncher.Common;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Common.Game.Patch.Acquisition;
+using XIVLauncher.Common.Util;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
 using MenuItem = System.Windows.Controls.MenuItem;
@@ -374,7 +375,7 @@ namespace XIVLauncher.Windows
                         url = "https://jp.finalfantasyxiv.com/lodestone/news/detail/";
                         break;
 
-                    case ClientLanguage.English when Util.IsRegionNorthAmerica():
+                    case ClientLanguage.English when GameHelpers.IsRegionNorthAmerica():
                         url = "https://na.finalfantasyxiv.com/lodestone/news/detail/";
                         break;
 
