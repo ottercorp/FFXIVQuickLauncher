@@ -29,6 +29,7 @@ namespace XIVLauncher.Common.Game
     public partial class Launcher
     {
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
+        private string pushMsgSessionKey = "";
 
         public async Task<LoginResult> LoginSdo(string userName, LogEventHandler logEvent = null, bool forceQr = false)
         {
@@ -76,7 +77,7 @@ namespace XIVLauncher.Common.Game
             var guid = jsonObj["data"]["guid"].Value<string>();
 
             // /authen/cancelPushMessageLogin.json
-            await LoginAsLauncher("cancelPushMessageLogin.json", new List<string>() { "pushMsgSessionKey=", $"guid={guid}" });
+            await LoginAsLauncher("cancelPushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
 
             // /authen/sendPushMessage.json
             jsonObj = await LoginAsLauncher("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" });
@@ -130,7 +131,7 @@ namespace XIVLauncher.Common.Game
                     return null;
                 }
                 var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
-                var pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
+                pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
                 logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
 
                 // /authen/pushMessageLogin.json
