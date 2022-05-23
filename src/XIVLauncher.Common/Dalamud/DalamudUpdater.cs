@@ -209,7 +209,7 @@ namespace XIVLauncher.Common.Dalamud
 
                     try
                     {
-                        await DownloadRuntime(this.runtimeDirectory, remoteVersionInfo.RuntimeVersion);
+                        await DownloadRuntime(this.runtimeDirectory, remoteVersionInfo.RuntimeVersion, remoteVersionInfo.DotnetUrl, remoteVersionInfo.DesktopUrl);
                         File.WriteAllText(versionFile.FullName, remoteVersionInfo.RuntimeVersion);
                     }
                     catch (Exception ex)
@@ -397,7 +397,7 @@ namespace XIVLauncher.Common.Dalamud
             }
         }
 
-        private static async Task DownloadRuntime(DirectoryInfo runtimePath, string version)
+        private static async Task DownloadRuntime(DirectoryInfo runtimePath, string version, string dotnetUrl, string desktopUrl)
         {
             // Ensure directory exists
             if (!runtimePath.Exists)
@@ -410,8 +410,8 @@ namespace XIVLauncher.Common.Dalamud
                 runtimePath.Create();
             }
 
-            var dotnetUrl = $"https://dotnetcli.azureedge.net/dotnet/Runtime/{version}/dotnet-runtime-{version}-win-x64.zip";
-            var desktopUrl = $"https://dotnetcli.azureedge.net/dotnet/WindowsDesktop/{version}/windowsdesktop-runtime-{version}-win-x64.zip";
+            //var dotnetUrl = $"https://dotnetcli.blob.core.windows.net/dotnet/Runtime/{version}/dotnet-runtime-{version}-win-x64.zip";
+            //var desktopUrl = $"https://dotnetcli.blob.core.windows.net/dotnet/WindowsDesktop/{version}/windowsdesktop-runtime-{version}-win-x64.zip";
 
             var downloadPath = Util.GetTempFileName();
 

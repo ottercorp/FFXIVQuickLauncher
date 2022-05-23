@@ -242,7 +242,7 @@
                                                 Height="24"
                                                 TextWrapping="Wrap"
                                                 VerticalAlignment="Top"
-                                                materialDesign:HintAssist.Hint="{Binding LoginUsernameLoc}"
+                                                materialDesign:HintAssist.Hint="盛趣账号"
                                                 Text="{Binding Username}" Cursor="IBeam"
                                                 />
                                             <PasswordBox

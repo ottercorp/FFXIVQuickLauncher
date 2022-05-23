@@ -341,14 +341,32 @@ namespace XIVLauncher.Common.Game
             var bootPath = Path.Combine(gamePath.FullName, "sdo", "sdologin");
             var entryDll = Path.Combine(bootPath, "sdologinentry64.dll");
             var sdoEntryDll = Path.Combine(bootPath, "sdologinentry64.sdo.dll");
-            if (!File.Exists(entryDll) || !File.Exists(sdoEntryDll))
-                throw new BinaryNotPresentException(entryDll);
-            var fileVersion = FileVersionInfo.GetVersionInfo(entryDll);
-            if (fileVersion.CompanyName == "ottercorp") { return; }
+            var xlEntryDll = Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll");
+            var entryDllVersion = FileVersionInfo.GetVersionInfo(entryDll);
+            var xlEntryDllVersion = FileVersionInfo.GetVersionInfo(xlEntryDll);
+            if (File.Exists(entryDll))
+            {
+                if (entryDllVersion.CompanyName != "ottercorp")
+                {
+                    Log.Information($"复制EntryDll");
+                    File.Copy(entryDll, sdoEntryDll, true);
+                    File.Copy(xlEntryDll, entryDll, true);
+                }
+                else
+                {
+                    if (GetFileHash(sdoEntryDll) != GetFileHash(xlEntryDll))
+                    {
+                        Log.Information($"xlEntryDll:{sdoEntryDll}版本不一致，{entryDllVersion.FileVersion}->{xlEntryDllVersion.FileVersion}");
+                        File.Copy(xlEntryDll, entryDll, true);
+                    }
+                }
+
+            }
+            if (File.Exists(sdoEntryDll))
+                return;
             else
             {
-                File.Copy(entryDll, Path.Combine(bootPath, "sdologinentry.sdo.dll"), true);
-                File.Copy(Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll"), entryDll, true);
+                throw new BinaryNotPresentException(sdoEntryDll);
             }
         }
 
@@ -368,7 +386,7 @@ namespace XIVLauncher.Common.Game
 
             // Conflict indicates that boot needs to update, we do not get a patch list or a unique ID to download patches with in this case
             if (resp.StatusCode == HttpStatusCode.Conflict)
-                return new LoginResult { PendingPatches=null, State=LoginState.NeedsPatchBoot, OauthLogin=null };
+                return new LoginResult { PendingPatches = null, State = LoginState.NeedsPatchBoot, OauthLogin = null };
 
             if (!resp.Headers.TryGetValues("X-Patch-Unique-Id", out var uidVals))
                 throw new InvalidResponseException("Could not get X-Patch-Unique-Id.", text);

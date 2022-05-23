@@ -19,10 +19,10 @@ namespace XIVLauncher
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             var url = "https://xlasset-1253720819.cos.ap-nanjing.myqcloud.com";
-            if (downloadPrerelease)
-                url += "/Prerelease";
-            else
-                url += "/Release";
+            //if (downloadPrerelease)
+            //    url += "/Prerelease";
+            //else
+            //    url += "/Release";
 
             try
             {

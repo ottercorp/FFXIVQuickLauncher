@@ -85,8 +85,10 @@ namespace XIVLauncher.Common
             {
                 args = "-issteam";
             }
-
-            Process.Start(GetOfficialLauncherPath(gamePath).FullName, args);
+            var sdoLauncher = new Process();
+            sdoLauncher.StartInfo.WorkingDirectory = gamePath.FullName;
+            sdoLauncher.StartInfo.FileName = GetOfficialLauncherPath(gamePath).FullName;
+            sdoLauncher.Start();
             
         }
 
