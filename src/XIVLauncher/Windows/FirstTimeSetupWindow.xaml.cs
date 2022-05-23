@@ -7,6 +7,7 @@ using IWshRuntimeLibrary;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Addon;
 using XIVLauncher.Common.Addon.Implementations;
+using XIVLauncher.Common.Util;
 using XIVLauncher.Windows.ViewModel;
 
 namespace XIVLauncher.Windows
@@ -80,17 +81,17 @@ namespace XIVLauncher.Windows
                     return;
                 }
 
-                if (!Util.LetChoosePath(GamePathEntry.Text))
+                if (!GameHelpers.LetChoosePath(GamePathEntry.Text))
                 {
                     CustomMessageBox.Show(Loc.Localize("GamePathSafeguardError", "Please do not select the \"game\" or \"boot\" folder of your FFXIV installation, and choose the folder that contains these instead."), "Error",
                         MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: this);
                     return;
                 }
 
-                if (!Util.IsValidFfxivPath(GamePathEntry.Text))
+                if (!GameHelpers.IsValidFfxivPath(GamePathEntry.Text))
                 {
                     if (CustomMessageBox.Show(Loc.Localize("GamePathInvalidConfirm", "The folder you selected has no FFXIV installation.\nXIVLauncher will install FFXIV the first time you log in.\nContinue?"), "XIVLauncher",
-                        MessageBoxButton.YesNo, MessageBoxImage.Information, parentWindow: this) != MessageBoxResult.Yes)
+                            MessageBoxButton.YesNo, MessageBoxImage.Information, parentWindow: this) != MessageBoxResult.Yes)
                     {
                         return;
                     }

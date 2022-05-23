@@ -17,6 +17,7 @@ using XIVLauncher.Common.Addon;
 using XIVLauncher.Common.Addon.Implementations;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game.Patch.Acquisition;
+using XIVLauncher.Common.Util;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
 
@@ -67,7 +68,6 @@ namespace XIVLauncher.Windows
             LauncherLanguageNoticeTextBlock.Visibility = Visibility.Hidden;
             AddonListView.ItemsSource = App.Settings.AddonList ??= new List<AddonEntry>();
             UidCacheCheckBox.IsChecked = App.Settings.UniqueIdCacheEnabled;
-            EncryptedArgumentsCheckbox.IsChecked = App.Settings.EncryptArguments;
             ExitLauncherAfterGameExitCheckbox.IsChecked = App.Settings.ExitLauncherAfterGameExit ?? true;
             TreatNonZeroExitCodeAsFailureCheckbox.IsChecked = App.Settings.TreatNonZeroExitCodeAsFailure ?? false;
             AskBeforePatchingCheckBox.IsChecked = App.Settings.AskBeforePatchInstall;
@@ -124,7 +124,6 @@ namespace XIVLauncher.Windows
 
             App.Settings.AddonList = (List<AddonEntry>)AddonListView.ItemsSource;
             App.Settings.UniqueIdCacheEnabled = UidCacheCheckBox.IsChecked == true;
-            App.Settings.EncryptArguments = EncryptedArgumentsCheckbox.IsChecked == true;
             App.Settings.ExitLauncherAfterGameExit = ExitLauncherAfterGameExitCheckbox.IsChecked == true;
             App.Settings.TreatNonZeroExitCodeAsFailure = TreatNonZeroExitCodeAsFailureCheckbox.IsChecked == true;
             App.Settings.AskBeforePatchInstall = AskBeforePatchingCheckBox.IsChecked == true;
@@ -175,7 +174,7 @@ namespace XIVLauncher.Windows
                                           .WithParentWindow(Window.GetWindow(this))
                                           .Show() == MessageBoxResult.Yes;
 
-            Util.StartOfficialLauncher(App.Settings.GamePath, isSteam, App.Settings.IsFt.GetValueOrDefault(false));
+            GameHelpers.StartOfficialLauncher(App.Settings.GamePath, isSteam, App.Settings.IsFt.GetValueOrDefault(false));
         }
 
         // All of the list handling is very dirty - but i guess it works
@@ -331,12 +330,14 @@ namespace XIVLauncher.Windows
         {
             try
             {
-                if (!string.IsNullOrEmpty(ViewModel.GamePath) && Util.IsValidFfxivPath(ViewModel.GamePath) && !DalamudLauncher.CanRunDalamud(new DirectoryInfo(ViewModel.GamePath)))
+                if (!string.IsNullOrEmpty(ViewModel.GamePath) && GameHelpers.IsValidFfxivPath(ViewModel.GamePath) && !DalamudLauncher.CanRunDalamud(new DirectoryInfo(ViewModel.GamePath)))
+                {
                     CustomMessageBox.Show(
                         Loc.Localize("DalamudIncompatible", "Dalamud was not yet updated for your current FFXIV version.\nThis is common after patches, so please be patient or ask on the Discord for a status update!"),
                         "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Asterisk, parentWindow: Window.GetWindow(this));
+                }
             }
-            catch(Exception exc)
+            catch (Exception exc)
             {
                 CustomMessageBox.Show(Loc.Localize("DalamudCompatCheckFailed",
                     "Could not contact the server to get the current compatible FFXIV version Dalamud. This might mean that your .NET installation is too old.\nPlease check the Discord for more information."), "XIVLauncher Problem", MessageBoxButton.OK, MessageBoxImage.Hand, parentWindow: Window.GetWindow(this));
@@ -353,6 +354,7 @@ namespace XIVLauncher.Windows
             foreach (var path in definitionFiles)
             {
                 dynamic definition = JObject.Parse(File.ReadAllText(path));
+
                 try
                 {
                     if (PluginListView.SelectedValue.ToString().Contains(definition.Name.Value + " " + definition.AssemblyVersion.Value))
@@ -400,7 +402,7 @@ namespace XIVLauncher.Windows
 
         private void DeletePlugin_OnClick(object sender, RoutedEventArgs e)
         {
-            if(Util.CheckIsGameOpen())
+            if (GameHelpers.CheckIsGameOpen())
             {
                 CustomMessageBox.Show(Loc.Localize("GameIsOpenPluginLocked", "The game is open, please close it and try again."), "XIVLauncher Problem", parentWindow: Window.GetWindow(this));
                 return;
@@ -511,10 +513,11 @@ namespace XIVLauncher.Windows
         {
             var isBootOrGame = false;
             var mightBeNonInternationalVersion = false;
+
             try
             {
-                isBootOrGame = !Util.LetChoosePath(ViewModel.GamePath);
-                mightBeNonInternationalVersion = Util.CanFfxivMightNotBeInternationalClient(ViewModel.GamePath);
+                isBootOrGame = !GameHelpers.LetChoosePath(ViewModel.GamePath);
+                mightBeNonInternationalVersion = GameHelpers.CanFfxivMightNotBeInternationalClient(ViewModel.GamePath);
             }
             catch (Exception ex)
             {

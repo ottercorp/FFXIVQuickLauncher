@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using XIVLauncher.Common.Util;
 
 namespace XIVLauncher.Common.Game
 {

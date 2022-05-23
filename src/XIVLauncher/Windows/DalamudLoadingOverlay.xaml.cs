@@ -3,6 +3,7 @@ using System.Timers;
 using System.Windows;
 using CheapLoc;
 using XIVLauncher.Common.PlatformAbstractions;
+using XIVLauncher.Common.Util;
 using XIVLauncher.Windows.ViewModel;
 using XIVLauncher.Xaml;
 
@@ -89,6 +90,27 @@ namespace XIVLauncher.Windows
                     return;
 
                 this.Hide();
+            });
+        }
+
+        public void ReportProgress(long? size, long downloaded, double? progress)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (IsClosed)
+                    return;
+
+                if (progress == null || size == null)
+                {
+                    this.ProgressBar.IsIndeterminate = true;
+                    this.PercentageTextBlock.Text = string.Empty;
+                }
+                else
+                {
+                    this.ProgressBar.IsIndeterminate = false;
+                    this.ProgressBar.Value = progress.Value;
+                    this.PercentageTextBlock.Text = $"{progress.Value:0}% ({ApiHelpers.BytesToString(downloaded)}/{ApiHelpers.BytesToString(size.Value)})";
+                }
             });
         }
 

@@ -23,6 +23,7 @@ using XIVLauncher.Common.PlatformAbstractions;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
+using XIVLauncher.Common.Util;
 
 namespace XIVLauncher.Common.Game
 {

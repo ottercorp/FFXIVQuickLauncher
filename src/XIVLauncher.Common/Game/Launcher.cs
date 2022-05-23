@@ -1,6 +1,11 @@
+
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -20,8 +25,7 @@ using XIVLauncher.Common.Game.Patch.PatchList;
 using XIVLauncher.Common.Encryption;
 using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.PlatformAbstractions;
-
-#nullable enable
+using XIVLauncher.Common.Util;
 
 namespace XIVLauncher.Common.Game;
 
@@ -215,10 +219,10 @@ public partial class Launcher
         };
     }
 
-    public object? LaunchGame(IGameRunner runner, string sessionId, int region, int expansionLevel,
-                              bool isSteamServiceAccount, string additionalArguments,
-                              DirectoryInfo gamePath, bool isDx11, ClientLanguage language,
-                              bool encryptArguments, DpiAwareness dpiAwareness)
+    public Process? LaunchGame(IGameRunner runner, string sessionId, int region, int expansionLevel,
+                               bool isSteamServiceAccount, string additionalArguments,
+                               DirectoryInfo gamePath, bool isDx11, ClientLanguage language,
+                               bool encryptArguments, DpiAwareness dpiAwareness)
     {
         Log.Information(
             $"XivGame::LaunchGame(steamServiceAccount:{isSteamServiceAccount}, args:{additionalArguments})");
@@ -249,9 +253,9 @@ public partial class Launcher
         // This is a bit of a hack; ideally additionalArguments would be a dictionary or some KeyValue structure
         if (!string.IsNullOrEmpty(additionalArguments))
         {
-            var regex = new Regex(@"\s*(?<key>[^=]+)\s*=\s*(?<value>[^\s]+)\s*", RegexOptions.Compiled);
+            var regex = new Regex(@"\s*(?<key>[^\s=]+)\s*=\s*(?<value>([^=]*$|[^=]*\s(?=[^\s=]+)))\s*", RegexOptions.Compiled);
             foreach (Match match in regex.Matches(additionalArguments))
-                argumentBuilder.Append(match.Groups["key"].Value, match.Groups["value"].Value);
+                argumentBuilder.Append(match.Groups["key"].Value, match.Groups["value"].Value.Trim());
         }
 
         if (!File.Exists(exePath))
@@ -561,7 +565,7 @@ public partial class Launcher
     {
         var bytes = File.ReadAllBytes(file);
 
-        var hash = new SHA1Managed().ComputeHash(bytes);
+        var hash = SHA1.Create().ComputeHash(bytes);
         var hashstring = string.Join("", hash.Select(b => b.ToString("x2")).ToArray());
 
         var length = new FileInfo(file).Length;
@@ -575,7 +579,7 @@ public partial class Launcher
         {
             var reply = Encoding.UTF8.GetString(
                 await DownloadAsLauncher(
-                    $"https://frontier.ffxiv.com/worldStatus/gate_status.json?lang={language.GetLangCode()}&_={Util.GetUnixMillis()}", language).ConfigureAwait(true));
+                    $"https://frontier.ffxiv.com/worldStatus/gate_status.json?lang={language.GetLangCode()}&_={ApiHelpers.GetUnixMillis()}", language).ConfigureAwait(true));
 
             return JsonConvert.DeserializeObject<GateStatus>(reply);
         }
@@ -591,7 +595,7 @@ public partial class Launcher
         {
             var reply = Encoding.UTF8.GetString(
                 await DownloadAsLauncher(
-                    $"https://frontier.ffxiv.com/worldStatus/login_status.json?_={Util.GetUnixMillis()}", ClientLanguage.English).ConfigureAwait(true));
+                    $"https://frontier.ffxiv.com/worldStatus/login_status.json?_={ApiHelpers.GetUnixMillis()}", ClientLanguage.English).ConfigureAwait(true));
 
             return Convert.ToBoolean(int.Parse(reply[10].ToString()));
         }
@@ -652,7 +656,7 @@ public partial class Launcher
 
     private static string GetLauncherFormattedTimeLongRounded()
     {
-        var formatted = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm").ToCharArray();
+        var formatted = DateTime.UtcNow.ToString("yyyy-MM-dd-HH-mm", new CultureInfo("en-US")).ToCharArray();
         formatted[15] = '0';
 
         return new string(formatted);
