@@ -394,7 +394,7 @@ namespace XIVLauncher.Common.Dalamud
             }
         }
 
-        private static async Task DownloadRuntime(DirectoryInfo runtimePath, string version, string dotnetUrl, string desktopUrl)
+        private async Task DownloadRuntime(DirectoryInfo runtimePath, string version, string dotnetUrl, string desktopUrl)
         {
             // Ensure directory exists
             if (!runtimePath.Exists)

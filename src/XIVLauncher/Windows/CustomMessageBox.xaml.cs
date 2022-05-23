@@ -11,7 +11,6 @@ using System.Windows.Media;
 using CheapLoc;
 using MaterialDesignThemes.Wpf;
 using Serilog;
-using XIVLauncher.Common;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
