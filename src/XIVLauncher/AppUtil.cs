@@ -108,12 +108,12 @@ namespace XIVLauncher
                     using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView))
                     {
                         // Should return "C:\Program Files (x86)\SquareEnix\FINAL FANTASY XIV - A Realm Reborn\boot\ffxivboot.exe" if installed with default options.
-                        using (var subkey = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{2B41E132-07DF-4925-A3D3-F2D1765CCDFE}"))
+                        using (var subkey = hklm.OpenSubKey(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\FFXIV"))
                         {
                             if (subkey != null && subkey.GetValue("DisplayIcon", null) is string path)
                             {
                                 // DisplayIcon includes "boot\ffxivboot.exe", need to remove it
-                                path = Directory.GetParent(path).Parent.FullName;
+                                path = Directory.GetParent(path).FullName;
 
                                 if (Directory.Exists(path) && Util.IsValidFfxivPath(path) && !foundVersions.ContainsKey(path))
                                 {
