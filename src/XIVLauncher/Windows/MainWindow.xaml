@@ -305,6 +305,7 @@
                                                     <Button.ContextMenu>
                                                         <ContextMenu x:Name="LoginContextMenu">
                                                             <MenuItem Header="{Binding LoginRepairLoc}"
+                                                                      IsEnabled="False"
                                                                       Command="{Binding Path=LoginRepairCommand}" />
                                                             <MenuItem Header="{Binding LoginNoDalamudLoc}"
                                                                       Command="{Binding Path=LoginNoDalamudCommand}" />
