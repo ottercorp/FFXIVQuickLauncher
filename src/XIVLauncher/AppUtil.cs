@@ -108,7 +108,7 @@ namespace XIVLauncher
                     using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView))
                     {
                         // Should return "C:\Program Files (x86)\SquareEnix\FINAL FANTASY XIV - A Realm Reborn\boot\ffxivboot.exe" if installed with default options.
-                        using (var subkey = hklm.OpenSubKey(@"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\FFXIV"))
+                        using (var subkey = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\FFXIV"))
                         {
                             if (subkey != null && subkey.GetValue("DisplayIcon", null) is string path)
                             {
@@ -123,12 +123,12 @@ namespace XIVLauncher
                             }
                         }
 
-                        // Should return "C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY XIV Online" if installed with default options.
+                        // WEGAY
                         foreach (var steamAppId in ValidSteamAppIds)
                         {
-                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {steamAppId}"))
+                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\◊Ó÷’ª√œÎ14"))
                             {
-                                if (subkey != null && subkey.GetValue("InstallLocation", null) is string path)
+                                if (subkey != null && subkey.GetValue("InstallSource", null) is string path)
                                 {
                                     if (Directory.Exists(path) && Util.IsValidFfxivPath(path) && !foundVersions.ContainsKey(path))
                                     {
