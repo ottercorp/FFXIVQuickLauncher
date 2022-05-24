@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Castle.Core.Internal;
 using CheapLoc;
 using Serilog;
 using XIVLauncher.Accounts;
@@ -176,14 +177,14 @@ namespace XIVLauncher.Windows.ViewModel
             if (!bootRes)
                 return;
 
-            if (string.IsNullOrEmpty(username))
-            {
-                CustomMessageBox.Show(
-                    Loc.Localize("EmptyUsernameError", "Please enter an username."),
-                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            //if (string.IsNullOrEmpty(username))
+            //{
+            //    CustomMessageBox.Show(
+            //        Loc.Localize("EmptyUsernameError", "Please enter an username."),
+            //        "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-                return;
-            }
+            //    return;
+            //}
 
             //if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
             //{
@@ -1164,6 +1165,8 @@ namespace XIVLauncher.Windows.ViewModel
 
         private void PersistAccount(string username, string password)
         {
+            if (username.IsNullOrEmpty()) return;
+
             if (AccountManager.CurrentAccount != null && AccountManager.CurrentAccount.UserName.Equals(username) &&
                 AccountManager.CurrentAccount.Password != password &&
                 AccountManager.CurrentAccount.SavePassword)
