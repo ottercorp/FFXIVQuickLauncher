@@ -31,10 +31,10 @@ namespace XIVLauncher
                 using (var updateManager = new UpdateManager(url, "XIVLauncherCN"))
                 {
                     // TODO: is this allowed?
-                    //SquirrelAwareApp.HandleEvents(
-                    //    onInitialInstall: v => updateManager.CreateShortcutForThisExe(),
-                    //    onAppUpdate: v => updateManager.CreateShortcutForThisExe(),
-                    //    onAppUninstall: v => updateManager.RemoveShortcutForThisExe());
+                    SquirrelAwareApp.HandleEvents(
+                        onInitialInstall: v => updateManager.CreateShortcutForThisExe(),
+                        onAppUpdate: v => updateManager.CreateShortcutForThisExe(),
+                        onAppUninstall: v => updateManager.RemoveShortcutForThisExe());
 
                     var a = await updateManager.CheckForUpdate();
                     newRelease = await updateManager.UpdateApp();
