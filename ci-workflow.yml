@@ -56,7 +56,7 @@ jobs:
           $setup_file = $current.assets | Where-Object -Property name -Value "Setup.exe" -EQ
           Invoke-WebRequest -Uri $setup_file.browser_download_url -OutFile .\Releases\Setup.exe
           Copy-Item -Path $Env:GITHUB_WORKSPACE\misc\packer\Setup.exe  -Destination ~\.nuget\packages\squirrel.windows\1.9.1\tools\ -Force
-          Copy-Item -Path $Env:GITHUB_WORKSPACE\misc\packer\Update.exe -Destination ~\.nuget\packages\squirrel.windows\1.9.1\tools\Squirrel.exe -Force
+          Copy-Item -Path $Env:GITHUB_WORKSPACE\misc\packer\Update.exe -Destination ~\.nuget\packages\squirrel.windows\1.9.1\tools\ -Force
            ~\.nuget\packages\squirrel.windows\1.9.1\tools\Squirrel.exe --no-msi --releasify .\XIVLauncherCN.$refver.nupkg --setupIcon=.\XIVLauncher\Resources\dalamud_icon.ico --icon=.\XIVLauncher\Resources\dalamud_icon.ico
           Start-Sleep -s 60
           try

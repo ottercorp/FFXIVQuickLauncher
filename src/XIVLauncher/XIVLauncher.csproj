@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
-    <Product>XIVLauncher</Product>
+    <Product>XIVLauncherCN</Product>
     <AssemblyTitle>XIVLauncher</AssemblyTitle>
     <Description>Custom launcher for FFXIV.</Description>
-    <VersionPrefix>6.2.35</VersionPrefix>
+    <VersionPrefix>6.2.31</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -38,6 +38,9 @@
   <PropertyGroup>
     <ApplicationIcon>Resources\dalamud_icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PackageId>XIVLauncherCN</PackageId>
+    <Company>ottercorp</Company>
+    <AssemblyName>XIVLauncherCN</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
