@@ -125,9 +125,8 @@ namespace XIVLauncher
                         }
 
                         // WEGAY
-                        foreach (var steamAppId in ValidSteamAppIds)
-                        {
-                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\���ջ���14"))
+
+                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\最终幻想14"))
                             {
                                 if (subkey != null && subkey.GetValue("InstallSource", null) is string path)
                                 {
@@ -139,7 +138,7 @@ namespace XIVLauncher
                                     }
                                 }
                             }
-                        }
+                        
                     }
                 }
 
