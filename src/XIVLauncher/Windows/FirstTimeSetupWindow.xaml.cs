@@ -38,8 +38,8 @@ namespace XIVLauncher.Windows
             {
 #endif
                 CustomMessageBox.Show(
-                    $"You're running an unsupported version of XIVLauncher.\n\nThis can be unsafe and a danger to your SE account. If you have not gotten this unsupported version on purpose, please reinstall a clean version from {App.REPO_URL}/releases and contact us.",
-                    "XIVLauncher Problem", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: this);
+                    $"你正在使用国服特供第三方启动器,请勿选择国际服或韩服安装位置.\n否则可能会造成游戏损坏等后果",
+                    "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: this);
 #if !XL_NOAUTOUPDATE
             }
 #endif

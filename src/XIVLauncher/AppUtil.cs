@@ -95,14 +95,14 @@ namespace XIVLauncher
             {
                 var foundVersions = new Dictionary<string, SeVersion>();
 
-                foreach (var path in GetCommonPaths())
-                {
-                    if (!Directory.Exists(path) || !GameHelpers.IsValidFfxivPath(path) || foundVersions.ContainsKey(path))
-                        continue;
+                // foreach (var path in GetCommonPaths())
+                // {
+                //     if (!Directory.Exists(path) || !GameHelpers.IsValidFfxivPath(path) || foundVersions.ContainsKey(path))
+                //         continue;
 
-                    var baseVersion = Repository.Ffxiv.GetVer(new DirectoryInfo(path));
-                    foundVersions.Add(path, SeVersion.Parse(baseVersion));
-                }
+                //     var baseVersion = Repository.Ffxiv.GetVer(new DirectoryInfo(path));
+                //     foundVersions.Add(path, SeVersion.Parse(baseVersion));
+                // }
 
                 foreach (var registryView in new RegistryView[] { RegistryView.Registry32, RegistryView.Registry64 })
                 {
@@ -127,7 +127,7 @@ namespace XIVLauncher
                         // WEGAY
                         foreach (var steamAppId in ValidSteamAppIds)
                         {
-                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\×îÖÕ»ÃÏë14"))
+                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½14"))
                             {
                                 if (subkey != null && subkey.GetValue("InstallSource", null) is string path)
                                 {
