@@ -114,7 +114,7 @@ namespace XIVLauncher.Common.Game
 
                         if (error_code == -10515805)
                         {
-                            Log.Information("等待用户扫码...");
+                            //Log.Information("等待用户扫码...");
                             await Task.Delay(1000).ConfigureAwait(false);
                             continue;
                         }
@@ -156,7 +156,7 @@ namespace XIVLauncher.Common.Game
 
                         if (error_code == -10516808)
                         {
-                            Log.Information("等待用户确认...");
+                            //Log.Information("等待用户确认...");
                             await Task.Delay(1000).ConfigureAwait(false);
                             continue;
                         }
@@ -254,7 +254,10 @@ namespace XIVLauncher.Common.Game
                 CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
                 SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
             }
-            return (JObject)JsonConvert.DeserializeObject(reply);
+            var result = (JObject)JsonConvert.DeserializeObject(reply);
+            Log.Information($"{endPoint}:ErrorCode={result["return_code"].Value<int>()}:FailReason:{result["data"]["failReason"].Value<string>()}");
+
+            return result;
         }
 
         public async Task<string> GetQRCode(string endPoint, List<string> para)
@@ -281,7 +284,7 @@ namespace XIVLauncher.Common.Game
             request.Method = "GET";
             request.CookieContainer = new CookieContainer(10);
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            var cookie = response.Cookies[0].Value;
+            var codeKey = response.Cookies[0].Value;
             var stream = response.GetResponseStream();
             if (File.Exists(qrPath)) File.Delete(qrPath);
             using (var fileStream = File.Create(qrPath))
@@ -291,7 +294,8 @@ namespace XIVLauncher.Common.Game
                 fileStream.Close();
                 fileStream.Dispose();
             }
-            return cookie;
+            Log.Information($"QRCode下载完成,CodeKey={codeKey}");
+            return codeKey;
         }
         public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
              string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)
