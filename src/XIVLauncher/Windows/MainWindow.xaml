@@ -261,12 +261,13 @@
                                             <CheckBox
                                                 Visibility="Visible"
                                                 DockPanel.Dock="Top"
-                                                Content="使用快速登录"
+                                                Content="快速登录"
                                                 HorizontalAlignment="Center"
                                                 Margin="0,10,0,0"
                                                 VerticalAlignment="Top"
                                                 x:Name="FastLoginCheckBox"
                                                 Click="FastLoginCheckBox_OnClick"
+                                                ToolTip="缓存登录信息,类PC叨鱼快速登录"
                                                 IsChecked="{Binding IsFastLogin}" />
                                             <CheckBox
                                                 Visibility="Collapsed"
