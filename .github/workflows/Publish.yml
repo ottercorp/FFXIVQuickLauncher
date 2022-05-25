@@ -1,0 +1,37 @@
+name: Publish to Azure
+on:
+  release:
+    types: released
+
+jobs:
+  upload:
+    name: Publish to Azure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Release
+        run: |
+          $releases = Invoke-WebRequest -Uri 'https://api.github.com/repos/ottercorp/FFXIVQuickLauncher/releases'
+          $current = ConvertFrom-Json -InputObject $releases.Content | Select-Object -First 1
+          $release_file = $current.assets | Where-Object -Property name -Value RELEASES -EQ
+          Invoke-WebRequest -Uri $release_file.browser_download_url -OutFile .\RELEASES
+          $delta_file = $current.assets | Where-Object -Property name -Value "*delta.nupkg" -Like
+          try
+          {
+            Invoke-WebRequest -Uri $delta_file.browser_download_url -OutFile "$($delta_file.name)"
+          }
+          catch
+          {
+          }
+          $full_file = $current.assets | Where-Object -Property name -Value "*full.nupkg" -Like
+          Invoke-WebRequest -Uri $full_file.browser_download_url -OutFile "$($full_file.name)"
+        shell: pwsh
+        
+      - name: Upload OneDrive
+        uses: Loskh/onedrive-action@v0.7
+        with:
+          files: "*"
+          upload_path: /downloads/XLRelease/
+          redirect_uri: "https://file.ffxiv.wang/"
+          client_id: ${{ secrets.CLIENT_ID }}
+          client_secret: ${{ secrets.CLIENT_SECRET }}
+          refresh_token: ${{ secrets.REFRESH_TOKEN }}  
