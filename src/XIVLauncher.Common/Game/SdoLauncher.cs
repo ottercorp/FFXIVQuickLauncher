@@ -92,7 +92,7 @@ namespace XIVLauncher.Common.Game
                 if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
                 {
                     var failReason = jsonObj["data"]["failReason"].Value<string>();
-                    logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
+                    //logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
                     useCache = false;
                 }
 
@@ -261,7 +261,7 @@ namespace XIVLauncher.Common.Game
                 Tgt = tgt,
                 MaxExpansion = Constants.MaxExpansion
             };
-            //TODO:在设置里新建个Key判断是否传递
+            
             return result;
         }
 
