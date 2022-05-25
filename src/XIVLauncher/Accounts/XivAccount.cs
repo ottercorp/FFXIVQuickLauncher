@@ -51,6 +51,14 @@ namespace XIVLauncher.Accounts
         public bool UseOtp { get; set; }
         public string Tgt { get; set; }
 
+        public bool HasTgt
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(Tgt);
+            }
+        }
+
         public string ChosenCharacterName;
         public string ChosenCharacterWorld;
 
