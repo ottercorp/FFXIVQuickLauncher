@@ -592,6 +592,7 @@ public partial class Launcher
 
     public async Task<bool> GetLoginStatus()
     {
+        return true;
         try
         {
             var reply = Encoding.UTF8.GetString(

@@ -277,6 +277,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         private async Task<bool> CheckGateStatus()
         {
+            return true;
             GateStatus? gateStatus = null;
 
             try
