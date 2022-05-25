@@ -88,42 +88,7 @@ namespace XIVLauncher.Common.Game
             var retryTimes = 60;
             var returnCode = jsonObj["return_code"].Value<int>();
 
-            //首次登陆/频繁登录扫码
-            if ((returnCode == -10242296 || returnCode == -1602726) && jsonObj["error_type"].Value<int>() == 0 || forceQR)
-            {
-                // /authen/getCodeKey.json
-                var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
-                logEvent?.Invoke(SdoLoginState.GotQRCode, null);
-                // /authen/codeKeyLogin.json
-                CTS = new CancellationTokenSource();
-                while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
-                {
-                    jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
-                    var error_code = jsonObj["return_code"].Value<int>();
-
-                    if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
-                    {
-                        sndaId = jsonObj["data"]["sndaId"].Value<string>();
-                        tgt = jsonObj["data"]["tgt"].Value<string>();
-                        break;
-                    }
-                    else
-                    {
-                        var failReason = jsonObj["data"]["failReason"].Value<string>();
-                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, failReason);
-
-                        if (error_code == -10515805)
-                        {
-                            //Log.Information("等待用户扫码...");
-                            await Task.Delay(1000).ConfigureAwait(false);
-                            continue;
-                        }
-
-                        return null;
-                    }
-                }
-            }
-            else //叨鱼一键登录
+            if (returnCode == 0 && !forceQR) //叨鱼滑动登录
             {
                 if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
                 {
@@ -165,6 +130,42 @@ namespace XIVLauncher.Common.Game
                     }
                 }
             }
+            //扫码
+            else
+            {
+                // /authen/getCodeKey.json
+                var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
+                logEvent?.Invoke(SdoLoginState.GotQRCode, null);
+                // /authen/codeKeyLogin.json
+                CTS = new CancellationTokenSource();
+                while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
+                {
+                    jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
+                    var error_code = jsonObj["return_code"].Value<int>();
+
+                    if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
+                    {
+                        sndaId = jsonObj["data"]["sndaId"].Value<string>();
+                        tgt = jsonObj["data"]["tgt"].Value<string>();
+                        break;
+                    }
+                    else
+                    {
+                        var failReason = jsonObj["data"]["failReason"].Value<string>();
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, failReason);
+
+                        if (error_code == -10515805)
+                        {
+                            //Log.Information("等待用户扫码...");
+                            await Task.Delay(1000).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        return null;
+                    }
+                }
+            }
+
             //超时 tgt或ID空白则返回
             if (retryTimes <= 0)
             {
@@ -255,7 +256,7 @@ namespace XIVLauncher.Common.Game
                 SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
             }
             var result = (JObject)JsonConvert.DeserializeObject(reply);
-            Log.Information($"{endPoint}:ErrorCode={result["return_code"].Value<int>()}:FailReason:{result["data"]["failReason"].Value<string>()}");
+            Log.Information($"{endPoint}:ErrorCode={result["return_code"]?.Value<int>()}:FailReason:{result["data"]["failReason"]?.Value<string>()}");
 
             return result;
         }
