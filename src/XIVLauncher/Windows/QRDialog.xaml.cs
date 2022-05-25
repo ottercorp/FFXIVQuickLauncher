@@ -13,6 +13,7 @@ using Serilog;
 using XIVLauncher.Common.Http;
 using XIVLauncher.Windows.ViewModel;
 using System.Windows.Media.Imaging;
+using System.ComponentModel;
 
 namespace XIVLauncher.Windows
 {
@@ -88,6 +89,12 @@ namespace XIVLauncher.Windows
             DialogResult = false;
             Reset();
             Close();          
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Hide();
         }
 
         private void OtpInputDialog_OnMouseMove(object sender, MouseEventArgs e)

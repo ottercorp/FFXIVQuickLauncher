@@ -50,7 +50,7 @@
 
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                     <Button
-                        Content="{Binding OkLoc}"
+                        Content="取消"
                         Margin="7,0,0,0"
                         Width="220"
                         Click="OkButton_OnClick" />
