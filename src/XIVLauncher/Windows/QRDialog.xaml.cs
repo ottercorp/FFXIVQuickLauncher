@@ -40,6 +40,17 @@ namespace XIVLauncher.Windows
             bitmap.EndInit();
             return bitmap;
         }
+
+        public static BitmapImage BitmapFromStream(Stream stream)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.StreamSource = stream;
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            return bitmap;
+        }
+
         public QRDialog()
         {
             InitializeComponent();
@@ -58,7 +69,9 @@ namespace XIVLauncher.Windows
             QRImage.Focus();
             if (File.Exists(qrPath))
             {
-                QRImage.Source = BitmapFromUri(new Uri(qrPath));
+                using (var ms = new FileStream(qrPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                    QRImage.Source = BitmapFromStream(ms);
+                } ;
             }
             else
             {
