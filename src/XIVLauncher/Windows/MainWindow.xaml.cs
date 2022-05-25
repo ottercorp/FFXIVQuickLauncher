@@ -121,7 +121,7 @@ namespace XIVLauncher.Windows
             {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    ServerSelection.ItemsSource = new List<SdoArea> { new SdoArea{ AreaName = "��ȡ������ʧ��"} };
+                    ServerSelection.ItemsSource = new List<SdoArea> { new SdoArea{ AreaName = "服务器状态异常"} };
                 }));
             }
         }
@@ -246,6 +246,8 @@ namespace XIVLauncher.Windows
             }
 
             App.Settings.VersionUpgradeLevel = versionLevel;
+
+            Model.LoginMessage = $"扫码登录请右键点击登录按钮选择";
         }
 
         public void Initialize()

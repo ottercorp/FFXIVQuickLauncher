@@ -177,14 +177,14 @@ namespace XIVLauncher.Windows.ViewModel
             if (!bootRes)
                 return;
 
-            //if (string.IsNullOrEmpty(username))
-            //{
-            //    CustomMessageBox.Show(
-            //        Loc.Localize("EmptyUsernameError", "Please enter an username."),
-            //        "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            if (string.IsNullOrEmpty(username) && action != AfterLoginAction.ForceQR)
+            {
+                CustomMessageBox.Show(
+                    Loc.Localize("EmptyUsernameError", "Please enter an username."),
+                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-            //    return;
-            //}
+                return;
+            }
 
             //if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
             //{
@@ -244,6 +244,12 @@ namespace XIVLauncher.Windows.ViewModel
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
+
+            if (loginResult.State == Launcher.LoginState.Ok)
+            {
+                AccountManager.CurrentAccount.Tgt = loginResult.OauthLogin.Tgt;
+                AccountManager.Save();
+            }
 
             if (otp != null)
                 AccountManager.UpdateLastSuccessfulOtp(AccountManager.CurrentAccount, otp);
@@ -396,7 +402,9 @@ namespace XIVLauncher.Windows.ViewModel
                     {
                         QRDialog.CloseQRWindow(_window);
                     }
-                }, action == AfterLoginAction.ForceQR).ConfigureAwait(false);
+                }, action == AfterLoginAction.ForceQR,
+                    string.IsNullOrEmpty(password) && true,AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
+                //TODO:替换必TRUE
             }
             catch (Exception ex)
             {
