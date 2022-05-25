@@ -13,7 +13,6 @@
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              Background="{DynamicResource MaterialDesignPaper}"
              TextElement.FontWeight="Medium"
-             FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
              d:DataContext="{d:DesignInstance viewModel:SettingsControlViewModel}">
     <Grid>
         <dragablz:TabablzControl IsEnabled="True" FixedHeaderCount="7" x:Name="SetupTabControl"

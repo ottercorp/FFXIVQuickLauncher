@@ -10,8 +10,7 @@
         Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.FontWeight="Medium"
-        FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto">
+        TextElement.FontWeight="Medium" >
     <Grid>
         <TabControl IsEnabled="True" BorderThickness="0" x:Name="SetupTabControl"
                     Background="{DynamicResource MaterialDesignPaper}">

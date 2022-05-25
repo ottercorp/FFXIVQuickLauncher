@@ -11,8 +11,7 @@
         Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.FontWeight="Medium"
-        FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto">
+        TextElement.FontWeight="Medium" >
     <Grid>
         <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"
                    Text="{Binding GenericAddonSetupDescriptionLoc}" />

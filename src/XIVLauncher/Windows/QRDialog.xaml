@@ -10,7 +10,7 @@
         Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Medium"
-        FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
+
         AllowsTransparency="True"
         Background="Transparent"
         WindowStyle="None" Height="196.088" Width="269.186">
