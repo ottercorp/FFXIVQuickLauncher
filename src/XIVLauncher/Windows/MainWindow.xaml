@@ -261,7 +261,7 @@
                                                 Visibility="Visible"
                                                 DockPanel.Dock="Top"
                                                 Content="快速登录"
-                                                HorizontalAlignment="Center"
+                                                HorizontalAlignment="Left"
                                                 Margin="0,10,0,0"
                                                 VerticalAlignment="Top"
                                                 x:Name="FastLoginCheckBox"
