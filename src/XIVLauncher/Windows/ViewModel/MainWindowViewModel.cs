@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Castle.Core.Internal;
 using CheapLoc;
 using Serilog;
 using XIVLauncher.Accounts;
@@ -132,7 +133,7 @@ namespace XIVLauncher.Windows.ViewModel
         {
             if (this.IsLoggingIn)
                 return;
-
+            if (username== null) username = string.Empty;
             if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
             {
                 _window.Dispatcher.Invoke(() => TryLogin(username, password, isOtp, isSteam, doingAutoLogin, action));
@@ -176,14 +177,14 @@ namespace XIVLauncher.Windows.ViewModel
             if (!bootRes)
                 return;
 
-            if (string.IsNullOrEmpty(username))
-            {
-                CustomMessageBox.Show(
-                    Loc.Localize("EmptyUsernameError", "Please enter an username."),
-                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            //if (string.IsNullOrEmpty(username))
+            //{
+            //    CustomMessageBox.Show(
+            //        Loc.Localize("EmptyUsernameError", "Please enter an username."),
+            //        "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-                return;
-            }
+            //    return;
+            //}
 
             //if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
             //{
@@ -204,7 +205,7 @@ namespace XIVLauncher.Windows.ViewModel
             //    IsAutoLogin = false;
             //    return;
             //}
-
+            if (username == null) username = string.Empty;
             username = username.Replace(" ", string.Empty); // Remove whitespace
             if (Repository.Ffxiv.GetVer(App.Settings.GamePath) == Constants.BASE_GAME_VERSION &&
                 App.Settings.UniqueIdCacheEnabled)
@@ -379,11 +380,11 @@ namespace XIVLauncher.Windows.ViewModel
                 var checkResult = await Launcher.CheckGameUpdate(SelectArea, gamePath, false);
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
-
+                if (username == null) username = string.Empty;
                 return await Launcher.LoginSdo(username, (state, msg) =>
                 {
                     LoginMessage = msg;
-                    Log.Information(msg);
+                    //Log.Information(msg);
                     if (state == Launcher.SdoLoginState.GotQRCode)
                     {
                         new Task(() =>
@@ -1164,6 +1165,8 @@ namespace XIVLauncher.Windows.ViewModel
 
         private void PersistAccount(string username, string password)
         {
+            if (username.IsNullOrEmpty()) username = String.Empty;
+
             if (AccountManager.CurrentAccount != null && AccountManager.CurrentAccount.UserName.Equals(username) &&
                 AccountManager.CurrentAccount.Password != password &&
                 AccountManager.CurrentAccount.SavePassword)

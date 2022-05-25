@@ -262,23 +262,22 @@ namespace XIVLauncher.Windows
 
             this.SetDefaults();
 
-            var worldStatusBrushOk = WorldStatusPackIcon.Foreground;
             // grey out world status icon while deferred check is running
             WorldStatusPackIcon.Foreground = new SolidColorBrush(Color.FromRgb(38, 38, 38));
             Model.IsAutoLogin = App.Settings.AutologinEnabled;
 
-            _launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English)).ContinueWith((resultTask) =>
-            {
-                try
-                {
-                    var brushToSet = resultTask.Result.Status ? worldStatusBrushOk : null;
-                    Dispatcher.InvokeAsync(() => WorldStatusPackIcon.Foreground = brushToSet ?? new SolidColorBrush(Color.FromRgb(242, 24, 24)));
-                }
-                catch
-                {
-                    // ignored
-                }
-            });
+            //_launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English)).ContinueWith((resultTask) =>
+            //{
+            //    try
+            //    {
+            //        var brushToSet = resultTask.Result.Status ? worldStatusBrushOk : null;
+            //        Dispatcher.InvokeAsync(() => WorldStatusPackIcon.Foreground = brushToSet ?? new SolidColorBrush(Color.FromRgb(242, 24, 24)));
+            //    }
+            //    catch
+            //    {
+            //        // ignored
+            //    }
+            //});
 
             _accountManager = new AccountManager(App.Settings);
 
@@ -365,43 +364,43 @@ namespace XIVLauncher.Windows
             {
                 Process.Start(item.Url);
             }
-            else
-            {
-                string url;
+            //else
+            //{
+            //    string url;
 
-                switch (App.Settings.Language)
-                {
-                    case ClientLanguage.Japanese:
-                        url = "https://jp.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
+            //    switch (App.Settings.Language)
+            //    {
+            //        case ClientLanguage.Japanese:
+            //            url = "https://jp.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
 
-                    case ClientLanguage.English when GameHelpers.IsRegionNorthAmerica():
-                        url = "https://na.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
+            //        case ClientLanguage.English when GameHelpers.IsRegionNorthAmerica():
+            //            url = "https://na.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
 
-                    case ClientLanguage.English:
-                        url = "https://eu.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
+            //        case ClientLanguage.English:
+            //            url = "https://eu.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
 
-                    case ClientLanguage.German:
-                        url = "https://de.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
+            //        case ClientLanguage.German:
+            //            url = "https://de.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
 
-                    case ClientLanguage.French:
-                        url = "https://fr.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
+            //        case ClientLanguage.French:
+            //            url = "https://fr.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
 
-                    case ClientLanguage.ChineseSimplified:
-                        url = "https://na.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
+            //        case ClientLanguage.ChineseSimplified:
+            //            url = "https://na.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
 
-                    default:
-                        url = "https://eu.finalfantasyxiv.com/lodestone/news/detail/";
-                        break;
-                }
+            //        default:
+            //            url = "https://eu.finalfantasyxiv.com/lodestone/news/detail/";
+            //            break;
+            //    }
 
-                Process.Start(url + item.Id);
-            }
+            //    Process.Start(url + item.Id);
+            //}
         }
 
         private void WorldStatusButton_Click(object sender, RoutedEventArgs e)
@@ -449,7 +448,7 @@ namespace XIVLauncher.Windows
 
             try
             {
-                gateStatus = Task.Run(() => _launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English))).Result.Status;
+                //gateStatus = Task.Run(() => _launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English))).Result.Status;
             }
             catch
             {
@@ -575,6 +574,12 @@ namespace XIVLauncher.Windows
         {
             App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
             Model.SelectArea = (SdoArea)ServerSelection.SelectedItem;
+        }
+
+        private void LoginUsername_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (this.DataContext != null)
+                ((MainWindowViewModel)this.DataContext).Username = ((TextBox)sender).Text;
         }
     }
 }

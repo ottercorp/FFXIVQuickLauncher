@@ -13,6 +13,7 @@ using Serilog;
 using XIVLauncher.Common.Http;
 using XIVLauncher.Windows.ViewModel;
 using System.Windows.Media.Imaging;
+using System.ComponentModel;
 
 namespace XIVLauncher.Windows
 {
@@ -39,6 +40,17 @@ namespace XIVLauncher.Windows
             bitmap.EndInit();
             return bitmap;
         }
+
+        public static BitmapImage BitmapFromStream(Stream stream)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.StreamSource = stream;
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            return bitmap;
+        }
+
         public QRDialog()
         {
             InitializeComponent();
@@ -57,7 +69,9 @@ namespace XIVLauncher.Windows
             QRImage.Focus();
             if (File.Exists(qrPath))
             {
-                QRImage.Source = BitmapFromUri(new Uri(qrPath));
+                using (var ms = new FileStream(qrPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                    QRImage.Source = BitmapFromStream(ms);
+                } ;
             }
             else
             {
@@ -88,6 +102,12 @@ namespace XIVLauncher.Windows
             DialogResult = false;
             Reset();
             Close();          
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Hide();
         }
 
         private void OtpInputDialog_OnMouseMove(object sender, MouseEventArgs e)

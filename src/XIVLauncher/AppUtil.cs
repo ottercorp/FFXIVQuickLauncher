@@ -95,26 +95,26 @@ namespace XIVLauncher
             {
                 var foundVersions = new Dictionary<string, SeVersion>();
 
-                foreach (var path in GetCommonPaths())
-                {
-                    if (!Directory.Exists(path) || !GameHelpers.IsValidFfxivPath(path) || foundVersions.ContainsKey(path))
-                        continue;
+                // foreach (var path in GetCommonPaths())
+                // {
+                //     if (!Directory.Exists(path) || !GameHelpers.IsValidFfxivPath(path) || foundVersions.ContainsKey(path))
+                //         continue;
 
-                    var baseVersion = Repository.Ffxiv.GetVer(new DirectoryInfo(path));
-                    foundVersions.Add(path, SeVersion.Parse(baseVersion));
-                }
+                //     var baseVersion = Repository.Ffxiv.GetVer(new DirectoryInfo(path));
+                //     foundVersions.Add(path, SeVersion.Parse(baseVersion));
+                // }
 
                 foreach (var registryView in new RegistryView[] { RegistryView.Registry32, RegistryView.Registry64 })
                 {
                     using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView))
                     {
                         // Should return "C:\Program Files (x86)\SquareEnix\FINAL FANTASY XIV - A Realm Reborn\boot\ffxivboot.exe" if installed with default options.
-                        using (var subkey = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{2B41E132-07DF-4925-A3D3-F2D1765CCDFE}"))
+                        using (var subkey = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\FFXIV"))
                         {
                             if (subkey != null && subkey.GetValue("DisplayIcon", null) is string path)
                             {
                                 // DisplayIcon includes "boot\ffxivboot.exe", need to remove it
-                                path = Directory.GetParent(path).Parent.FullName;
+                                path = Directory.GetParent(path).FullName;
 
                                 if (Directory.Exists(path) && GameHelpers.IsValidFfxivPath(path) && !foundVersions.ContainsKey(path))
                                 {
@@ -124,12 +124,11 @@ namespace XIVLauncher
                             }
                         }
 
-                        // Should return "C:\Program Files (x86)\Steam\steamapps\common\FINAL FANTASY XIV Online" if installed with default options.
-                        foreach (var steamAppId in ValidSteamAppIds)
-                        {
-                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App {steamAppId}"))
+                        // WEGAY
+
+                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\最终幻想14"))
                             {
-                                if (subkey != null && subkey.GetValue("InstallLocation", null) is string path)
+                                if (subkey != null && subkey.GetValue("InstallSource", null) is string path)
                                 {
                                     if (Directory.Exists(path) && GameHelpers.IsValidFfxivPath(path) && !foundVersions.ContainsKey(path))
                                     {
@@ -139,7 +138,7 @@ namespace XIVLauncher
                                     }
                                 }
                             }
-                        }
+                        
                     }
                 }
 

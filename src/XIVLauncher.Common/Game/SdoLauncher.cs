@@ -30,6 +30,7 @@ namespace XIVLauncher.Common.Game
     public partial class Launcher
     {
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
+        private string pushMsgSessionKey = "";
 
         public async Task<LoginResult> LoginSdo(string userName, LogEventHandler logEvent = null, bool forceQr = false)
         {
@@ -77,7 +78,7 @@ namespace XIVLauncher.Common.Game
             var guid = jsonObj["data"]["guid"].Value<string>();
 
             // /authen/cancelPushMessageLogin.json
-            await LoginAsLauncher("cancelPushMessageLogin.json", new List<string>() { "pushMsgSessionKey=", $"guid={guid}" });
+            await LoginAsLauncher("cancelPushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
 
             // /authen/sendPushMessage.json
             jsonObj = await LoginAsLauncher("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" });
@@ -87,8 +88,50 @@ namespace XIVLauncher.Common.Game
             var retryTimes = 60;
             var returnCode = jsonObj["return_code"].Value<int>();
 
-            //首次登陆/频繁登录扫码
-            if ((returnCode == -10242296 || returnCode == -1602726) && jsonObj["error_type"].Value<int>() == 0 || forceQR)
+            if (returnCode == 0 && !forceQR) //叨鱼滑动登录
+            {
+                if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
+                {
+                    var failReason = jsonObj["data"]["failReason"].Value<string>();
+                    logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
+                    return null;
+                }
+                var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
+                pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
+                logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
+
+                // /authen/pushMessageLogin.json
+                CTS = new CancellationTokenSource();
+                while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
+                {
+                    jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
+                    var error_code = jsonObj["return_code"].Value<int>();
+
+                    if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
+                    {
+                        sndaId = jsonObj["data"]["sndaId"].Value<string>();
+                        tgt = jsonObj["data"]["tgt"].Value<string>();
+                        break;
+                    }
+                    else
+                    {
+                        var failReason = jsonObj["data"]["failReason"].Value<string>();
+                        if (failReason == "用户未确认") failReason = "等待用户确认...";
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, $"确认码:{pushMsgSerialNum},{failReason}");
+
+                        if (error_code == -10516808)
+                        {
+                            //Log.Information("等待用户确认...");
+                            await Task.Delay(1000).ConfigureAwait(false);
+                            continue;
+                        }
+
+                        return null;
+                    }
+                }
+            }
+            //扫码
+            else
             {
                 // /authen/getCodeKey.json
                 var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
@@ -113,7 +156,7 @@ namespace XIVLauncher.Common.Game
 
                         if (error_code == -10515805)
                         {
-                            Log.Information("等待用户扫码...");
+                            //Log.Information("等待用户扫码...");
                             await Task.Delay(1000).ConfigureAwait(false);
                             continue;
                         }
@@ -122,48 +165,7 @@ namespace XIVLauncher.Common.Game
                     }
                 }
             }
-            else //叨鱼一键登录
-            {
-                if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
-                {
-                    var failReason = jsonObj["data"]["failReason"].Value<string>();
-                    logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
-                    return null;
-                }
-                var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
-                var pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
-                logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
 
-                // /authen/pushMessageLogin.json
-                CTS = new CancellationTokenSource();
-                while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
-                {
-                    jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
-                    var error_code = jsonObj["return_code"].Value<int>();
-
-                    if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
-                    {
-                        sndaId = jsonObj["data"]["sndaId"].Value<string>();
-                        tgt = jsonObj["data"]["tgt"].Value<string>();
-                        break;
-                    }
-                    else
-                    {
-                        var failReason = jsonObj["data"]["failReason"].Value<string>();
-                        if (failReason == "用户未确认") failReason = "等待用户确认...";
-                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, $"确认码:{pushMsgSerialNum},{failReason}");
-
-                        if (error_code == -10516808)
-                        {
-                            Log.Information("等待用户确认...");
-                            await Task.Delay(1000).ConfigureAwait(false);
-                            continue;
-                        }
-
-                        return null;
-                    }
-                }
-            }
             //超时 tgt或ID空白则返回
             if (retryTimes <= 0)
             {
@@ -253,7 +255,10 @@ namespace XIVLauncher.Common.Game
                 CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
                 SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
             }
-            return (JObject)JsonConvert.DeserializeObject(reply);
+            var result = (JObject)JsonConvert.DeserializeObject(reply);
+            Log.Information($"{endPoint}:ErrorCode={result["return_code"]?.Value<int>()}:FailReason:{result["data"]["failReason"]?.Value<string>()}");
+
+            return result;
         }
 
         public async Task<string> GetQRCode(string endPoint, List<string> para)
@@ -280,7 +285,7 @@ namespace XIVLauncher.Common.Game
             request.Method = "GET";
             request.CookieContainer = new CookieContainer(10);
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            var cookie = response.Cookies[0].Value;
+            var codeKey = response.Cookies[0].Value;
             var stream = response.GetResponseStream();
             if (File.Exists(qrPath)) File.Delete(qrPath);
             using (var fileStream = File.Create(qrPath))
@@ -290,7 +295,8 @@ namespace XIVLauncher.Common.Game
                 fileStream.Close();
                 fileStream.Dispose();
             }
-            return cookie;
+            Log.Information($"QRCode下载完成,CodeKey={codeKey}");
+            return codeKey;
         }
         public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
              string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)

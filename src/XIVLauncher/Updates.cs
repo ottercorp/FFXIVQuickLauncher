@@ -28,7 +28,7 @@ namespace XIVLauncher
             {
                 ReleaseEntry newRelease = null;
 
-                using (var updateManager = new UpdateManager(url, "XIVLauncher"))
+                using (var updateManager = new UpdateManager(url, "XIVLauncherCN"))
                 {
                     // TODO: is this allowed?
                     SquirrelAwareApp.HandleEvents(

@@ -38,11 +38,32 @@ namespace XIVLauncher.Windows
             {
 #endif
                 CustomMessageBox.Show(
-                    $"You're running an unsupported version of XIVLauncher.\n\nThis can be unsafe and a danger to your SE account. If you have not gotten this unsupported version on purpose, please reinstall a clean version from {App.REPO_URL}/releases and contact us.",
-                    "XIVLauncher Problem", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: this);
+                    $"你正在使用国服特供第三方启动器,请勿选择国际服或韩服安装位置.\n否则可能会造成游戏损坏等后果",
+                    "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: this);
 #if !XL_NOAUTOUPDATE
             }
 #endif
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);//获取桌面文件夹路径
+            CreateShortcut(desktop, "XIVLauncherCN", Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "XIVLauncherCN.exe"));
+        }
+
+        public static void CreateShortcut(string directory, string shortcutName, string targetPath,
+                                          string description = null, string iconLocation = null)
+        {
+            if (!System.IO.Directory.Exists(directory))
+            {
+                System.IO.Directory.CreateDirectory(directory);
+            }
+
+            string shortcutPath = Path.Combine(directory, string.Format("{0}.lnk", shortcutName));
+            WshShell shell = new WshShell();
+            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath); //创建快捷方式对象
+            shortcut.TargetPath = targetPath; //指定目标路径
+            shortcut.WorkingDirectory = Path.GetDirectoryName(targetPath); //设置起始位置
+            shortcut.WindowStyle = 1; //设置运行方式，默认为常规窗口
+            shortcut.Description = description; //设置备注
+            shortcut.IconLocation = string.IsNullOrWhiteSpace(iconLocation) ? targetPath : iconLocation; //设置图标路径
+            shortcut.Save(); //保存快捷方式
         }
 
         public static string GetShortcutTargetFile(string path)

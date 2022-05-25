@@ -243,6 +243,7 @@
                                                 TextWrapping="Wrap"
                                                 VerticalAlignment="Top"
                                                 materialDesign:HintAssist.Hint="盛趣账号"
+                                                TextChanged="LoginUsername_OnTextChanged"
                                                 Text="{Binding Username}" Cursor="IBeam"
                                                 />
                                             <PasswordBox
@@ -305,6 +306,7 @@
                                                     <Button.ContextMenu>
                                                         <ContextMenu x:Name="LoginContextMenu">
                                                             <MenuItem Header="{Binding LoginRepairLoc}"
+                                                                      IsEnabled="False"
                                                                       Command="{Binding Path=LoginRepairCommand}" />
                                                             <MenuItem Header="{Binding LoginNoDalamudLoc}"
                                                                       Command="{Binding Path=LoginNoDalamudCommand}" />
