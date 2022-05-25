@@ -284,7 +284,6 @@ namespace XIVLauncher.Windows
 
             Model.IsFastLogin = App.Settings.FastLogin;
             LoginPassword.IsEnabled = !Model.IsFastLogin;
-            Model.LoginMessage = "如需扫码登录\n请右键登录按钮进行选择";
 
             _accountManager = new AccountManager(App.Settings);
 
