@@ -575,5 +575,11 @@ namespace XIVLauncher.Windows
             App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
             Model.SelectArea = (SdoArea)ServerSelection.SelectedItem;
         }
+
+        private void LoginUsername_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (this.DataContext != null)
+                ((MainWindowViewModel)this.DataContext).Username = ((TextBox)sender).Text;
+        }
     }
 }

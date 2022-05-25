@@ -243,6 +243,7 @@
                                                 TextWrapping="Wrap"
                                                 VerticalAlignment="Top"
                                                 materialDesign:HintAssist.Hint="盛趣账号"
+                                                TextChanged="LoginUsername_OnTextChanged"
                                                 Text="{Binding Username}" Cursor="IBeam"
                                                 />
                                             <PasswordBox
