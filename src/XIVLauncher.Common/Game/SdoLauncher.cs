@@ -82,7 +82,7 @@ namespace XIVLauncher.Common.Game
             //TODO:密码登录？
 
             //用户名及密码非空,跳过叨鱼部分
-            if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password)) useCache = false;
+            if ((!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password)) || string.IsNullOrEmpty(tgtcache)) useCache = false;
 
             if (useCache)//尝试TGT登录
             {
