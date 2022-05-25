@@ -41,6 +41,7 @@ namespace XIVLauncher.Settings
         bool? ExitLauncherAfterGameExit { get; set; }
         bool? IsFt { get; set; }
         int? SelectedServer { get; set; }
+        bool FastLogin { get; set; }
 
         #endregion
     }

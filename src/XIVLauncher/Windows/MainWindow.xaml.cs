@@ -121,7 +121,7 @@ namespace XIVLauncher.Windows
             {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    ServerSelection.ItemsSource = new List<SdoArea> { new SdoArea{ AreaName = "»ñÈ¡·þÎñÆ÷Ê§°Ü"} };
+                    ServerSelection.ItemsSource = new List<SdoArea> { new SdoArea{ AreaName = "æœåŠ¡å™¨çŠ¶æ€å¼‚å¸¸"} };
                 }));
             }
         }
@@ -246,6 +246,8 @@ namespace XIVLauncher.Windows
             }
 
             App.Settings.VersionUpgradeLevel = versionLevel;
+
+            
         }
 
         public void Initialize()
@@ -262,9 +264,10 @@ namespace XIVLauncher.Windows
 
             this.SetDefaults();
 
-            // grey out world status icon while deferred check is running
-            WorldStatusPackIcon.Foreground = new SolidColorBrush(Color.FromRgb(38, 38, 38));
-            Model.IsAutoLogin = App.Settings.AutologinEnabled;
+            //var worldStatusBrushOk = WorldStatusPackIcon.Foreground;
+            //// grey out world status icon while deferred check is running
+            //WorldStatusPackIcon.Foreground = new SolidColorBrush(Color.FromRgb(38, 38, 38));
+            //Model.IsAutoLogin = App.Settings.AutologinEnabled;
 
             //_launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English)).ContinueWith((resultTask) =>
             //{
@@ -278,6 +281,9 @@ namespace XIVLauncher.Windows
             //        // ignored
             //    }
             //});
+
+            Model.IsFastLogin = App.Settings.FastLogin;
+            LoginPassword.IsEnabled = !Model.IsFastLogin;
 
             _accountManager = new AccountManager(App.Settings);
 
@@ -580,6 +586,19 @@ namespace XIVLauncher.Windows
         {
             if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).Username = ((TextBox)sender).Text;
+        }
+
+        private void FastLoginCheckBox_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (Model.IsFastLogin)
+            {
+                LoginPassword.IsEnabled = false;
+                LoginPassword.Password = String.Empty;
+            }
+            else
+            {
+                LoginPassword.IsEnabled = true;
+            }
         }
     }
 }

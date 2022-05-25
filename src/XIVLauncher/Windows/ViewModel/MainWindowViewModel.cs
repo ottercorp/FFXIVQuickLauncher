@@ -177,14 +177,14 @@ namespace XIVLauncher.Windows.ViewModel
             if (!bootRes)
                 return;
 
-            //if (string.IsNullOrEmpty(username))
-            //{
-            //    CustomMessageBox.Show(
-            //        Loc.Localize("EmptyUsernameError", "Please enter an username."),
-            //        "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            if (string.IsNullOrEmpty(username) && action != AfterLoginAction.ForceQR)
+            {
+                CustomMessageBox.Show(
+                    Loc.Localize("EmptyUsernameError", "Please enter an username."),
+                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-            //    return;
-            //}
+                return;
+            }
 
             //if (username.Contains("@") && App.Settings.Language != ClientLanguage.ChineseSimplified)
             //{
@@ -240,10 +240,17 @@ namespace XIVLauncher.Windows.ViewModel
             PersistAccount(username, password);
 
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
+            App.Settings.FastLogin = IsFastLogin;
 
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
+
+            if (loginResult.State == Launcher.LoginState.Ok)
+            {
+                AccountManager.CurrentAccount.Tgt = loginResult.OauthLogin.Tgt;
+                AccountManager.Save();
+            }
 
             if (otp != null)
                 AccountManager.UpdateLastSuccessfulOtp(AccountManager.CurrentAccount, otp);
@@ -381,7 +388,7 @@ namespace XIVLauncher.Windows.ViewModel
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
                 if (username == null) username = string.Empty;
-                return await Launcher.LoginSdo(username, (state, msg) =>
+                return await Launcher.LoginSdo(username, password, (state, msg) =>
                 {
                     LoginMessage = msg;
                     //Log.Information(msg);
@@ -396,7 +403,8 @@ namespace XIVLauncher.Windows.ViewModel
                     {
                         QRDialog.CloseQRWindow(_window);
                     }
-                }, action == AfterLoginAction.ForceQR).ConfigureAwait(false);
+                }, action == AfterLoginAction.ForceQR,
+                    string.IsNullOrEmpty(password) && IsFastLogin,AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1354,6 +1362,17 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
+        private bool _isFastLogin;
+        public bool IsFastLogin
+        {
+            get => _isFastLogin;
+            set
+            {
+                _isFastLogin = value;
+                OnPropertyChanged(nameof(IsFastLogin));
+            }
+        }
+
         private bool _isOtp;
         public bool IsOtp
         {
@@ -1467,7 +1486,7 @@ namespace XIVLauncher.Windows.ViewModel
             LoginNoStartLoc = Loc.Localize("LoginBoxNoStartLogin", "Update without starting");
             LoginRepairLoc = Loc.Localize("LoginBoxRepairLogin", "Repair game files");
             LoginNoDalamudLoc = Loc.Localize("LoginBoxNoDalamudLogin", "Start without Dalamud");
-            LoginTooltipLoc = Loc.Localize("LoginBoxLoginTooltip", "Log in with the provided credentials");
+            LoginTooltipLoc = Loc.Localize("LoginBoxLoginTooltip", "如需扫码登录\n请右键登录按钮进行选择");
             WaitingForMaintenanceLoc = Loc.Localize("LoginBoxWaitingForMaint", "Waiting for maintenance to be over...");
             CancelWithShortcutLoc = Loc.Localize("CancelWithShortcut", "_Cancel");
             OpenAccountSwitcherLoc = Loc.Localize("OpenAccountSwitcher", "Open Account Switcher");

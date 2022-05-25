@@ -226,7 +226,7 @@
                                                 DockPanel.Dock="Top"
                                                 x:Name="ServerSelection"
                                                 HorizontalAlignment="Stretch"
-                                                Margin="0,14,0,0"
+                                                Margin="0,10,0,0"
                                                 Height="24"
                                                 VerticalAlignment="Top"
                                                 SelectionChanged="ServerSelection_OnSelectionChanged"
@@ -237,7 +237,7 @@
                                                 DockPanel.Dock="Top"
                                                 x:Name="LoginUsername"
                                                 HorizontalAlignment="Stretch"
-                                                Margin="0,14,0,0"
+                                                Margin="0,10,0,0"
                                                 Height="24"
                                                 TextWrapping="Wrap"
                                                 VerticalAlignment="Top"
@@ -247,15 +247,27 @@
                                                 />
                                             <PasswordBox
                                                 Visibility="Collapsed"
+                                                IsEnabled="False"
                                                 DockPanel.Dock="Top"
                                                 x:Name="LoginPassword"
                                                 HorizontalAlignment="Stretch"
                                                 Height="24"
-                                                Margin="0,4,0,0"
+                                                Margin="0,8,0,0"
                                                 VerticalAlignment="Top"
                                                 PasswordChanged="LoginPassword_OnPasswordChanged"
-                                                materialDesign:HintAssist.Hint="{Binding LoginPasswordLoc}" />
+                                                materialDesign:HintAssist.Hint="{Binding LoginPasswordLoc}" Cursor="IBeam" />
 
+                                            <CheckBox
+                                                Visibility="Visible"
+                                                DockPanel.Dock="Top"
+                                                Content="快速登录"
+                                                HorizontalAlignment="Center"
+                                                Margin="0,10,0,0"
+                                                VerticalAlignment="Top"
+                                                x:Name="FastLoginCheckBox"
+                                                Click="FastLoginCheckBox_OnClick"
+                                                ToolTip="缓存登录信息,类PC叨鱼快速登录"
+                                                IsChecked="{Binding IsFastLogin}" />
                                             <CheckBox
                                                 Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
@@ -287,14 +299,14 @@
                                                 Visibility="Visible"
                                                 DockPanel.Dock="Top"
                                                 HorizontalAlignment="Center"
-                                                Margin="0,40,0,0"
+                                                Margin="0,10,0,0"
                                                 VerticalAlignment="Top"
                                                 TextWrapping="Wrap"
                                                 Text="{Binding LoginMessage}"/>                                        
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Bottom"
-                                                        Width="142" Margin="0,0,0,0" DockPanel.Dock="Bottom">
+                                                        Width="142" Margin="0,10,0,0" DockPanel.Dock="Bottom">
                                                 <Button
                                                     Content="{Binding LoginLoc}"
                                                     Command="{Binding Path=StartLoginCommand}"
