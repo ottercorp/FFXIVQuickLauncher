@@ -49,8 +49,6 @@ namespace XIVLauncher.Accounts
         public bool SavePassword { get; set; }
         public bool UseSteamServiceAccount { get; set; }
         public bool UseOtp { get; set; }
-
-        public bool UseDaoyu { get; set; }
         public string Tgt { get; set; }
 
         public string ChosenCharacterName;

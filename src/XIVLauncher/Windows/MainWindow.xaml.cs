@@ -247,7 +247,7 @@ namespace XIVLauncher.Windows
 
             App.Settings.VersionUpgradeLevel = versionLevel;
 
-            Model.LoginMessage = $"扫码登录请右键点击登录按钮选择";
+            
         }
 
         public void Initialize()
@@ -281,6 +281,10 @@ namespace XIVLauncher.Windows
             //        // ignored
             //    }
             //});
+
+            Model.IsFastLogin = App.Settings.FastLogin;
+            LoginPassword.IsEnabled = !Model.IsFastLogin;
+            Model.LoginMessage = "如需扫码登录\n请右键登录按钮进行选择";
 
             _accountManager = new AccountManager(App.Settings);
 
@@ -583,6 +587,19 @@ namespace XIVLauncher.Windows
         {
             if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).Username = ((TextBox)sender).Text;
+        }
+
+        private void FastLoginCheckBox_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (Model.IsFastLogin)
+            {
+                LoginPassword.IsEnabled = false;
+                LoginPassword.Password = String.Empty;
+            }
+            else
+            {
+                LoginPassword.IsEnabled = true;
+            }
         }
     }
 }

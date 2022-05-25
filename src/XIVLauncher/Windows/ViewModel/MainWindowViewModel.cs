@@ -240,6 +240,7 @@ namespace XIVLauncher.Windows.ViewModel
             PersistAccount(username, password);
 
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
+            App.Settings.FastLogin = IsFastLogin;
 
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
@@ -403,8 +404,7 @@ namespace XIVLauncher.Windows.ViewModel
                         QRDialog.CloseQRWindow(_window);
                     }
                 }, action == AfterLoginAction.ForceQR,
-                    string.IsNullOrEmpty(password) && true,AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
-                //TODO:替换必TRUE
+                    string.IsNullOrEmpty(password) && IsFastLogin,AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1359,6 +1359,17 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 _isAutoLogin = value;
                 OnPropertyChanged(nameof(IsAutoLogin));
+            }
+        }
+
+        private bool _isFastLogin;
+        public bool IsFastLogin
+        {
+            get => _isFastLogin;
+            set
+            {
+                _isFastLogin = value;
+                OnPropertyChanged(nameof(IsFastLogin));
             }
         }
 
