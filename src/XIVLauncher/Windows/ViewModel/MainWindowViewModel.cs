@@ -381,7 +381,7 @@ namespace XIVLauncher.Windows.ViewModel
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
                 if (username == null) username = string.Empty;
-                return await Launcher.LoginSdo(username, (state, msg) =>
+                return await Launcher.LoginSdo(username, password, (state, msg) =>
                 {
                     LoginMessage = msg;
                     //Log.Information(msg);

@@ -101,7 +101,7 @@ public partial class Launcher
         public LoginState State { get; set; }
         public PatchListEntry[] PendingPatches { get; set; }
         public OauthLoginResult OauthLogin { get; set; }
-        public string UniqueId { get; set; }
+        public string? UniqueId { get; set; }
         public SdoArea Area { get; set; }
     }
 
@@ -477,6 +477,7 @@ public partial class Launcher
     {
         public string SessionId { get; set; }
         public string SndaId { get; set; }
+        public string Tgt { get; set; }
         public int Region { get; set; }
         public bool TermsAccepted { get; set; }
         public bool Playable { get; set; }

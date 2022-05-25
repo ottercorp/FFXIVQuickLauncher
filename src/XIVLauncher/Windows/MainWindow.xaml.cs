@@ -262,9 +262,10 @@ namespace XIVLauncher.Windows
 
             this.SetDefaults();
 
-            // grey out world status icon while deferred check is running
-            WorldStatusPackIcon.Foreground = new SolidColorBrush(Color.FromRgb(38, 38, 38));
-            Model.IsAutoLogin = App.Settings.AutologinEnabled;
+            //var worldStatusBrushOk = WorldStatusPackIcon.Foreground;
+            //// grey out world status icon while deferred check is running
+            //WorldStatusPackIcon.Foreground = new SolidColorBrush(Color.FromRgb(38, 38, 38));
+            //Model.IsAutoLogin = App.Settings.AutologinEnabled;
 
             //_launcher.GetGateStatus(App.Settings.Language.GetValueOrDefault(ClientLanguage.English)).ContinueWith((resultTask) =>
             //{
