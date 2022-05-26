@@ -632,8 +632,8 @@ namespace XIVLauncher.Windows.ViewModel
                 return false;
 
 #if !DEBUG
-            if (!await CheckGateStatus().ConfigureAwait(false))
-                return false;
+            //if (!await CheckGateStatus().ConfigureAwait(false))
+            //    return false;
 #endif
 
             Hide();
