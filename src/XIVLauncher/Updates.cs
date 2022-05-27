@@ -36,7 +36,7 @@ namespace XIVLauncher
                         onAppUpdate: v => updateManager.CreateShortcutForThisExe(),
                         onAppUninstall: v => updateManager.RemoveShortcutForThisExe());
 
-                    var a = await updateManager.CheckForUpdate();
+                    //var a = await updateManager.CheckForUpdate();
                     newRelease = await updateManager.UpdateApp();
                 }
 
