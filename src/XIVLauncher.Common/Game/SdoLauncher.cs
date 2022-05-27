@@ -31,7 +31,7 @@ namespace XIVLauncher.Common.Game
     {
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
         private string pushMsgSessionKey = "";
-        private string areaId = "1";
+        private string AreaId = "1";
 
         public async Task<LoginResult> LoginSdo(string userName, string password, LogEventHandler logEvent = null, bool forceQr = false, bool useCache = false, string tgtcache = null)
         {
@@ -71,14 +71,9 @@ namespace XIVLauncher.Common.Game
         {
             var sndaId = String.Empty;
             var tgt = String.Empty;
-
+            var sessionId = String.Empty;
             // /authen/getGuid.json
-            var jsonObj = await LoginAsLauncher("getGuid.json", new List<string>() { "generateDynamicKey=1" });
-            if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
-                throw new OauthLoginException(jsonObj.ToString());
-            var dynamicKey = jsonObj["data"]["dynamicKey"].Value<string>();
-            var guid = jsonObj["data"]["guid"].Value<string>();
-
+            (var dynamicKey, var guid) = await GetGuid();
             //TODO:密码登录？
 
             //用户名及密码非空,跳过叨鱼部分
@@ -86,186 +81,88 @@ namespace XIVLauncher.Common.Game
 
             if (useCache)//尝试TGT登录
             {
-                //延长登录时效
-                jsonObj = await LoginAsDaoyu("extendLoginState.json", new List<string>() { $"tgt={tgtcache}" });
-
-                if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
+                try
                 {
-                    var failReason = jsonObj["data"]["failReason"].Value<string>();
-                    //logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
-                    useCache = false;
-                }
+                    //延长登录时效
+                    tgt = await ExtendLoginState(tgtcache);
 
-                if (jsonObj["data"]["tgt"] != null) tgt = jsonObj["data"]["tgt"].Value<string>();
-
-                if (string.IsNullOrEmpty(tgt)) useCache = false;
-
-                if (useCache)
-                {
                     //快速登录
-                    jsonObj = await LoginAsLauncher("fastLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
+                    (sndaId, tgt) = await FastLogin(tgt, guid);
 
-                    if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
-                    {
-                        var failReason = jsonObj["data"]["failReason"].Value<string>();
-                        logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
-                        return null;
-                    }
-
-                    if (jsonObj["data"]["sndaId"] != null) sndaId = jsonObj["data"]["sndaId"].Value<string>();
-                    if (jsonObj["data"]["tgt"] != null) tgt = jsonObj["data"]["tgt"].Value<string>();
-
-                    jsonObj = await LoginAsDaoyu("getLoginUserInfo.json", new List<string>() { $"tgt={tgt}" });
-                    jsonObj = await LoginAsDaoyu("getAccountInfo.json", new List<string>() { $"tgt={tgt}" });
+                    //jsonObj = await LoginAsDaoyu("getLoginUserInfo.json", new List<string>() { $"tgt={tgt}" });
+                    //jsonObj = await LoginAsDaoyu("getAccountInfo.json", new List<string>() { $"tgt={tgt}" });
                     //TODO:存一下用户信息?
                 }
-
-                if (string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId))
+                catch (OauthLoginException ex)
                 {
-                    //logEvent?.Invoke(SdoLoginState.LoginFail, $"登录失败");
-                    tgt = string.Empty;
-                    sndaId = string.Empty;
+                    logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
                     useCache = false;
                 }
             }
 
             if (!useCache) //手机叨鱼相关
             {
-                // /authen/cancelPushMessageLogin.json
-                await LoginAsLauncher("cancelPushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
+                var pushMsgSessionKey = String.Empty;
+                await CancelPushMessageLogin(pushMsgSessionKey, guid);
 
-                // /authen/sendPushMessage.json
-                jsonObj = await LoginAsLauncher("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" });
-
-                
-                var retryTimes = 60;
-                var returnCode = jsonObj["return_code"].Value<int>();
+                (var returnCode, var failReason, var pushMsgSerialNum, pushMsgSessionKey) = await SendPushMessage(userName);
 
                 if (returnCode == 0 && !forceQR) //叨鱼滑动登录
                 {
-                    if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
+                    if (pushMsgSerialNum == null || pushMsgSessionKey == null)
                     {
-                        var failReason = jsonObj["data"]["failReason"].Value<string>();
                         logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
                         return null;
                     }
-                    var pushMsgSerialNum = jsonObj["data"]["pushMsgSerialNum"].Value<string>();
-                    pushMsgSessionKey = jsonObj["data"]["pushMsgSessionKey"].Value<string>();
                     logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
-
-                    // /authen/pushMessageLogin.json
                     CTS = new CancellationTokenSource();
-                    while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
-                    {
-                        jsonObj = await LoginAsLauncher("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" });
-                        var error_code = jsonObj["return_code"].Value<int>();
-
-                        if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
-                        {
-                            sndaId = jsonObj["data"]["sndaId"].Value<string>();
-                            tgt = jsonObj["data"]["tgt"].Value<string>();
-                            break;
-                        }
-                        else
-                        {
-                            var failReason = jsonObj["data"]["failReason"].Value<string>();
-                            if (failReason == "用户未确认") failReason = "等待用户确认...";
-                            logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, $"确认码:{pushMsgSerialNum},{failReason}");
-
-                            if (error_code == -10516808)
-                            {
-                                //Log.Information("等待用户确认...");
-                                await Task.Delay(1000).ConfigureAwait(false);
-                                continue;
-                            }
-
-                            return null;
-                        }
-                    }
+                    CTS.CancelAfter(30 * 1000);
+                    (sndaId, tgt) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, guid, logEvent, CTS);
+                    CTS.Dispose();
                 }
                 else //扫码
                 {
-                    // /authen/getCodeKey.json
-                    var codeKey = await GetQRCode("getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" });
+                    var codeKey = await GetQRCode();
                     logEvent?.Invoke(SdoLoginState.GotQRCode, null);
-                    // /authen/codeKeyLogin.json
                     CTS = new CancellationTokenSource();
-
-                    while (retryTimes-- > 0 && !CTS.IsCancellationRequested)
-                    {
-                        jsonObj = await LoginAsLauncher("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" });
-                        var error_code = jsonObj["return_code"].Value<int>();
-
-                        if (jsonObj["return_code"].Value<int>() == 0 && jsonObj["data"]["nextAction"].Value<int>() == 0)
-                        {
-                            sndaId = jsonObj["data"]["sndaId"].Value<string>();
-                            tgt = jsonObj["data"]["tgt"].Value<string>();
-                            break;
-                        }
-                        else
-                        {
-                            var failReason = jsonObj["data"]["failReason"].Value<string>();
-                            logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, failReason);
-
-                            if (error_code == -10515805)
-                            {
-                                //Log.Information("等待用户扫码...");
-                                await Task.Delay(1000).ConfigureAwait(false);
-                                continue;
-                            }
-
-                            return null;
-                        }
-                    }
-                }
-
-                //超时 tgt或ID空白则返回
-                if (retryTimes <= 0)
-                {
-                    logEvent?.Invoke(SdoLoginState.OutTime, $"登录超时");
-                    return null;
-                }
-                if (string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId))
-                {
-                    logEvent?.Invoke(SdoLoginState.LoginFail, $"登录失败");
-                    return null;
+                    CTS.CancelAfter(60 * 1000);
+                    (sndaId, tgt) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS);
+                    CTS.Dispose();
                 }
 
                 if (File.Exists(qrPath)) File.Delete(qrPath);
             }
 
-            // /authen/getPromotion.json 不知道为什么要有,但就是有
-            jsonObj = await LoginAsLauncher("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
-            if (jsonObj["return_code"].Value<int>() != 0)
+            //tgt或ID空白则返回
+            if (string.IsNullOrEmpty(tgt) || string.IsNullOrEmpty(sndaId))
             {
-                logEvent?.Invoke(SdoLoginState.LoginFail, jsonObj["data"]["failReason"].Value<string>());
+                logEvent?.Invoke(SdoLoginState.LoginFail, $"登录失败");
                 return null;
             }
 
-            // /authen/ssoLogin.json 抓包的ticket=SID
-            var ticket = string.Empty;
-            jsonObj = await LoginAsLauncher("ssoLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
-            if (jsonObj["return_code"].Value<int>() != 0 || jsonObj["error_type"].Value<int>() != 0)
-                throw new OauthLoginException(jsonObj.ToString());
-            else
+            var promotionResult = await GetPromotionInfo(tgt, guid);
+            if (promotionResult.ErrorType != 0)
             {
-                ticket = jsonObj["data"]["ticket"].Value<string>();
+                logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
+                return null;
             }
-            if (!string.IsNullOrEmpty(ticket)) logEvent?.Invoke(SdoLoginState.LoginSucess, "登陆成功");
+
+            sessionId = await SsoLogin(tgt, guid);
+
+            if (!string.IsNullOrEmpty(sessionId)) logEvent?.Invoke(SdoLoginState.LoginSucess, "登陆成功");
             else return null;
 
-            var result = new OauthLoginResult
+            return new OauthLoginResult
             {
-                SessionId = ticket,
+                SessionId = sessionId,
                 SndaId = sndaId,
                 Tgt = tgt,
                 MaxExpansion = Constants.MaxExpansion
             };
-            
-            return result;
         }
 
-        private static string deviceId;
+        private static Lazy<string> _deviceId = new Lazy<string>(() => SdoUtils.GetDeviceId());
+        private static string DeviceId => _deviceId.Value;
         private static string CASCID;
         private static string SECURE_CASCID;
 
@@ -277,88 +174,119 @@ namespace XIVLauncher.Common.Game
                 CTS.Cancel();
             }
         }
-        public async Task<JObject> LoginAsLauncher(string endPoint, List<string> para)
-        {
-            if (deviceId == null)
-                deviceId = SdoUtils.GetDeviceId();
-            var commonParas = new List<string>();
-            commonParas.Add("authenSource=1");
-            commonParas.Add("appId=100001900");
-            commonParas.Add($"areaId={areaId}");
-            commonParas.Add("appIdSite=100001900");
-            commonParas.Add("locale=zh_CN");
-            commonParas.Add("productId=4");
-            commonParas.Add("frameType=1");
-            commonParas.Add("endpointOS=1");
-            commonParas.Add("version=21");
-            commonParas.Add("customSecurityLevel=2");
-            commonParas.Add($"deviceId={deviceId}");
-            commonParas.Add($"thirdLoginExtern=0");
-            commonParas.Add($"productVersion=2%2e0%2e1%2e4");
-            commonParas.Add($"tag=0");
-            para.AddRange(commonParas);
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
-            request.Headers.AddWithoutValidation("User-Agent", _userAgent);
-            request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
-            if (CASCID != null && SECURE_CASCID != null)
-            {
-                request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
-            }
-            var response = await this.client.SendAsync(request);
-            var reply = await response.Content.ReadAsStringAsync();
-            var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
-            if (cookies != null)
-            {
-                CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
-                SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
-            }
-            var result = new JObject();
-            try
-            {
-                result = (JObject)JsonConvert.DeserializeObject(reply);
-                Log.Information($"{endPoint}:ErrorCode={result["return_code"]?.Value<int>()}:FailReason:{result["data"]["failReason"]?.Value<string>()}");
-            }
-            catch (JsonReaderException ex)
-            {
-                Log.Error($"Reply from {endPoint} cannot be parsed:{reply}");
-                Log.Error(ex.StackTrace);
-                throw(ex);
-            }
 
-            return result;
+        enum SdoClient
+        {
+            Daoyu,
+            Launcher
         }
 
-        public async Task<string> GetQRCode(string endPoint, List<string> para)
+        private async Task<(string dynamicKey, string guid)> GetGuid()
         {
-            if (deviceId == null)
-                deviceId = SdoUtils.GetDeviceId();
-            var commonParas = new List<string>();
-            commonParas.Add("authenSource=1");
-            commonParas.Add("appId=100001900");
-            commonParas.Add($"areaId={areaId}");
-            commonParas.Add("appIdSite=100001900");
-            commonParas.Add("locale=zh_CN");
-            commonParas.Add("productId=4");
-            commonParas.Add("frameType=1");
-            commonParas.Add("endpointOS=1");
-            commonParas.Add("version=21");
-            commonParas.Add("customSecurityLevel=2");
-            commonParas.Add($"deviceId={deviceId}");
-            commonParas.Add($"thirdLoginExtern=0");
-            commonParas.Add($"productVersion=2%2e0%2e1%2e4");
-            commonParas.Add($"tag=0");
-            para.AddRange(commonParas);
-            var request = (HttpWebRequest)WebRequest.Create($"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
-            request.Method = "GET";
-            request.CookieContainer = new CookieContainer(10);
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            var codeKey = response.Cookies[0].Value;
-            var stream = response.GetResponseStream();
+            var result = await GetJsonAsSdoClient("getGuid.json", new List<string>() { "generateDynamicKey=1" }, SdoClient.Launcher);
+
+            if (result.ErrorType != 0)
+                throw new OauthLoginException(result.ToString());
+            return (result.Data.DynamicKey, result.Data.Guid);
+        }
+
+        #region 快速登陆
+
+        private async Task<string> ExtendLoginState(string tgtcache)
+        {
+            //延长登录时效
+            var result = await GetJsonAsSdoClient("extendLoginState.json", new List<string>() { $"tgt={tgtcache}" }, SdoClient.Daoyu);
+
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+            {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
+
+            var tgt = result.Data.Tgt;
+            if (string.IsNullOrEmpty(tgt))
+            {
+                throw new OauthLoginException("快速登陆失败");
+            }
+            else
+                return tgt;
+        }
+
+        private async Task<(string sndaId, string tgt)> FastLogin(string tgt, string guid)
+        {
+            //快速登录
+            var result = await GetJsonAsSdoClient("fastLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" }, SdoClient.Launcher);
+
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+            {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
+
+            return (result.Data.SndaId, result.Data.Tgt);
+        }
+
+        #endregion
+
+        #region 手机APP滑动登陆
+
+        private async Task CancelPushMessageLogin(string pushMsgSessionKey, string guid)
+        {
+            // /authen/cancelPushMessageLogin.json
+            await GetJsonAsSdoClient("cancelPushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" }, SdoClient.Launcher);
+        }
+
+        private async Task<(int? errorType, string failReason, string? pushMsgSerialNum, string? pushMsgSessionKey)> SendPushMessage(string userName)
+        {
+            // /authen/sendPushMessage.json
+            var result = await GetJsonAsSdoClient("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" }, SdoClient.Launcher);
+            var pushMsgSerialNum = result.Data.PushMsgSerialNum;
+            var pushMsgSessionKey = result.Data.PushMsgSessionKey;
+            return (result.ErrorType, result.Data.FailReason, pushMsgSerialNum, pushMsgSessionKey);
+        }
+
+        private async Task<(string sndaId, string tgt)> WaitingForSlideOnDaoyuApp(string pushMsgSessionKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation)
+        {
+            while (!cancellation.IsCancellationRequested)
+            {
+                // /authen/pushMessageLogin.json
+                var result = await GetJsonAsSdoClient("pushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" }, SdoClient.Launcher);
+                if (result.ReturnCode == 0 && result.Data.NextAction == 0)
+                {
+                    return (result.Data.SndaId, result.Data.Tgt);
+                }
+                else
+                {
+                    logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, result.Data.FailReason);
+                    if (result.ReturnCode == -10516808)
+                    {
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "等待用户确认...");
+                        await Task.Delay(1000).ConfigureAwait(false);
+                        continue;
+                    }
+                    throw new OauthLoginException(result.Data.FailReason);
+                }
+            }
+            logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "登陆超时或被取消");
+            return (null, null);
+        }
+
+        #endregion
+
+        #region 扫码登陆
+
+        private async Task<string> GetQRCode()
+        {
+            // /authen/getCodeKey.json
+            var request = GetSdoHttpRequestMessage(HttpMethod.Get, "getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" }, SdoClient.Launcher);
+            var response = await this.client.SendAsync(request);
+            var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+            var codeKey = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0];
+            codeKey = codeKey.Split('=')[1];
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+
             if (File.Exists(qrPath)) File.Delete(qrPath);
             using (var fileStream = File.Create(qrPath))
             {
-                //stream.Seek(0, SeekOrigin.Begin);
-                stream.CopyTo(fileStream);
+                fileStream.Write(bytes, 0, bytes.Length);
                 fileStream.Close();
                 fileStream.Dispose();
             }
@@ -366,33 +294,121 @@ namespace XIVLauncher.Common.Game
             return codeKey;
         }
 
-        public async Task<JObject> LoginAsDaoyu(string endPoint, List<string> para)
+        private async Task<(string sndaId, string tgt)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation)
         {
-            if (deviceId == null)
-                deviceId = SdoUtils.GetDeviceId();
+            while (!cancellation.IsCancellationRequested)
+            {
+                // /authen/pushMessageLogin.json
+                var result = await GetJsonAsSdoClient("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" }, SdoClient.Launcher);
+                if (result.ReturnCode == 0 && result.Data.NextAction == 0)
+                {
+                    return (result.Data.SndaId, result.Data.Tgt);
+                }
+                else
+                {
+                    logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, result.Data.FailReason);
+                    if (result.ReturnCode == -10515805)
+                    {
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "等待用户扫码...");
+                        await Task.Delay(1000).ConfigureAwait(false);
+                        continue;
+                    }
+                    throw new OauthLoginException(result.Data.FailReason);
+                }
+            }
+            logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "登陆超时或被取消");
+            return (null, null);
+        }
+
+        #endregion
+
+        #region 登陆结束
+
+        private async Task<string> SsoLogin(string tgt, string guid)
+        {
+            // /authen/ssoLogin.json 抓包的ticket=SID
+            var result = await GetJsonAsSdoClient("ssoLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+                throw new OauthLoginException(result.ToString());
+            else
+            {
+                return result.Data.Ticket;
+            }
+        }
+
+        private async Task<SdoLoginResult> GetPromotionInfo(string tgt, string guid)
+        {
+            // /authen/getPromotion.json 不知道为什么要有,但就是有
+            return await GetJsonAsSdoClient("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
+        }
+
+        #endregion
+
+        private class SdoLoginResult
+        {
+            [JsonProperty("error_type")]
+            public int ErrorType;
+            [JsonProperty("return_code")]
+            public int ReturnCode;
+            [JsonProperty("data")]
+            public SdoLoginData Data;
+            public class SdoLoginData
+            {
+                [JsonProperty("failReason")]
+                public string FailReason;
+                [JsonProperty("nextAction")]
+                public int NextAction;
+                [JsonProperty("guid")]
+                public string Guid;
+                [JsonProperty("pushMsgSerialNum")]
+                public string PushMsgSerialNum;
+                [JsonProperty("pushMsgSessionKey")]
+                public string PushMsgSessionKey;
+                [JsonProperty("dynamicKey")]
+                public string DynamicKey;
+                [JsonProperty("ticket")]
+                public string Ticket;
+                [JsonProperty("sndaId")]
+                public string SndaId;
+                [JsonProperty("tgt")]
+                public string Tgt;
+            }
+        }
+
+        private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<string> para, SdoClient app)
+        {
+            var appId = app == SdoClient.Launcher ? 100001900 : 991002627;
+            var productVersion = app == SdoClient.Launcher ? "2%2e0%2e1%2e4" : "1%2e1%2e8%2e1";
             var commonParas = new List<string>();
             commonParas.Add("authenSource=1");
-            commonParas.Add("appId=991002627");
-            commonParas.Add("areaId=7");
-            commonParas.Add("appIdSite=991002627");
+            commonParas.Add($"appId={appId}");
+            commonParas.Add($"areaId={AreaId}");
+            commonParas.Add($"appIdSite={appId}");
             commonParas.Add("locale=zh_CN");
             commonParas.Add("productId=4");
             commonParas.Add("frameType=1");
             commonParas.Add("endpointOS=1");
             commonParas.Add("version=21");
             commonParas.Add("customSecurityLevel=2");
-            commonParas.Add($"deviceId={deviceId}");
+            commonParas.Add($"deviceId={DeviceId}");
             commonParas.Add($"thirdLoginExtern=0");
-            commonParas.Add($"productVersion=1%2e1%2e8%2e1");
+            commonParas.Add($"productVersion={productVersion}");
             commonParas.Add($"tag=0");
             para.AddRange(commonParas);
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
+            var request = new HttpRequestMessage(method, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("User-Agent", _userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
             if (CASCID != null && SECURE_CASCID != null)
             {
                 request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
             }
+            return request;
+        }
+
+        private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<string> para, SdoClient app = SdoClient.Launcher)
+        {
+            var request = GetSdoHttpRequestMessage(HttpMethod.Get, endPoint, para, app);
+
             var response = await this.client.SendAsync(request);
             var reply = await response.Content.ReadAsStringAsync();
             var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
@@ -401,10 +417,18 @@ namespace XIVLauncher.Common.Game
                 CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
                 SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
             }
-            var result = (JObject)JsonConvert.DeserializeObject(reply);
-            Log.Information($"{endPoint}:ErrorCode={result["return_code"]?.Value<int>()}:FailReason:{result["data"]["failReason"]?.Value<string>()}");
-
-            return result;
+            try
+            {
+                var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
+                Log.Information($"{endPoint}:ErrorCode={result.ErrorType}:FailReason:{result.Data.FailReason}");
+                return result;
+            }
+            catch (JsonReaderException ex)
+            {
+                Log.Error($"Reply from {endPoint} cannot be parsed:{reply}");
+                Log.Error(ex.StackTrace);
+                throw (ex);
+            }
         }
 
         public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
