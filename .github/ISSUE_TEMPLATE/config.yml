@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: XIVLauncher FAQ
-    url: https://goatcorp.github.io/faq/
-    about: Help and more information about XIVLauncher and potential issues you might be encountering. Please check this first.
-  - name: XIVLauncher Discord
-    url: https://discord.gg/aSuNjps
-    about: Discussion about XIVLauncher and it's development - we'll do our best to answer your question if you can't find an answer in the FAQ!
+  - name: XIVLauncher CN FAQ
+    url: https://ottercorp.github.io/faq/
+    about: 有关 XIVLauncher CN 和您可能遇到的潜在问题的帮助和更多信息。请在提问前先检查一下。
+  - name: XIVLauncher CN QQ频道
+    url: https://qun.qq.com/qqweb/qunpro/share?_wv=3&_wwv=128&inviteCode=CZtWN&from=181074&biz=ka&shareSource=5
+    about: 关于 XIVLauncher CN 及其开发的讨论 - 如果您在常见问题解答中找不到答案，我们将尽力回答您的问题！
