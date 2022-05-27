@@ -312,8 +312,18 @@ namespace XIVLauncher.Common.Game
                 CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
                 SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
             }
-            var result = (JObject)JsonConvert.DeserializeObject(reply);
-            Log.Information($"{endPoint}:ErrorCode={result["return_code"]?.Value<int>()}:FailReason:{result["data"]["failReason"]?.Value<string>()}");
+            var result = new JObject();
+            try
+            {
+                result = (JObject)JsonConvert.DeserializeObject(reply);
+                Log.Information($"{endPoint}:ErrorCode={result["return_code"]?.Value<int>()}:FailReason:{result["data"]["failReason"]?.Value<string>()}");
+            }
+            catch (JsonReaderException ex)
+            {
+                Log.Error($"Reply from {endPoint} cannot be parsed:{reply}");
+                Log.Error(ex.StackTrace);
+                throw(ex);
+            }
 
             return result;
         }
