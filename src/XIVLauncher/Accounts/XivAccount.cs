@@ -23,7 +23,7 @@ namespace XIVLauncher.Accounts
         {
             get
             {
-                var credentials = CredentialManager.GetCredentials($"FINAL FANTASY XIV-{UserName.ToLower()}");
+                var credentials = CredentialManager.GetCredentials($"FINAL FANTASY XIV CN-{UserName.ToLower()}");
 
                 return credentials != null ? credentials.Password : string.Empty;
             }
@@ -31,14 +31,14 @@ namespace XIVLauncher.Accounts
             {
                 try
                 {
-                    CredentialManager.RemoveCredentials($"FINAL FANTASY XIV-{UserName.ToLower()}");
+                    CredentialManager.RemoveCredentials($"FINAL FANTASY XIV CN-{UserName.ToLower()}");
                 }
                 catch (Win32Exception)
                 {
                     // ignored
                 }
 
-                CredentialManager.SaveCredentials($"FINAL FANTASY XIV-{UserName.ToLower()}", new NetworkCredential
+                CredentialManager.SaveCredentials($"FINAL FANTASY XIV CN-{UserName.ToLower()}", new NetworkCredential
                 {
                     UserName = UserName,
                     Password = value
@@ -49,7 +49,32 @@ namespace XIVLauncher.Accounts
         public bool SavePassword { get; set; }
         public bool UseSteamServiceAccount { get; set; }
         public bool UseOtp { get; set; }
-        public string Tgt { get; set; }
+        [JsonIgnore]
+        public string Tgt {
+            get
+            {
+                var credentials = CredentialManager.GetCredentials($"FINAL FANTASY XIV CN TGT-{UserName.ToLower()}");
+
+                return credentials != null ? credentials.Password : string.Empty;
+            }
+            set
+            {
+                try
+                {
+                    CredentialManager.RemoveCredentials($"FINAL FANTASY XIV CN TGT-{UserName.ToLower()}");
+                }
+                catch (Win32Exception)
+                {
+                    // ignored
+                }
+
+                CredentialManager.SaveCredentials($"FINAL FANTASY XIV CN TGT-{UserName.ToLower()}", new NetworkCredential
+                {
+                    UserName = UserName,
+                    Password = value
+                });
+            }
+        }
 
         public bool HasTgt
         {
