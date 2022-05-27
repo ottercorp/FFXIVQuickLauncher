@@ -1,5 +1,5 @@
 name: Bug Report
-description: File a bug report for the launcher itself.
+description: 给启动器本身提交 Bug 报告。
 labels: ["bug", "triage"]
 assignees:
   - octocat
@@ -7,28 +7,28 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! Please read all prompts on this page carefully and make sure that you have entered the relevant details **before** submitting.
+        感谢您抽出宝贵时间填写此错误报告！ 请仔细阅读此页面上的所有提示，并确保您在**提交前**输入了相关详细信息。
   - type: checkboxes
     id: terms
     attributes:
-      label: Update disclaimer
-      description: If FFXIV recently updated, XIVLauncher and plugins will not work. They need to be updated first. You can get notified about updates on our Discord.
+      label: 更新免责声明
+      description: 如果 FFXIV 最近刚刚更新，XIVLauncher 和插件将无法工作。他们需要随之更新。您可以前往QQ频道获取有关更新的通知。
       options:
-        - label: Yes, I have checked and my issue is not related to FFXIV updating and plugins not working correctly.
+        - label: 是的，我已经检查过了，我的问题与 FFXIV 更新和插件无法正常工作无关。
           required: true
   - type: textarea
     id: what-happened
     attributes:
-      label: What did you do?
-      description: What were you doing when the problem occurred? Please give us *step by step* directions. You can drop files and images here to attach them.
-      placeholder: Tell us what you did!
+      label: 您做了什么？
+      description: 问题发生时您在做什么？ 请给我们*一步一步*的指示。 您可以将日志文件和截图图像拖放到此处来添加附件。
+      placeholder: 告诉我们您的操作步骤！
     validations:
       required: true
   - type: dropdown
     id: platform
     attributes:
-      label: Platform
-      description: Where were you running XIVLauncher?
+      label: 平台
+      description: 您在哪种平台运行 XIVLauncher?
       options:
         - Windows
         - Linux (Wine/Proton)
@@ -39,14 +39,14 @@ body:
   - type: input
     id: runnerver
     attributes:
-      label: Wine/Proton runner version
-      description: If you are using Linux or Mac OS X, what version of Wine/Proton are you using? Leave this empty if you are on Windows.
-      placeholder: e.g. Proton-GE-7.0
+      label: Wine/Proton 运行版本
+      description: 如果您使用的是 Linux 或 Mac OS X，您使用的是哪个版本的 Wine/Proton？ 如果您使用的是 Windows，请将其留空。
+      placeholder: 例如 Proton-GE-7.0
     validations:
       required: false
   - type: textarea
     id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output or error message. You can see this in the error message that popped up or in relevant log files.
+      label: 相关日志文件
+      description: 请复制并粘贴任何相关的日志输出或错误消息。 您可以在弹出的错误消息或相关日志文件中看到这些。
       render: shell
