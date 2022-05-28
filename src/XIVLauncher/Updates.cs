@@ -18,7 +18,7 @@ namespace XIVLauncher
             // GitHub requires TLS 1.2, we need to hardcode this for Windows 7
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            var url = "https://file.ffxiv.wang/XLRelease/";
+            var url = "https://ottercorp.azurewebsites.net/api/Update/";
             //if (downloadPrerelease)
             //    url += "/Prerelease";
             //else

@@ -20,7 +20,7 @@ namespace XIVLauncher.Windows
     public partial class ChangelogWindow : Window
     {
         private readonly bool _prerelease;
-        private const string META_URL = "https://xlasset-1253720819.cos.ap-nanjing.myqcloud.com/Meta.json";
+        private const string META_URL = "https://ottercorp.azurewebsites.net/api/Meta";
 
         public class VersionMeta
         {
