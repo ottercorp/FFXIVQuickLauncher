@@ -30,7 +30,6 @@ namespace XIVLauncher.Common.Game
     public partial class Launcher
     {
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
-        private string pushMsgSessionKey = "";
         private string AreaId = "1";
 
         public async Task<LoginResult> LoginSdo(string userName, string password, LogEventHandler logEvent = null, bool forceQr = false, bool useCache = false, string tgtcache = null)
@@ -106,8 +105,8 @@ namespace XIVLauncher.Common.Game
                 await CancelPushMessageLogin(pushMsgSessionKey, guid);
 
                 (var returnCode, var failReason, var pushMsgSerialNum, pushMsgSessionKey) = await SendPushMessage(userName);
-
-                if (returnCode == 0 && !forceQR) //叨鱼滑动登录
+                // 叨鱼已经打开/未打开，其余情况一律扫码
+                if ((returnCode == 0|| returnCode == -14001710) && !forceQR) //叨鱼滑动登录
                 {
                     if (pushMsgSerialNum == null || pushMsgSessionKey == null)
                     {
@@ -117,7 +116,7 @@ namespace XIVLauncher.Common.Game
                     logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
                     CTS = new CancellationTokenSource();
                     CTS.CancelAfter(30 * 1000);
-                    (sndaId, tgt) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, guid, logEvent, CTS);
+                    (sndaId, tgt) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, logEvent, CTS);
                     CTS.Dispose();
                 }
                 else //扫码
@@ -234,16 +233,20 @@ namespace XIVLauncher.Common.Game
             await GetJsonAsSdoClient("cancelPushMessageLogin.json", new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" }, SdoClient.Launcher);
         }
 
-        private async Task<(int? errorType, string failReason, string? pushMsgSerialNum, string? pushMsgSessionKey)> SendPushMessage(string userName)
+        private async Task<(int? returnCode, string failReason, string? pushMsgSerialNum, string? pushMsgSessionKey)> SendPushMessage(string userName)
         {
             // /authen/sendPushMessage.json
             var result = await GetJsonAsSdoClient("sendPushMessage.json", new List<string>() { $"inputUserId={userName}" }, SdoClient.Launcher);
+            // ErrorType ReturnCode NextAction FailReason
+            // 0         -14001710  0          "请确保已安装叨鱼，并保持联网"
+            // 0         -10242296  0          "该账号首次在本设备上登录，不支持一键登录，请使用二维码、动态密码或密码登录"
+            // 0         0          0          null
             var pushMsgSerialNum = result.Data.PushMsgSerialNum;
             var pushMsgSessionKey = result.Data.PushMsgSessionKey;
-            return (result.ErrorType, result.Data.FailReason, pushMsgSerialNum, pushMsgSessionKey);
+            return (result.ReturnCode, result.Data.FailReason, pushMsgSerialNum, pushMsgSessionKey);
         }
 
-        private async Task<(string sndaId, string tgt)> WaitingForSlideOnDaoyuApp(string pushMsgSessionKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation)
+        private async Task<(string sndaId, string tgt)> WaitingForSlideOnDaoyuApp(string pushMsgSessionKey, string pushMsgSerialNum, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation)
         {
             while (!cancellation.IsCancellationRequested)
             {
@@ -258,7 +261,7 @@ namespace XIVLauncher.Common.Game
                     logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, result.Data.FailReason);
                     if (result.ReturnCode == -10516808)
                     {
-                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "等待用户确认...");
+                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, $"等待用户确认\n确认码:{pushMsgSerialNum}");
                         await Task.Delay(1000).ConfigureAwait(false);
                         continue;
                     }
@@ -420,7 +423,7 @@ namespace XIVLauncher.Common.Game
             try
             {
                 var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
-                Log.Information($"{endPoint}:ErrorCode={result.ErrorType}:FailReason:{result.Data.FailReason}");
+                Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}");
                 return result;
             }
             catch (JsonReaderException ex)
