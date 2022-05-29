@@ -133,7 +133,7 @@ namespace XIVLauncher.Windows.ViewModel
         {
             if (this.IsLoggingIn)
                 return;
-            if (username== null) username = string.Empty;
+            if (username == null) username = string.Empty;
             if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
             {
                 _window.Dispatcher.Invoke(() => TryLogin(username, password, isOtp, isSteam, doingAutoLogin, action));
@@ -245,19 +245,20 @@ namespace XIVLauncher.Windows.ViewModel
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
-
-            if (loginResult.State == Launcher.LoginState.Ok)
+            if (action != AfterLoginAction.UpdateOnly)
             {
-                AccountManager.CurrentAccount.Tgt = loginResult.OauthLogin.Tgt;
-                AccountManager.Save();
+                if (loginResult.State == Launcher.LoginState.Ok)
+                {
+                    AccountManager.CurrentAccount.Tgt = loginResult.OauthLogin.Tgt;
+                    AccountManager.Save();
+                }
+
+                if (otp != null)
+                    AccountManager.UpdateLastSuccessfulOtp(AccountManager.CurrentAccount, otp);
+
+                Log.Verbose(
+                    $"[LR] {loginResult.State} {loginResult.PendingPatches != null} {loginResult.OauthLogin?.Playable}");
             }
-
-            if (otp != null)
-                AccountManager.UpdateLastSuccessfulOtp(AccountManager.CurrentAccount, otp);
-
-            Log.Verbose(
-                $"[LR] {loginResult.State} {loginResult.PendingPatches != null} {loginResult.OauthLogin?.Playable}");
-
             loginResult.Area = SelectArea;
 
             if (await TryProcessLoginResult(loginResult, isSteam, action).ConfigureAwait(false))
@@ -405,7 +406,7 @@ namespace XIVLauncher.Windows.ViewModel
                         QRDialog.CloseQRWindow(_window);
                     }
                 }, action == AfterLoginAction.ForceQR,
-                    string.IsNullOrEmpty(password) && IsFastLogin,AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
+                    string.IsNullOrEmpty(password) && IsFastLogin, AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
