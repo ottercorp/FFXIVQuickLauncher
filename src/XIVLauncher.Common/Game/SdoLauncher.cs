@@ -399,6 +399,7 @@ namespace XIVLauncher.Common.Game
             commonParas.Add($"tag=0");
             para.AddRange(commonParas);
             var request = new HttpRequestMessage(method, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
+            request.Headers.AddWithoutValidation("Cache-Control", "no-cache");
             request.Headers.AddWithoutValidation("User-Agent", _userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
             if (CASCID != null && SECURE_CASCID != null)
