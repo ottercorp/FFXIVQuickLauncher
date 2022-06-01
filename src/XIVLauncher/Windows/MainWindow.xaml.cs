@@ -35,7 +35,7 @@ namespace XIVLauncher.Windows
         private Headlines _headlines;
         private BitmapImage[] _bannerBitmaps;
         private int _currentBannerIndex;
-
+        private SdoArea[] _sdoAreas;
         class BannerDotInfo
         {
             public bool Active { get; set; }
@@ -116,21 +116,19 @@ namespace XIVLauncher.Windows
         {
             try
             {
-                var _areas = await SdoAreas.Get();
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    ServerSelection.ItemsSource = _areas.Servers;
-                    ServerSelection.DisplayMemberPath = "AreaName";
-                    ServerSelection.SelectedValuePath = "Areaid";
-                    ServerSelection.SelectedIndex = App.Settings.SelectedServer.GetValueOrDefault(0);                   
-                }));
-
+                _sdoAreas = await SdoArea.Get();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Dispatcher.BeginInvoke(new Action(() =>
+                _sdoAreas = new SdoArea[1] { new SdoArea { AreaName = "服务器状态异常", Areaid = "-1" } };
+                throw ex;
+            }
+            finally
+            {
+                Dispatcher.BeginInvoke(new Action(async () =>
                 {
-                    ServerSelection.ItemsSource = new List<SdoArea> { new SdoArea{ AreaName = "服务器状态异常"} };
+                    ServerSelection.ItemsSource = _sdoAreas;
+                    ServerSelection.SelectedIndex = App.Settings.SelectedServer.GetValueOrDefault(0);
                 }));
             }
         }
@@ -269,7 +267,7 @@ namespace XIVLauncher.Windows
 
             App.Settings.VersionUpgradeLevel = versionLevel;
 
-            
+
         }
 
         public void Initialize()
@@ -310,9 +308,6 @@ namespace XIVLauncher.Windows
             _accountManager = new AccountManager(App.Settings);
 
             var savedAccount = _accountManager.CurrentAccount;
-
-            if (savedAccount != null)
-                SwitchAccount(savedAccount, false);
 
             if (App.Settings.UniqueIdCacheEnabled && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
@@ -359,6 +354,11 @@ namespace XIVLauncher.Windows
             Task.Run(async () =>
             {
                 await SetupServers();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (savedAccount != null)
+                        SwitchAccount(savedAccount, false);
+                }));
                 await SetupHeadlines();
                 Troubleshooting.LogTroubleshooting();
             });
@@ -560,6 +560,7 @@ namespace XIVLauncher.Windows
             Model.IsOtp = account.UseOtp;
             Model.IsSteam = account.UseSteamServiceAccount;
             Model.IsAutoLogin = App.Settings.AutologinEnabled;
+            Model.Area = _sdoAreas.Where(x => x.Areaid == account.AreaID).FirstOrDefault();
 
             if (account.SavePassword)
                 LoginPassword.Password = account.Password;
@@ -600,8 +601,9 @@ namespace XIVLauncher.Windows
 
         private void ServerSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (this.DataContext != null) 
+                ((MainWindowViewModel)this.DataContext).Area = (SdoArea)((ComboBox)sender).SelectedItem;
             App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
-            Model.SelectArea = (SdoArea)ServerSelection.SelectedItem;
         }
 
         private void LoginUsername_OnTextChanged(object sender, TextChangedEventArgs e)

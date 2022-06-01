@@ -256,6 +256,9 @@
                                                 Margin="0,10,0,0"
                                                 Height="24"
                                                 VerticalAlignment="Top"
+                                                SelectedItem="{Binding Path=Area}"  
+                                                SelectedValuePath="Areaid"
+                                                DisplayMemberPath="AreaName"
                                                 SelectionChanged="ServerSelection_OnSelectionChanged"
                                                 materialDesign:HintAssist.Hint="选择服务器"
                                             >

@@ -9,26 +9,11 @@ using XIVLauncher.Common.Util;
 
 namespace XIVLauncher.Common.Game
 {
-	public class SdoAreas
-	{
-		[JsonProperty("servers")]
-		public SdoArea[] Servers { get; set; }
-		public static async Task<SdoAreas> Get()
-		{
-			var request = new HttpRequestMessage(HttpMethod.Get, "https://ff.dorado.sdo.com/ff/area/serverlist_new.js");
-			request.Headers.AddWithoutValidation("Accept", "*/*");
-			request.Headers.AddWithoutValidation("Host", "ff.dorado.sdo.com");
-			var client = new HttpClient();
-			var resp = await client.SendAsync(request);
-			var text = await resp.Content.ReadAsStringAsync();
-			var json = text.Trim();
-			json = json.Substring("var servers=".Length);
-			json = json.Substring(0, json.Length - 1);
-			json = $"{{\"servers\":{json}}}";
-			//Console.WriteLine(json);
-			return  JsonConvert.DeserializeObject<SdoAreas>(json); ;
-		}
-	}
+	//public class SdoAreas
+	//{
+	//	[JsonProperty("servers")]
+	//	public SdoArea[] Servers { get; set; }
+	//}
 	public class SdoArea {
 		//"Areaid":"1",
 		public string Areaid { get; set; }
@@ -48,5 +33,21 @@ namespace XIVLauncher.Common.Game
 		public string AreaPatch { get; set; }
 		//"AreaConfigUpload":"ffxivsdb01.ff14.sdo.com"
 		public string AreaConfigUpload { get; set; }
+
+		public static async Task<SdoArea[]> Get()
+		{
+			var request = new HttpRequestMessage(HttpMethod.Get, "https://ff.dorado.sdo.com/ff/area/serverlist_new.js");
+			request.Headers.AddWithoutValidation("Accept", "*/*");
+			request.Headers.AddWithoutValidation("Host", "ff.dorado.sdo.com");
+			var client = new HttpClient();
+			var resp = await client.SendAsync(request);
+			var text = await resp.Content.ReadAsStringAsync();
+			var json = text.Trim();
+			json = json.Substring("var servers=".Length);
+			json = json.Substring(0, json.Length - 1);
+			//json = $"{{\"servers\":{json}}}";
+			//Console.WriteLine(json);
+			return JsonConvert.DeserializeObject<SdoArea[]>(json); ;
+		}
 	}
 }

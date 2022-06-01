@@ -18,6 +18,8 @@ namespace XIVLauncher.Accounts
 
         public string UserName { get; private set; }
 
+        public string AreaID { get; set; } = "1";
+
         [JsonIgnore]
         public string Password
         {

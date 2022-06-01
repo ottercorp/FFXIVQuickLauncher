@@ -36,7 +36,6 @@ public partial class Launcher
     private readonly IUniqueIdCache uniqueIdCache;
     private readonly ISettings settings;
     private readonly HttpClient client;
-
     public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings)
     {
         this.steam = steam;
@@ -105,7 +104,7 @@ public partial class Launcher
         public SdoArea Area { get; set; }
     }
 
-    public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial,SdoArea a)
+    public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial, SdoArea a)
     {
         string uid;
         PatchListEntry[] pendingPatches = null;

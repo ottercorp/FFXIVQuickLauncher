@@ -48,7 +48,7 @@ namespace XIVLauncher.Windows.ViewModel
         public Action ReloadHeadlines;
 
         public string Password { get; set; }
-        public SdoArea SelectArea { get; set; }
+        //public SdoArea SelectArea { get; set; }
 
         public enum AfterLoginAction
         {
@@ -205,6 +205,14 @@ namespace XIVLauncher.Windows.ViewModel
             //    IsAutoLogin = false;
             //    return;
             //}
+            if (Area == null || Area.Areaid == "-1")
+            {
+                CustomMessageBox.Show(
+                    "未能获取到服务器列表,无法登陆",
+                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+                return;
+            }
+
             if (username == null) username = string.Empty;
             username = username.Replace(" ", string.Empty); // Remove whitespace
             if (Repository.Ffxiv.GetVer(App.Settings.GamePath) == Constants.BASE_GAME_VERSION &&
@@ -241,7 +249,6 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
-
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
@@ -259,7 +266,7 @@ namespace XIVLauncher.Windows.ViewModel
                 Log.Verbose(
                     $"[LR] {loginResult.State} {loginResult.PendingPatches != null} {loginResult.OauthLogin?.Playable}");
             }
-            loginResult.Area = SelectArea;
+            loginResult.Area = Area;
 
             if (await TryProcessLoginResult(loginResult, isSteam, action).ConfigureAwait(false))
             {
@@ -386,7 +393,7 @@ namespace XIVLauncher.Windows.ViewModel
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
                 //else
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-                var checkResult = await Launcher.CheckGameUpdate(SelectArea, gamePath, false);
+                var checkResult = await Launcher.CheckGameUpdate(Area, gamePath, false);
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
                 if (username == null) username = string.Empty;
@@ -1096,10 +1103,10 @@ namespace XIVLauncher.Windows.ViewModel
             var launched = this.Launcher.LaunchGameSdo(gameRunner,
                     loginResult.OauthLogin.SessionId,
                     loginResult.OauthLogin.SndaId,
-                    SelectArea.Areaid,
-                    SelectArea.AreaLobby,
-                    SelectArea.AreaGm,
-                    SelectArea.AreaConfigUpload,
+                    Area.Areaid,
+                    Area.AreaLobby,
+                    Area.AreaGm,
+                    Area.AreaConfigUpload,
                     App.Settings.AdditionalLaunchArgs,
                     App.Settings.GamePath,
                     App.Settings.IsDx11,
@@ -1182,6 +1189,9 @@ namespace XIVLauncher.Windows.ViewModel
                 AccountManager.CurrentAccount.SavePassword)
                 AccountManager.UpdatePassword(AccountManager.CurrentAccount, password);
 
+            if (AccountManager.CurrentAccount != null && AccountManager.CurrentAccount.UserName.Equals(username))
+                AccountManager.CurrentAccount.AreaID = Area.Areaid;
+
             if (AccountManager.CurrentAccount == null ||
                 AccountManager.CurrentAccount.Id != $"{username}-{IsOtp}-{IsSteam}")
             {
@@ -1190,7 +1200,8 @@ namespace XIVLauncher.Windows.ViewModel
                     Password = password,
                     SavePassword = true,
                     UseOtp = IsOtp,
-                    UseSteamServiceAccount = IsSteam
+                    UseSteamServiceAccount = IsSteam,
+                    AreaID = Area.Areaid
                 };
 
                 AccountManager.AddAccount(accountToSave);
@@ -1405,6 +1416,17 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 _username = value;
                 OnPropertyChanged(nameof(Username));
+            }
+        }
+
+        private SdoArea _area;
+        public SdoArea Area
+        {
+            get => _area;
+            set
+            {
+                _area = value;
+                OnPropertyChanged(nameof(Area));
             }
         }
 
