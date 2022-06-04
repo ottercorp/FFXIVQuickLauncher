@@ -52,10 +52,10 @@ namespace XIVLauncher.Accounts
         public bool UseSteamServiceAccount { get; set; }
         public bool UseOtp { get; set; }
         [JsonIgnore]
-        public string Tgt {
+        public string AutoLoginSessionKey {
             get
             {
-                var credentials = CredentialManager.GetCredentials($"FINAL FANTASY XIV CN TGT-{UserName.ToLower()}");
+                var credentials = CredentialManager.GetCredentials($"FINAL FANTASY XIV CN AutoLoginSessionKey-{UserName.ToLower()}");
 
                 return credentials != null ? credentials.Password : string.Empty;
             }
@@ -63,26 +63,18 @@ namespace XIVLauncher.Accounts
             {
                 try
                 {
-                    CredentialManager.RemoveCredentials($"FINAL FANTASY XIV CN TGT-{UserName.ToLower()}");
+                    CredentialManager.RemoveCredentials($"FINAL FANTASY XIV CN AutoLoginSessionKey-{UserName.ToLower()}");
                 }
                 catch (Win32Exception)
                 {
                     // ignored
                 }
 
-                CredentialManager.SaveCredentials($"FINAL FANTASY XIV CN TGT-{UserName.ToLower()}", new NetworkCredential
+                CredentialManager.SaveCredentials($"FINAL FANTASY XIV CN AutoLoginSessionKey-{UserName.ToLower()}", new NetworkCredential
                 {
                     UserName = UserName,
                     Password = value
                 });
-            }
-        }
-
-        public bool HasTgt
-        {
-            get
-            {
-                return !string.IsNullOrEmpty(Tgt);
             }
         }
 

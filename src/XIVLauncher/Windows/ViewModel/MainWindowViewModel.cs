@@ -256,7 +256,7 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 if (loginResult.State == Launcher.LoginState.Ok)
                 {
-                    AccountManager.CurrentAccount.Tgt = loginResult.OauthLogin.Tgt;
+                    AccountManager.CurrentAccount.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
                     AccountManager.Save();
                 }
 
@@ -413,7 +413,7 @@ namespace XIVLauncher.Windows.ViewModel
                         QRDialog.CloseQRWindow(_window);
                     }
                 }, action == AfterLoginAction.ForceQR,
-                    string.IsNullOrEmpty(password) && IsFastLogin, AccountManager.CurrentAccount.Tgt).ConfigureAwait(false);
+                    string.IsNullOrEmpty(password) && IsFastLogin, AccountManager.CurrentAccount.AutoLoginSessionKey).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

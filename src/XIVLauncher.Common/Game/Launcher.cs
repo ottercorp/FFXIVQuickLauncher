@@ -476,7 +476,7 @@ public partial class Launcher
     {
         public string SessionId { get; set; }
         public string SndaId { get; set; }
-        public string Tgt { get; set; }
+        public string AutoLoginSessionKey { get; set; }
         public int Region { get; set; }
         public bool TermsAccepted { get; set; }
         public bool Playable { get; set; }
