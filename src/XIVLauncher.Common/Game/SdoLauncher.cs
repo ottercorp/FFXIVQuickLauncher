@@ -140,11 +140,11 @@ namespace XIVLauncher.Common.Game
             }
 
             var promotionResult = await GetPromotionInfo(tgt, guid);
-            if (promotionResult.ErrorType != 0)
-            {
-                logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
-                return null;
-            }
+            //if (promotionResult.ErrorType != 0)
+            //{
+            //    logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
+            //    return null;
+            //}
 
             sessionId = await SsoLogin(tgt, guid);
 
@@ -431,7 +431,8 @@ namespace XIVLauncher.Common.Game
             {
                 Log.Error($"Reply from {endPoint} cannot be parsed:{reply}");
                 Log.Error(ex.StackTrace);
-                throw (ex);
+                //throw (ex);
+                return null;
             }
         }
 
