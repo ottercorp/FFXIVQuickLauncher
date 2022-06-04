@@ -140,11 +140,11 @@ namespace XIVLauncher.Common.Game
             }
 
             var promotionResult = await GetPromotionInfo(tgt, guid);
-            //if (promotionResult.ErrorType != 0)
-            //{
-            //    logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
-            //    return null;
-            //}
+            if (promotionResult.ErrorType != 0)
+            {
+                logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
+                return null;
+            }
 
             sessionId = await SsoLogin(tgt, guid);
 
@@ -330,7 +330,7 @@ namespace XIVLauncher.Common.Game
         private async Task<string> SsoLogin(string tgt, string guid)
         {
             // /authen/ssoLogin.json 抓包的ticket=SID
-            var result = await GetJsonAsSdoClient("ssoLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
+            var result = await GetJsonAsSdoClient("ssoLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" }, SdoClient.Launcher, tgt);
             if (result.ReturnCode != 0 || result.ErrorType != 0)
                 throw new OauthLoginException(result.ToString());
             else
@@ -342,7 +342,7 @@ namespace XIVLauncher.Common.Game
         private async Task<SdoLoginResult> GetPromotionInfo(string tgt, string guid)
         {
             // /authen/getPromotion.json 不知道为什么要有,但就是有
-            return await GetJsonAsSdoClient("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" });
+            return await GetJsonAsSdoClient("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" }, SdoClient.Launcher, tgt);
         }
 
         #endregion
@@ -378,10 +378,11 @@ namespace XIVLauncher.Common.Game
             }
         }
 
-        private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<string> para, SdoClient app)
+        private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<string> para, SdoClient app, string tgt = null)
         {
             var appId = app == SdoClient.Launcher ? 100001900 : 991002627;
             var productVersion = app == SdoClient.Launcher ? "2%2e0%2e1%2e4" : "1%2e1%2e8%2e1";
+            AreaId = app == SdoClient.Launcher ? "1" : "7";
             var commonParas = new List<string>();
             commonParas.Add("authenSource=1");
             commonParas.Add($"appId={appId}");
@@ -404,12 +405,18 @@ namespace XIVLauncher.Common.Game
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
             if (CASCID != null && SECURE_CASCID != null)
             {
-                request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
+                
+                if (endPoint is "ssoLogin.json" or "getPromotionInfo.json")
+                {
+                    request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC={tgt}; CAS_LOGIN_STATE=1");
+                    Log.Information($"Added Cookie:CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC=***; CAS_LOGIN_STATE=1");
+                }
+                else request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
             }
             return request;
         }
 
-        private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<string> para, SdoClient app = SdoClient.Launcher)
+        private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<string> para, SdoClient app = SdoClient.Launcher, string tgt = null)
         {
             var request = GetSdoHttpRequestMessage(HttpMethod.Get, endPoint, para, app);
 
@@ -431,8 +438,8 @@ namespace XIVLauncher.Common.Game
             {
                 Log.Error($"Reply from {endPoint} cannot be parsed:{reply}");
                 Log.Error(ex.StackTrace);
-                //throw (ex);
-                return null;
+                throw (ex);
+                //return null;
             }
         }
 
