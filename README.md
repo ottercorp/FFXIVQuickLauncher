@@ -1,8 +1,6 @@
-# XIVLauncher [![Actions Status](https://img.shields.io/github/workflow/status/goatcorp/FFXIVQuickLauncher/Build%20XIVLauncher)](https://github.com/goaaats/FFXIVQuickLauncher/actions) [![Discord Shield](https://discordapp.com/api/guilds/581875019861328007/widget.png?style=shield)](https://discord.gg/3NMcUV5) [![Crowdin](https://badges.crowdin.net/ffxivquicklauncher/localized.svg)](https://crowdin.com/project/ffxivquicklauncher) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/goatcorp/FFXIVQuickLauncher)](https://github.com/goatcorp/FFXIVQuickLauncher/releases/latest) <a href="https://github.com/goatcorp/FFXIVQuickLauncher/releases"><img src="https://github.com/goatcorp/FFXIVQuickLauncher/raw/master/src/XIVLauncher/Resources/logo.png" alt="XL logo" width="100" align="right"/></a> 
+# XIVLauncher [![Actions Status](https://img.shields.io/github/workflow/status/ottercorp/FFXIVQuickLauncher/Build%20XIVLauncher)](https://github.com/ottercorp/FFXIVQuickLauncher/actions) [![Discord Shield](https://discordapp.com/api/guilds/581875019861328007/widget.png?style=shield)](https://discord.gg/HqvSXkGj) [![Crowdin](https://badges.crowdin.net/ffxivquicklauncher/localized.svg)](https://crowdin.com/project/ffxivquicklauncher) [![GitHub all releases](https://img.shields.io/github/downloads/ottercorp/FFXIVQuickLauncher/total)](https://github.com/ottercorp/FFXIVQuickLauncher/releases/latest) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/ottercorp/FFXIVQuickLauncher)](https://github.com/ottercorp/FFXIVQuickLauncher/releases/latest) <a href="https://github.com/ottercorp/FFXIVQuickLauncher/releases"><img src="https://github.com/ottercorp/FFXIVQuickLauncher/raw/master/src/XIVLauncher/Resources/logo.png" alt="XL logo" width="100" align="right"/></a>
 
-Read in: [日本語](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(Japanese)) | [Français](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(French)) | [Deutsch](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(German)) | [Español](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(Spanish)) | [简体中文](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(Chinese-Simplified)) | [繁體中文](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(Chinese-Traditional)) | [한국어](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(Korean)) | [Italiano](https://github.com/goatcorp/FFXIVQuickLauncher/wiki/Info-(Italian))
-
-XIVLauncher (abbreviated as XL) is a faster launcher for FFXIV, with various available addons and enhancements to the game!
+XIVLauncher（简写为 XL）是用于最终幻想14的一个多功能启动器，包含各种可用的附加组件和游戏增强功能。
 
 <p align="center">
   <a href="https://github.com/goatcorp/FFXIVQuickLauncher/releases">
@@ -10,66 +8,56 @@ XIVLauncher (abbreviated as XL) is a faster launcher for FFXIV, with various ava
   </a>
 </p>
 
-## Why?
+## 为什么要使用 XIVLauncher
 
-The original FFXIV launcher is slow and cannot save your password. This project aims to fix that and add some QoL features to the game, such as:
+FF14 原版启动器已经很老了，这导致它运行缓慢且不支持保存密码。 这个项目旨在解决以上的问题，并在游戏中添加一些能够提高游戏体验的功能，例如：
 
-* Auto-login
-* Fast patching
+* 自动登录
+* 快速更新
 * Discord Rich Presence
-* Fast in-game market board price checks
-* Chat filtering
-* Chat bridge to Discord
-* Discord notifications for duties, retainer sales, etc.
+* 快捷市场价格查询
+* 聊天信息过滤
+* Discord 消息转发
+* Discord 通知（副本匹配、雇员销售等）
 
-## How to install the launcher
+## 如何安装
 
-[Download the latest "Setup.exe" from the releases](https://github.com/goatcorp/FFXIVQuickLauncher/releases/latest) page and run it. XIVLauncher will start and will be installed to your start menu.
-To uninstall, you can use the Windows Programs & Apps menu or right click XIVLauncher in your start menu.
+[在 GitHub Release 页面下载最新的「Setup.exe」](https://github.com/goatcorp/FFXIVQuickLauncher/releases/latest)并运行 XIVLauncher 将会启动并添加至您的开始菜单。 如果您想要卸载 XL，您可以使用 Windows 应用程序菜单或者右键开始菜单中的 XIVLauncher。
 
-⚠ <b>Attention!</b> If you receive errors during the installation or if the launcher doesn't work correctly, make sure to <b>check your antivirus</b> first and disable it for XIVLauncher. Many commercial antivirus programs detect XIVLauncher as a false positive. You can check for yourself on VirusTotal. If you need any help with this, please [check our FAQ](https://goatcorp.github.io/faq/xl_troubleshooting#q-how-do-i-whitelist-xivlauncher-and-dalamud-so-my-antivirus-leaves-them-alone) or join our Discord channel.
+⚠ <b>注意！</b> 如果您在安装过程中遇到错误或启动器无法正常工作，请先确保您已在<b>杀毒软件</b>中排除了 XIVLauncher。 许多付费杀毒软件会将 XIVLauncher 误认为病毒。 您可以自行在 VirusTotal 上查看病毒检测报告。 如果您需要任何帮助，请[查阅常见问题](https://goatcorp.github.io/faq/xl_troubleshooting#q-how-do-i-whitelist-xivlauncher-and-dalamud-so-my-antivirus-leaves-them-alone)或加入我们的 Discord 服务器。
 
-## On Steam Deck and Desktop Linux
-XIVLauncher now has a native Linux version that works on Steam Deck and Desktop Linux - no more messing around with scripts and command lines, just a few easy steps to install the game and add it to Steam, with a wine version especially tuned to XIV.
+## 如何安装插件
+XIVLauncher 支持在游戏内安装由__第三方开发者__制作的__插件、扩展__。
 
-Please see a guide here: https://goatcorp.github.io/faq/steamdeck
+您可以通过点击游戏系统菜单的「Dalamud Plugins」按钮来打开插件菜单。 您也可以在聊天框输入 `/xlplugins` 命令来达到同样的效果。<br>如果显示命令不存在，或者插件菜单没有出现，请检查并确保您已经在启动器设置里启用了游戏内组件功能。
 
-## How to install plugins
-XIVLauncher supports the installation of __plugins/addons__ made by __third-party developers__ in-game.
+## 寻求帮助
+[请先查阅常见问题](https://goatcorp.github.io/faq/)，您通常可以在该处找到需要的答案。<br>您也可以加入我们的 Discord 服务器（[https://discord.gg/3NMcUV5](https://discord.gg/3NMcUV5)）并在和谐友爱的社区中提问。
 
-Open the system menu in-game by pressing escape, and then select "Dalamud Plugins" from there. You can also use the ``/xlplugins`` command in chat.<br>If the command is not found, or the options don't show up, make sure that the in-game addon is enabled in the launcher settings.
-
-## Need any help?
-[Please check out our exhaustive FAQ](https://goatcorp.github.io/faq/), you may find what you need there.<br>You can also join our discord at [https://discord.gg/3NMcUV5](https://discord.gg/3NMcUV5) and ask our incredibly forthcoming community.
-
-## Is XIVLauncher safe to use?
-We put a lot of effort into ensuring that XIVLauncher is safe to use for everyone.<br>Please read through our [FAQ entry](https://goatcorp.github.io/faq/xl_troubleshooting#q-are-xivlauncher-dalamud-and-dalamud-plugins-safe-to-use) on this matter if you want to know more.
+## 这安全吗
+我们付出了很大的努力来确保 XIVLauncher 对所有人都是安全无害的。<br>如果您想要了解更多的信息，请查阅[我们对此作出的答复](https://goatcorp.github.io/faq/xl_troubleshooting#q-are-xivlauncher-dalamud-and-dalamud-plugins-safe-to-use)。
 
 <br>
 <br>
 
-## Plugin API
+## 插件 API
 
-XIVLauncher lets you use many community-created plugins that improve your game. Please check [this site](https://goatcorp.github.io/DalamudPlugins/plugins) for a list of them.
-<br>To make your own in-game plugins for XIVLauncher, check out the [API documentation](https://goatcorp.github.io/Dalamud/api/index.html) and the [sample plugin](https://github.com/goatcorp/SamplePlugin).
+您可以使用各种来自社区的插件来改善您的游戏体验。 详细的插件列表可以在[这里](https://goatcorp.github.io/DalamudPlugins/plugins)找到。 <br>如果您有意开发自己的游戏插件，请查阅我们的[API文档](https://goatcorp.github.io/Dalamud/api/index.html)和[示例插件](https://github.com/goatcorp/SamplePlugin)。
 
-If you want to contribute to the plugin API itself, you can check it out [here](https://github.com/goatcorp/Dalamud).
+如果您希望为插件 API 本身作出贡献，请前往[此页](https://github.com/goatcorp/Dalamud)。<br>在此特别感谢 Mino 提供的注入基础！
 
-### Is this cheating?
+### 这属于作弊吗
 
-We don't think so - our official guideline for plugins on this launcher is this:<br>
+我们不认为是－我们的官方插件开发指南中写着：<br>
 
-Make sure that your plugin does not directly interact with the game servers in a way that is...
-<br>a) *outside of specification*, as in allowing the player to do things or submit data to the server that would not be possible by normal means or by a normal player on PC or PS4.
-<br>b) *automatic*, as in polling data or making requests without direct interaction from the user which could create unwanted load on the server or give away that XIVLauncher is being used.
-<br>c) *circumvent paywalls*, as in any attempts to bypass restrictions that require purchase to be lifted such as enabling access to mog station emotes.
+请确保您的插件不会以下列的方式直接与游戏服务器交互： <br>第一、*规格外*，比如允许玩家做出某些不可能由普通玩家做出的操作。 <br>第二、*自动化*，比如在没有玩家直接操作下向服务器轮询数据或发出请求，这可能会造成不必要的服务器负担或暴露该玩家正在使用 XIVLauncher。 <br>第三、*绕过付费墙*，比如允许玩家使用尚未购买的付费表情动作。
 
-We feel like that this offers developers the __freedom to improve the game's functionality__ in ways that SE can't, while officially disallowing plugins that can give __unfair advantages over players on other platforms__.
+我们认为这为开发者提供了 SE 无法实现的__改进游戏功能的自由__，同时禁止了会给其他平台玩家带来__不公平优势__的插件。
 
 <br>
 <br>
 
-## Disclaimer
-XIVLauncher is not in-line with Square Enix ToS. We are doing our best to make it safe to use for everyone, and to our knowledge, no one ever got into trouble for using XIVLauncher, but please be aware that it is a possibility.<br>You can read through our [FAQ entry](https://goatcorp.github.io/faq/xl_troubleshooting#q-are-xivlauncher-dalamud-and-dalamud-plugins-safe-to-use) on this matter if you want to know more.
+## 免责声明
+XIVLauncher 并不符合 Square Enix 的服务条款。 我们已经尽力地确保使用 XIVLauncher 对所有人来说都是安全的，且目前还没有玩家因此被封禁，但我们不能否认它存在的可能性。<br>您可以在[此处](https://goatcorp.github.io/faq/xl_troubleshooting#q-are-xivlauncher-dalamud-and-dalamud-plugins-safe-to-use)查到有关的信息。
 
-##### FINAL FANTASY is a registered trademark of Square Enix Holdings Co., Ltd. FINAL FANTASY XIV © 2010-2022 SQUARE ENIX CO., LTD. All Rights Reserved. We are not affiliated with SQUARE ENIX CO., LTD. in any way.
+##### Final Fantasy XIV © 2010-2021 SQUARE ENIX CO., LTD. 保留所有权利。 我们不以任何形式附属于 SQUARE ENIX CO。
