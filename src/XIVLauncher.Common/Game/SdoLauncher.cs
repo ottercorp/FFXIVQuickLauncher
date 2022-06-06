@@ -119,7 +119,7 @@ namespace XIVLauncher.Common.Game
                     logEvent?.Invoke(SdoLoginState.GotQRCode, null);
                     CTS = new CancellationTokenSource();
                     CTS.CancelAfter(60 * 1000);
-                    (sndaId, tgt, autoLoginSessionKey) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS, autoLogin);
+                    (sndaId, tgt, userName,autoLoginSessionKey) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS, autoLogin);
                     CTS.Dispose();
                 }
 
@@ -149,6 +149,7 @@ namespace XIVLauncher.Common.Game
             return new OauthLoginResult
             {
                 SessionId = sessionId,
+                InputUserId = userName,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
                 MaxExpansion = Constants.MaxExpansion
@@ -191,7 +192,7 @@ namespace XIVLauncher.Common.Game
 
             if (result.ErrorType != 0)
                 throw new OauthLoginException(result.ToString());
-            Log.Information($"LoginSessionKey Updated,{(result.Data.AutoLoginMaxAge / 3600):F1} hours left");
+            Log.Information($"LoginSessionKey Updated, {(result.Data.AutoLoginMaxAge / 3600f):F1} hours left");
             return (result.Data.AutoLoginSessionKey, result.Data.Tgt, result.Data.SndaId);
         }
         #endregion
@@ -306,7 +307,7 @@ namespace XIVLauncher.Common.Game
             return codeKey;
         }
 
-        private async Task<(string sndaId, string tgt, string AutoLoginSessionKey)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation, bool autoLogin = false)
+        private async Task<(string sndaId, string tgt,string userName, string AutoLoginSessionKey)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation, bool autoLogin = false)
         {
             while (!cancellation.IsCancellationRequested)
             {
@@ -315,8 +316,8 @@ namespace XIVLauncher.Common.Game
                                                                                      : new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime=7", $"maxsize=97" }, SdoClient.Launcher);
                 if (result.ReturnCode == 0 && result.Data.NextAction == 0)
                 {
-                    if (autoLogin) return (result.Data.SndaId, result.Data.Tgt, result.Data.AutoLoginSessionKey);
-                    return (result.Data.SndaId, result.Data.Tgt, null);
+                    if (autoLogin) return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId, result.Data.AutoLoginSessionKey);
+                    return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId, null);
                 }
                 else
                 {
@@ -331,7 +332,7 @@ namespace XIVLauncher.Common.Game
                 }
             }
             logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "登陆超时或被取消");
-            return (null, null, null);
+            return (null, null, null, null);
         }
 
         #endregion
@@ -390,6 +391,8 @@ namespace XIVLauncher.Common.Game
                 public string AutoLoginSessionKey;
                 [JsonProperty("autoLoginMaxAge")]
                 public int AutoLoginMaxAge;
+                [JsonProperty("inputUserId")]
+                public string InputUserId;
             }
         }
 

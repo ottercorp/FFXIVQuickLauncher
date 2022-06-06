@@ -475,6 +475,7 @@ public partial class Launcher
     public class OauthLoginResult
     {
         public string SessionId { get; set; }
+        public string InputUserId { get; set; }
         public string SndaId { get; set; }
         public string AutoLoginSessionKey { get; set; }
         public int Region { get; set; }
