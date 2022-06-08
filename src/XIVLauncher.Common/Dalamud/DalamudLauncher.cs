@@ -32,7 +32,7 @@ namespace XIVLauncher.Common.Dalamud
             this.fakeLogin = fakeLogin;
         }
 
-        public const string REMOTE_BASE = "https://xlasset-1253720819.cos.ap-nanjing.myqcloud.com/DalamudVersion.json";
+        public const string REMOTE_BASE = "https://aonyx.ffxiv.wang/Dalamud/Release/VersionInfo?track=";
 
         public bool HoldForUpdate(DirectoryInfo gamePath)
         {

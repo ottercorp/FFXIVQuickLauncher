@@ -20,7 +20,7 @@ namespace XIVLauncher.Windows
     public partial class ChangelogWindow : Window
     {
         private readonly bool _prerelease;
-        private const string META_URL = "https://ottercorp.azurewebsites.net/api/Meta";
+        private const string META_URL = "https://aonyx.ffxiv.wang/Proxy/Meta";
 
         public class VersionMeta
         {

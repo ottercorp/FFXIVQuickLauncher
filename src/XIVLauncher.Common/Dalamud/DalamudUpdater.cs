@@ -217,7 +217,7 @@ namespace XIVLauncher.Common.Dalamud
 
                     try
                     {
-                        await DownloadRuntime(this.runtimeDirectory, remoteVersionInfo.RuntimeVersion, remoteVersionInfo.DotnetUrl, remoteVersionInfo.DesktopUrl).ConfigureAwait(false);
+                        await DownloadRuntime(this.runtimeDirectory, remoteVersionInfo.RuntimeVersion).ConfigureAwait(false);
                         File.WriteAllText(versionFile.FullName, remoteVersionInfo.RuntimeVersion);
                     }
                     catch (Exception ex)
@@ -394,7 +394,7 @@ namespace XIVLauncher.Common.Dalamud
             }
         }
 
-        private async Task DownloadRuntime(DirectoryInfo runtimePath, string version, string dotnetUrl, string desktopUrl)
+        private async Task DownloadRuntime(DirectoryInfo runtimePath, string version)
         {
             // Ensure directory exists
             if (!runtimePath.Exists)
@@ -407,8 +407,8 @@ namespace XIVLauncher.Common.Dalamud
                 runtimePath.Create();
             }
 
-            //var dotnetUrl = $"https://dotnetcli.blob.core.windows.net/dotnet/Runtime/{version}/dotnet-runtime-{version}-win-x64.zip";
-            //var desktopUrl = $"https://dotnetcli.blob.core.windows.net/dotnet/WindowsDesktop/{version}/windowsdesktop-runtime-{version}-win-x64.zip";
+            var dotnetUrl = $"https://aonyx.ffxiv.wang/Dalamud/Release/Runtime/DotNet/{version}";
+            var desktopUrl = $"https://aonyx.ffxiv.wang/Dalamud/Release/Runtime/WindowsDesktop/{version}";
 
             var downloadPath = PlatformHelpers.GetTempFileName();
 
