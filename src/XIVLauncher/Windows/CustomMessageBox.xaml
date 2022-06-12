@@ -51,10 +51,10 @@
                 </StackPanel>
             </Button>
             <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
-                    x:Name="DiscordButton" Margin="5,0,0,0" Click="DiscordButton_Click">
+                    x:Name="DiscordButton" Margin="5,0,0,0" Click="QQButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Discord" />
-                    <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding JoinDiscordLoc}"/>
+                    <materialDesign:PackIcon Kind="Qqchat" />
+                    <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="加入QQ频道"/>
                 </StackPanel>
             </Button>
             <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"

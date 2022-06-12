@@ -256,6 +256,11 @@ namespace XIVLauncher.Windows
             SupportLinks.OpenDiscord(sender, e);
         }
 
+        private void QQButton_Click(object sender, RoutedEventArgs e)
+        {
+            SupportLinks.OpenQQChannel(sender, e);
+        }
+
         private void FaqButton_Click(object sender, RoutedEventArgs e)
         {
             SupportLinks.OpenFaq(sender, e);
