@@ -91,6 +91,7 @@ namespace XIVLauncher.Common.Game
                     logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
                     tryFast = false;
                 }
+                (sndaId, tgt) = await FastLogin(tgt, guid);
             }
 
             if (!tryFast) //手机叨鱼相关
@@ -133,12 +134,12 @@ namespace XIVLauncher.Common.Game
                 return null;
             }
 
-            // var promotionResult = await GetPromotionInfo(tgt, guid);
-            // if (promotionResult.ErrorType != 0)
-            // {
-            //     logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
-            //     return null;
-            // }
+            var promotionResult = await GetPromotionInfo(tgt, guid);
+            if (promotionResult.ErrorType != 0)
+            {
+                logEvent?.Invoke(SdoLoginState.LoginFail, promotionResult.Data.FailReason);
+                return null;
+            }
 
             sessionId = await SsoLogin(tgt, guid);
 
