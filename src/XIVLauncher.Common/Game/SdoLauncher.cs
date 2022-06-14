@@ -459,6 +459,7 @@ namespace XIVLauncher.Common.Game
                 Log.Error(ex.StackTrace);
                 //throw (ex);
             }
+            return null;
         }
 
         public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
