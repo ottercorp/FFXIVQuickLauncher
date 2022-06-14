@@ -91,7 +91,8 @@ namespace XIVLauncher.Common.Game
                     logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
                     tryFast = false;
                 }
-                (sndaId, tgt) = await FastLogin(tgt, guid);
+                if (autoLoginSessionKey == null) tryFast = false;
+                else (sndaId, tgt) = await FastLogin(tgt, guid);
             }
 
             if (!tryFast) //手机叨鱼相关
@@ -191,8 +192,7 @@ namespace XIVLauncher.Common.Game
         {
             var result = await GetJsonAsSdoClient("autoLogin.json", new List<string>() { $"autoLoginSessionKey={autoLoginSessionKey}", $"guid={guid}" }, SdoClient.Launcher);
 
-            if (result.ErrorType != 0)
-                throw new OauthLoginException(result.ToString());
+            if (result.ReturnCode != 0 || result.ErrorType != 0) result.Data.AutoLoginSessionKey = null;
             Log.Information($"LoginSessionKey Updated, {(result.Data.AutoLoginMaxAge / 3600f):F1} hours left");
             return (result.Data.AutoLoginSessionKey, result.Data.Tgt, result.Data.SndaId);
         }
@@ -457,7 +457,7 @@ namespace XIVLauncher.Common.Game
             {
                 Log.Error($"Reply from {endPoint} cannot be parsed:{reply}");
                 Log.Error(ex.StackTrace);
-                throw (ex);
+                //throw (ex);
             }
         }
 
