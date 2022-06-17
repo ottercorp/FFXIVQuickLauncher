@@ -40,6 +40,8 @@ namespace XIVLauncher.Common.Dalamud
             {
                 NoCache = true,
             };
+            client.DefaultRequestHeaders.Add("User-Agent", "Wget/1.21.1 (linux-gnu)");
+            client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate, br");
 
             using var sha1 = SHA1.Create();
 
