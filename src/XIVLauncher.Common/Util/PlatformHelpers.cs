@@ -88,6 +88,33 @@ public static class PlatformHelpers
             throw new Exception("Could not untar.");
     }
 
+    public static void Un7za(string path, string output)
+    {
+        var sevenzaPath = Path.Combine(Paths.ResourcesPath, "7za.exe");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            sevenzaPath = "7za";
+        }
+
+        var psi = new ProcessStartInfo(sevenzaPath)
+        {
+            Arguments = $"x -y \"{path}\" -o\"{output}\"",
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        var tarProcess = Process.Start(psi);
+        var outputLines = tarProcess.StandardOutput.ReadToEnd();
+        if (tarProcess == null)
+            throw new BadImageFormatException("Could not start 7za.");
+
+        tarProcess.WaitForExit();
+        if (tarProcess.ExitCode != 0)
+            throw new FormatException($"Could not un7z.\n{outputLines}");
+    }
+
     private static readonly IPEndPoint DefaultLoopbackEndpoint = new(IPAddress.Loopback, port: 0);
 
     public static int GetAvailablePort()
