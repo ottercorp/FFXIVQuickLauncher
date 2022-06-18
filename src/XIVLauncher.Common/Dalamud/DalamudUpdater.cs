@@ -367,7 +367,9 @@ namespace XIVLauncher.Common.Dalamud
                 File.Delete(downloadPath);
 
             await this.DownloadFile(version.DownloadUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
-            ZipFile.ExtractToDirectory(downloadPath, addonPath.FullName);
+            //downloadPath = @"D:\Code\ottercorp\FFXIVQuickLauncher\src\Roaming\addon\Hooks\6.3.0.13.7z";
+            PlatformHelpers.Un7za(downloadPath, addonPath.FullName);
+            //ZipFile.ExtractToDirectory(downloadPath, addonPath.FullName);
 
             File.Delete(downloadPath);
 
