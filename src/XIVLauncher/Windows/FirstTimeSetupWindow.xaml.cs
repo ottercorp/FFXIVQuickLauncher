@@ -34,11 +34,11 @@ namespace XIVLauncher.Windows
             this.actPath = this.FindAct();
 
 #if !XL_NOAUTOUPDATE
-            if (EnvironmentSettings.IsDisableUpdates || AppUtil.GetBuildOrigin() != "goatcorp/FFXIVQuickLauncher")
+            if (EnvironmentSettings.IsDisableUpdates || AppUtil.GetBuildOrigin() != "ottercorp/FFXIVQuickLauncher")
             {
 #endif
                 CustomMessageBox.Show(
-                    $"你正在使用国服特供第三方启动器,请勿选择国际服或韩服安装位置.\n否则可能会造成游戏损坏等后果",
+                    $"你正在使用一个不受支持的XLLauncher版本！\n\n有可能不安全或对账号带来危害。 请从 {App.REPO_URL}/releases 下载干净的版本并重新安装或联系我们。",
                     "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: this);
 #if !XL_NOAUTOUPDATE
             }
@@ -118,7 +118,7 @@ namespace XIVLauncher.Windows
                     }
                 }
 
-                //if (Util.CanFfxivMightNotBeInternationalClient(GamePathEntry.Text) && App.Settings.Language != ClientLanguage.ChineseSimplified)
+                //if (GameHelpers.CanFfxivMightNotBeInternationalClient(GamePathEntry.Text) && App.Settings.Language != ClientLanguage.ChineseSimplified)
                 //{
                 //    if (CustomMessageBox.Show(Loc.Localize("GamePathRegionConfirm", "The folder you selected might be the Chinese or Korean release of the game. XIVLauncher only supports international release of the game.\nIs the folder you've selected indeed for the international version?"), "XIVLauncher",
                 //        MessageBoxButton.YesNo, MessageBoxImage.Warning, parentWindow: this) != MessageBoxResult.Yes)
@@ -126,6 +126,15 @@ namespace XIVLauncher.Windows
                 //        return;
                 //    }
                 //}
+
+                if (GamePathEntry.Text.StartsWith("C"))
+                {
+                    if (CustomMessageBox.Show("你选择的游戏路径位于C盘。\nXIVLauncher将会无法正常登陆，请将游戏移出C盘或者使用管理员启动XIVLauncher。", "XIVLauncher",
+                        MessageBoxButton.YesNo, MessageBoxImage.Warning, parentWindow: this) != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
             }
 
             if (SetupTabControl.SelectedIndex == 2)
