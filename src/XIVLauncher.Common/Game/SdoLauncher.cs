@@ -313,8 +313,8 @@ namespace XIVLauncher.Common.Game
             while (!cancellation.IsCancellationRequested)
             {
                 // /authen/pushMessageLogin.json
-                var result = await GetJsonAsSdoClient("codeKeyLogin.json", autoLogin ? new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" }
-                                                                                     : new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime=7", $"maxsize=97" }, SdoClient.Launcher);
+                var result = await GetJsonAsSdoClient("codeKeyLogin.json", autoLogin ? new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime=7", $"maxsize=97" }
+                                                                                     : new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" }, SdoClient.Launcher);
                 if (result.ReturnCode == 0 && result.Data.NextAction == 0)
                 {
                     if (autoLogin) return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId, result.Data.AutoLoginSessionKey);
@@ -451,6 +451,7 @@ namespace XIVLauncher.Common.Game
             {
                 var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
                 Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}");
+                //Log.Information($"{string.Join("&", para)}:{reply}");
                 return result;
             }
             catch (JsonReaderException ex)
