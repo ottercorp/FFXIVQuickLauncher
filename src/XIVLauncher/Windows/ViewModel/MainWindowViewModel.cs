@@ -1279,6 +1279,13 @@ namespace XIVLauncher.Windows.ViewModel
                 return false;
             }
 
+            if (App.Settings.PatchPath is { Exists: false })
+            {
+                App.Settings.PatchPath = null;
+            }
+
+            App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patches"));
+
             using var installer = new Common.Game.Patch.PatchInstaller(App.Settings.KeepPatches ?? false);
             var patcher = new PatchManager(App.Settings.PatchAcquisitionMethod ?? AcquisitionMethod.Aria, App.Settings.SpeedLimitBytes,
                 repository, pendingPatches, App.Settings.GamePath, App.Settings.PatchPath, installer, this.Launcher, sid);
