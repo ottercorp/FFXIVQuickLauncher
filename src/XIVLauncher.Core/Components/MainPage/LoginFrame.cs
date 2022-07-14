@@ -10,9 +10,10 @@ public class LoginFrame : Component
     private readonly MainPage mainPage;
 
     private readonly Input loginInput;
-    private readonly Input passwordInput;
-    private readonly Checkbox oneTimePasswordCheckbox;
-    private readonly Checkbox useSteamServiceCheckbox;
+    private readonly Combo areaCombo;
+    // private readonly Input passwordInput;
+    // private readonly Checkbox oneTimePasswordCheckbox;
+    // private readonly Checkbox useSteamServiceCheckbox;
     private readonly Checkbox autoLoginCheckbox;
     private readonly Button loginButton;
 
@@ -24,20 +25,26 @@ public class LoginFrame : Component
 
     public string Password
     {
-        get => this.passwordInput.Value;
-        set => this.passwordInput.Value = value;
+        get => String.Empty;
+        set
+        {
+        }
     }
 
     public bool IsOtp
     {
-        get => this.oneTimePasswordCheckbox.Value;
-        set => this.oneTimePasswordCheckbox.Value = value;
+        get => false;
+        set
+        {
+        }
     }
 
     public bool IsSteam
     {
-        get => this.useSteamServiceCheckbox.Value;
-        set => this.useSteamServiceCheckbox.Value = value;
+        get => false;
+        set
+        {
+        }
     }
 
     public bool IsAutoLogin
@@ -54,16 +61,23 @@ public class LoginFrame : Component
     {
         this.mainPage = mainPage;
 
-        this.loginInput = new Input("Square Enix ID", "Enter your Square Enix ID", new Vector2(12f, 0f), 128);
-        this.passwordInput = new Input("Password", "Enter your password", new Vector2(12f, 0f), 128, flags: ImGuiInputTextFlags.Password | ImGuiInputTextFlags.NoUndoRedo);
+        string[] areas =
+        {
+            "陆行鸟", "莫古力", "猫小胖", "豆豆柴"
+        };
+        
+        this.areaCombo = new Combo("大区", areas);
+        
+        this.loginInput = new Input("盛趣账号", "请输入盛趣账号", new Vector2(12f, 0f), 128);
+        // this.passwordInput = new Input("Password", "Enter your password", new Vector2(12f, 0f), 128, flags: ImGuiInputTextFlags.Password | ImGuiInputTextFlags.NoUndoRedo);
 
-        this.oneTimePasswordCheckbox = new Checkbox("Use one-time password");
+        // this.oneTimePasswordCheckbox = new Checkbox("Use one-time password");
 
-        this.useSteamServiceCheckbox = new Checkbox("Use steam service");
+        // this.useSteamServiceCheckbox = new Checkbox("Use steam service");
 
-        this.autoLoginCheckbox = new Checkbox("Log in automatically");
+        this.autoLoginCheckbox = new Checkbox("快速登陆");
 
-        this.loginButton = new Button("Login");
+        this.loginButton = new Button("登陆");
         this.loginButton.Click += () => { this.OnLogin?.Invoke(LoginAction.Game); };
     }
 
@@ -78,11 +92,12 @@ public class LoginFrame : Component
         if (ImGui.BeginChild("###loginFrame", this.GetSize()))
         {
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(32f, 32f));
+            this.areaCombo.Draw();
             this.loginInput.Draw();
-            this.passwordInput.Draw();
+            // this.passwordInput.Draw();
 
-            this.oneTimePasswordCheckbox.Draw();
-            this.useSteamServiceCheckbox.Draw();
+            // this.oneTimePasswordCheckbox.Draw();
+            // this.useSteamServiceCheckbox.Draw();
             this.autoLoginCheckbox.Draw();
 
             ImGui.Dummy(new Vector2(10));

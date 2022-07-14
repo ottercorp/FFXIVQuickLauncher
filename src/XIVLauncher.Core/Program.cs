@@ -11,8 +11,8 @@ using XIVLauncher.Common;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game.Patch.Acquisition;
 using XIVLauncher.Common.PlatformAbstractions;
-using XIVLauncher.Common.Windows;
-using XIVLauncher.Common.Unix;
+// using XIVLauncher.Common.Windows;
+// using XIVLauncher.Common.Unix;
 using XIVLauncher.Common.Unix.Compatibility;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Core.Accounts.Secrets;
@@ -133,7 +133,7 @@ class Program
         Secrets = GetSecretProvider(storage);
 
         Loc.SetupWithFallbacks();
-
+        /*
         try
         {
             switch (Environment.OSVersion.Platform)
@@ -165,6 +165,7 @@ class Program
         {
             Log.Error(ex, "Steam couldn't load");
         }
+        */
 
         DalamudLoadInfo = new DalamudOverlayInfoProxy();
         DalamudUpdater = new DalamudUpdater(storage.GetFolder("dalamud"), storage.GetFolder("runtime"), storage.GetFolder("dalamudAssets"), storage.Root, null)
@@ -185,7 +186,7 @@ class Program
 
         // Create window, GraphicsDevice, and all resources necessary for the demo.
         VeldridStartup.CreateWindowAndGraphicsDevice(
-            new WindowCreateInfo(50, 50, 1280, 800, WindowState.Normal, $"XIVLauncher {version}"),
+            new WindowCreateInfo(50, 50, 1280, 800, WindowState.Normal, $"XIVLauncherCN {version}"),
             new GraphicsDeviceOptions(false, null, true, ResourceBindingModel.Improved, true, true),
             out window,
             out gd);

@@ -79,7 +79,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources/FontAwesome5FreeSolid.otf" LogicalName="FontAwesome5FreeSolid.otf" />
-    <EmbeddedResource Include="Resources/NotoSansCJKjp-Regular.otf" LogicalName="NotoSansCJKjp-Regular.otf" />
+    <EmbeddedResource Include="Resources/NotoSansCJKsc-Medium.otf" LogicalName="NotoSansCJKsc-Medium.otf" />
 
     <EmbeddedResource Include="Resources/logo.png" LogicalName="logo.png" />
 
@@ -103,7 +103,6 @@
     <ProjectReference Include="..\XIVLauncher.Common\XIVLauncher.Common.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common.Unix\XIVLauncher.Common.Unix.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common.Windows\XIVLauncher.Common.Windows.csproj" />
-    <ProjectReference Include="..\XIVLauncher\XIVLauncher.csproj" />
   </ItemGroup>
 
   <!-- Git -->

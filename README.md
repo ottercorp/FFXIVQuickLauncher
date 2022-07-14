@@ -26,16 +26,20 @@ FF14 原版启动器已经很老了，这导致它运行缓慢且不支持保存
 
 ⚠ <b>注意！</b> 如果您在安装过程中遇到错误或启动器无法正常工作，请先确保您已在<b>杀毒软件</b>中排除了 XIVLauncher。 许多付费杀毒软件会将 XIVLauncher 误认为病毒。 您可以自行在 VirusTotal 上查看病毒检测报告。 如果您需要任何帮助，请[查阅常见问题](https://goatcorp.github.io/faq/xl_troubleshooting#q-how-do-i-whitelist-xivlauncher-and-dalamud-so-my-antivirus-leaves-them-alone)或加入我们的 Discord 服务器。
 
+## 进入游戏黑屏
+
+XIVLauncher 默认会在启动游戏的同时开启插件框架，如果遇到启动游戏卡在黑屏的状况可以在设置界面给框架注入设置 5000ms 左右的延迟来解决。如果您不需要插件，也可以直接关闭插件框架。
+
 ## 如何安装插件
-XIVLauncher 支持在游戏内安装由__第三方开发者__制作的__插件、扩展__。
+XIVLauncher 支持在游戏内安装由 __第三方开发者__ 制作的 __插件、扩展__。
 
 您可以通过点击游戏系统菜单的「Dalamud Plugins」按钮来打开插件菜单。 您也可以在聊天框输入 `/xlplugins` 命令来达到同样的效果。<br>如果显示命令不存在，或者插件菜单没有出现，请检查并确保您已经在启动器设置里启用了游戏内组件功能。
 
 ## 寻求帮助
-[请先查阅常见问题](https://ottercorp.github.io/faq/)，您通常可以在该处找到需要的答案。<br>您也可以加入我们的 Discord 服务器（[https://discord.gg/HqvSXkGj](https://discord.gg/HqvSXkGj)）并在和谐友爱的社区中提问。
+[请先查阅常见问题](https://ottercorp.github.io/faq/)，您通常可以在该处找到需要的答案。<br>您也可以加入我们的 [QQ频道](https://qun.qq.com/qqweb/qunpro/share?_wv=3&_wwv=128&inviteCode=CZtWN&from=181074&biz=ka&shareSource=5) 并在和谐友爱的社区中提问。
 
 ## 这安全吗
-我们付出了很大的努力来确保 XIVLauncher 对所有人都是安全无害的。<br>如果您想要了解更多的信息，请查阅[我们对此作出的答复](https://goatcorp.github.io/faq/xl_troubleshooting#q-are-xivlauncher-dalamud-and-dalamud-plugins-safe-to-use)。
+我们付出了很大的努力来确保 XIVLauncher 对所有人都是安全无害的。<br>如果您想要了解更多的信息，请查阅[我们对此作出的答复](https://ottercorp.github.io/faq/xl_troubleshooting#q-%E4%BD%BF%E7%94%A8-xivlauncher-dalamud-%E5%92%8C%E5%85%B6%E4%B8%AD%E7%9A%84%E6%8F%92%E4%BB%B6%E5%AE%89%E5%85%A8%E5%90%97)。
 
 <br>
 <br>
@@ -52,7 +56,7 @@ XIVLauncher 支持在游戏内安装由__第三方开发者__制作的__插件�
 
 请确保您的插件不会以下列的方式直接与游戏服务器交互： <br>第一、*规格外*，比如允许玩家做出某些不可能由普通玩家做出的操作。 <br>第二、*自动化*，比如在没有玩家直接操作下向服务器轮询数据或发出请求，这可能会造成不必要的服务器负担或暴露该玩家正在使用 XIVLauncher。 <br>第三、*绕过付费墙*，比如允许玩家使用尚未购买的付费表情动作。
 
-我们认为这为开发者提供了 SE 无法实现的__改进游戏功能的自由__，同时禁止了会给其他平台玩家带来__不公平优势__的插件。
+我们认为这为开发者提供了 SE 无法实现的 __改进游戏功能的自由__ ，同时禁止了会给其他平台玩家带来 __不公平优势__ 的插件。
 
 <br>
 <br>

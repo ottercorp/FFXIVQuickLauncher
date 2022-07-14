@@ -39,6 +39,7 @@ public class LauncherApp : Component
         Fts,
         UpdateWarn,
         SteamDeckPrompt,
+        QrEntry,
     }
 
     private LauncherState state = LauncherState.Main;
@@ -49,12 +50,12 @@ public class LauncherApp : Component
         set
         {
             // If we are coming from the settings, we should reload the news, as the client language might have changed
-            switch (this.state)
-            {
-                case LauncherState.Settings:
-                    this.mainPage.ReloadNews();
-                    break;
-            }
+            // switch (this.state)
+            // {
+            //     case LauncherState.Settings:
+            //         this.mainPage.ReloadNews();
+            //         break;
+            // }
 
             this.state = value;
 
@@ -119,6 +120,7 @@ public class LauncherApp : Component
     private readonly MainPage mainPage;
     private readonly SettingsPage setPage;
     private readonly OtpEntryPage otpEntryPage;
+    private readonly QrEntryPage qrEntryPage;
     private readonly FtsPage ftsPage;
     private readonly UpdateWarnPage updateWarnPage;
     private readonly SteamDeckPromptPage steamDeckPromptPage;
@@ -136,6 +138,7 @@ public class LauncherApp : Component
         this.mainPage = new MainPage(this);
         this.setPage = new SettingsPage(this);
         this.otpEntryPage = new OtpEntryPage(this);
+        this.qrEntryPage = new QrEntryPage(this);
         this.LoadingPage = new LoadingPage(this);
         this.ftsPage = new FtsPage(this);
         this.updateWarnPage = new UpdateWarnPage(this);
@@ -210,6 +213,19 @@ public class LauncherApp : Component
             Thread.Yield();
 
         return this.otpEntryPage.Result;
+    }
+    public void AskForQr()
+    {
+        this.qrEntryPage.Reset();
+        this.State = LauncherState.QrEntry;
+    }
+
+    public string? WaitForQr()
+    {
+        while (this.qrEntryPage.Result == null && !this.qrEntryPage.Cancelled)
+            Thread.Yield();
+
+        return this.qrEntryPage.Result;
     }
 
     public void StartLoading(string line1, string line2 = "", string line3 = "", bool isIndeterminate = true, bool canCancel = false, bool canDisableAutoLogin = false)

@@ -20,7 +20,7 @@ public class FontManager
         ImFontConfigPtr fontConfig = ImGuiNative.ImFontConfig_ImFontConfig();
         fontConfig.PixelSnapH = true;
 
-        var fontDataText = AppUtil.GetEmbeddedResourceBytes("NotoSansCJKjp-Regular.otf");
+        var fontDataText = AppUtil.GetEmbeddedResourceBytes("NotoSansCJKsc-Medium.otf");
         var fontDataIcons = AppUtil.GetEmbeddedResourceBytes("FontAwesome5FreeSolid.otf");
 
         var fontDataTextPtr = Marshal.AllocHGlobal(fontDataText.Length);
@@ -29,9 +29,9 @@ public class FontManager
         var fontDataIconsPtr = Marshal.AllocHGlobal(fontDataIcons.Length);
         Marshal.Copy(fontDataIcons, 0, fontDataIconsPtr, fontDataIcons.Length);
 
-        var japaneseRangeHandle = GCHandle.Alloc(GlyphRangesJapanese.GlyphRanges, GCHandleType.Pinned);
+        var chineseRangeHandle = GCHandle.Alloc(GlyphRangesChinese.GlyphRanges, GCHandleType.Pinned);
 
-        TextFont = ioFonts.AddFontFromMemoryTTF(fontDataTextPtr, fontDataText.Length, pxSize, null, japaneseRangeHandle.AddrOfPinnedObject());
+        TextFont = ioFonts.AddFontFromMemoryTTF(fontDataTextPtr, fontDataText.Length, pxSize, null, chineseRangeHandle.AddrOfPinnedObject());
 
         var iconRangeHandle = GCHandle.Alloc(
             new ushort[]
@@ -55,7 +55,7 @@ public class FontManager
         }
 
         fontConfig.Destroy();
-        japaneseRangeHandle.Free();
+        chineseRangeHandle.Free();
         iconRangeHandle.Free();
     }
 }

@@ -200,59 +200,78 @@ public class MainPage : Page
         bool? gateStatus = null;
 
 #if !DEBUG
-        try
-        {
-            // TODO: Also apply the login status fix here
-            var gate = await App.Launcher.GetGateStatus(App.Settings.ClientLanguage ?? ClientLanguage.English).ConfigureAwait(false);
-            gateStatus = gate.Status;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Could not obtain gate status");
-        }
-
-        if (gateStatus == null)
-        {
-            /*
-            CustomMessageBox.Builder.NewFrom(Loc.Localize("GateUnreachable", "The login servers could not be reached. This usually indicates that the game is under maintenance, or that your connection to the login servers is unstable.\n\nPlease try again later."))
-                            .WithImage(MessageBoxImage.Asterisk)
-                            .WithButtons(MessageBoxButton.OK)
-                            .WithShowHelpLinks(true)
-                            .WithCaption("XIVLauncher")
-                            .WithParentWindow(_window)
-                            .Show();
-                            */
-
-            App.ShowMessageBlocking("Login servers could not be reached or maintenance is in progress. This might be a problem with your connection.");
-
-            return null;
-        }
-
-        if (gateStatus == false)
-        {
-            /*
-            CustomMessageBox.Builder.NewFrom(Loc.Localize("GateClosed", "FFXIV is currently under maintenance. Please try again later or see official sources for more information."))
-                            .WithImage(MessageBoxImage.Asterisk)
-                            .WithButtons(MessageBoxButton.OK)
-                            .WithCaption("XIVLauncher")
-                            .WithParentWindow(_window)
-                            .Show();*/
-
-            App.ShowMessageBlocking("Maintenance is in progress.");
-
-            return null;
-        }
+        // try
+        // {
+        //     // TODO: Also apply the login status fix here
+        //     var gate = await App.Launcher.GetGateStatus(App.Settings.ClientLanguage ?? ClientLanguage.English).ConfigureAwait(false);
+        //     gateStatus = gate.Status;
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Could not obtain gate status");
+        // }
+        //
+        // if (gateStatus == null)
+        // {
+        //     /*
+        //     CustomMessageBox.Builder.NewFrom(Loc.Localize("GateUnreachable", "The login servers could not be reached. This usually indicates that the game is under maintenance, or that your connection to the login servers is unstable.\n\nPlease try again later."))
+        //                     .WithImage(MessageBoxImage.Asterisk)
+        //                     .WithButtons(MessageBoxButton.OK)
+        //                     .WithShowHelpLinks(true)
+        //                     .WithCaption("XIVLauncher")
+        //                     .WithParentWindow(_window)
+        //                     .Show();
+        //                     */
+        //
+        //     App.ShowMessageBlocking("Login servers could not be reached or maintenance is in progress. This might be a problem with your connection.");
+        //
+        //     return null;
+        // }
+        //
+        // if (gateStatus == false)
+        // {
+        //     /*
+        //     CustomMessageBox.Builder.NewFrom(Loc.Localize("GateClosed", "FFXIV is currently under maintenance. Please try again later or see official sources for more information."))
+        //                     .WithImage(MessageBoxImage.Asterisk)
+        //                     .WithButtons(MessageBoxButton.OK)
+        //                     .WithCaption("XIVLauncher")
+        //                     .WithParentWindow(_window)
+        //                     .Show();*/
+        //
+        //     App.ShowMessageBlocking("Maintenance is in progress.");
+        //
+        //     return null;
+        // }
 #endif
 
         try
         {
             var enableUidCache = App.Settings.IsUidCacheEnabled ?? false;
             var gamePath = App.Settings.GamePath;
+            return null;
 
-            if (action == LoginAction.Repair)
-                return await App.Launcher.Login(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-            else
-                return await App.Launcher.Login(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+            // if (action == LoginAction.Repair)
+            //     return await App.Launcher.Login(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+            // else
+            //     return await App.Launcher.Login(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
+            // var checkResult = await App.Launcher.CheckGameUpdate(Area, gamePath, false);
+            // if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
+            //     return checkResult;
+            // return await App.Launcher.LoginSdo(username, password, (state, msg) =>
+            //     {
+            //         if (state == Launcher.SdoLoginState.GotQRCode)
+            //         {
+            //             new Task(() =>
+            //             {
+            //                 QRDialog.OpenQRWindow(_window, () => Launcher.CancelLogin());
+            //             }).Start();
+            //         }
+            //         else if (state == Launcher.SdoLoginState.LoginSucess || state == Launcher.SdoLoginState.LoginFail || state == Launcher.SdoLoginState.OutTime)
+            //         {
+            //             QRDialog.CloseQRWindow(_window);
+            //         }
+            //     }, action == AfterLoginAction.ForceQR,
+            //     string.IsNullOrEmpty(password) && IsFastLogin, AccountManager.CurrentAccount.AutoLoginSessionKey).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

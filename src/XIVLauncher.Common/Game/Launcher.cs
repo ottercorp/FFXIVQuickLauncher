@@ -47,7 +47,19 @@ public partial class Launcher
 #if NET6_0_OR_GREATER && !WIN32
         var sslOptions = new SslClientAuthenticationOptions()
         {
-            CipherSuitesPolicy = new CipherSuitesPolicy(new[] { TlsCipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 })
+            CipherSuitesPolicy = new CipherSuitesPolicy(new[]
+            {
+                TlsCipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+                TlsCipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+                TlsCipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+                TlsCipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
+                TlsCipherSuite.TLS_RSA_WITH_AES_256_GCM_SHA384,
+                TlsCipherSuite.TLS_RSA_WITH_AES_256_CCM_8,
+                TlsCipherSuite.TLS_RSA_WITH_AES_256_CCM,
+                TlsCipherSuite.TLS_RSA_WITH_AES_128_CCM_8,
+                TlsCipherSuite.TLS_RSA_WITH_AES_128_CCM,
+                TlsCipherSuite.TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+            })
         };
 
         var handler = new SocketsHttpHandler
@@ -104,7 +116,7 @@ public partial class Launcher
         public SdoArea Area { get; set; }
     }
 
-    public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial, SdoArea a)
+    public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial)
     {
         string uid;
         PatchListEntry[] pendingPatches = null;

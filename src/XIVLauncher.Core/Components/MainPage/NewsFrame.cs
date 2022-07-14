@@ -67,7 +67,7 @@ public class NewsFrame : Component
 
     public override void Draw()
     {
-        if (ImGui.BeginChild("###newsFrame", this.GetSize()))
+        if (ImGui.BeginChild("###newsFrame", this.GetSize(), false, ImGuiWindowFlags.NoScrollbar))
         {
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(32f, 32f));
 
@@ -76,6 +76,8 @@ public class NewsFrame : Component
             if (this.newsLoaded)
             {
                 var banner = this.banners[this.currentBanner];
+
+                ImGui.SetCursorPosX((this.GetSize().X - banner.Size.X) * 0.5f);
                 ImGui.Image(banner.ImGuiHandle, banner.Size);
 
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
@@ -93,21 +95,25 @@ public class NewsFrame : Component
                     }
                 }
 
-                foreach (News newsEntry in this.headlines.News)
+                if (ImGui.BeginChild("####NewsEntry"))
                 {
-                    ShowNewsEntry(newsEntry);
+                    foreach (News newsEntry in this.headlines.News)
+                    {
+                        ShowNewsEntry(newsEntry);
+                    }
+                    ImGui.EndChild();
                 }
 
                 ImGui.Separator();
 
-                foreach (News topic in this.headlines.Topics)
-                {
-                    ShowNewsEntry(topic);
-                }
+                // foreach (News topic in this.headlines.Topics)
+                // {
+                //     ShowNewsEntry(topic);
+                // }
             }
             else
             {
-                ImGui.Text("News are loading...");
+                ImGui.Text("新闻加载中...");
             }
 
             ImGui.PopStyleVar();

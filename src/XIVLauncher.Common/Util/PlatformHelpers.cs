@@ -92,7 +92,7 @@ public static class PlatformHelpers
     {
         var sevenzaPath = Path.Combine(Paths.ResourcesPath, "7za.exe");
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             sevenzaPath = "7za";
         }
