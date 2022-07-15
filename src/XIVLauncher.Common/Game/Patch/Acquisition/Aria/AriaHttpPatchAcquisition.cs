@@ -46,7 +46,7 @@ namespace XIVLauncher.Common.Game.Patch.Acquisition.Aria
 
                 var ariaPath = Path.Combine(Paths.ResourcesPath, "aria2c-xl.exe");
 
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     ariaPath = "aria2c";
                 }

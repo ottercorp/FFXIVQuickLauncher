@@ -27,6 +27,10 @@ namespace XIVLauncher.Common
 
         private static string GetCPUId()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return String.Empty;
+            }
             var result = String.Empty;
             try
             {

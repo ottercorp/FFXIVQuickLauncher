@@ -463,7 +463,7 @@ namespace XIVLauncher.Common.Game
             return null;
         }
 
-        public object? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
+        public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
              string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)
         {
             Log.Information(
@@ -516,6 +516,7 @@ namespace XIVLauncher.Common.Game
             var xlEntryDll = Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll");
             var entryDllVersion = FileVersionInfo.GetVersionInfo(entryDll);
             var xlEntryDllVersion = FileVersionInfo.GetVersionInfo(xlEntryDll);
+
             if (File.Exists(entryDll))
             {
                 if (entryDllVersion.CompanyName != "ottercorp")
@@ -532,14 +533,12 @@ namespace XIVLauncher.Common.Game
                         File.Copy(xlEntryDll, entryDll, true);
                     }
                 }
-
             }
+
             if (File.Exists(sdoEntryDll))
                 return;
-            else
-            {
-                throw new BinaryNotPresentException(sdoEntryDll);
-            }
+
+            throw new BinaryNotPresentException(sdoEntryDll);
         }
 
         public async Task<LoginResult> CheckGameUpdate(SdoArea area, DirectoryInfo gamePath, bool forceBaseVersion)

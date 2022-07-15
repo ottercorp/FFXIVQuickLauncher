@@ -25,6 +25,7 @@ public class MainPage : Page
     private readonly LoginFrame loginFrame;
     private readonly NewsFrame newsFrame;
     private readonly ActionButtons actionButtons;
+    public SdoArea Area;
 
     public bool IsLoggingIn { get; private set; }
 
@@ -246,32 +247,38 @@ public class MainPage : Page
 
         try
         {
+            Area = this.loginFrame.Area;
             var enableUidCache = App.Settings.IsUidCacheEnabled ?? false;
             var gamePath = App.Settings.GamePath;
-            return null;
+            var checkResult = await App.Launcher.CheckGameUpdate(Area, gamePath, false);
+            if (checkResult.State == Launcher.LoginState.NeedsPatchGame)
+                return checkResult;
+            if (username == null) username = string.Empty;
+            return await App.Launcher.LoginSdo(
+                username,
+                password,
+                (state, msg) =>
+                {
+                    // LoginMessage = msg;
+                    Log.Information(msg);
 
-            // if (action == LoginAction.Repair)
-            //     return await App.Launcher.Login(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-            // else
-            //     return await App.Launcher.Login(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-            // var checkResult = await App.Launcher.CheckGameUpdate(Area, gamePath, false);
-            // if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
-            //     return checkResult;
-            // return await App.Launcher.LoginSdo(username, password, (state, msg) =>
-            //     {
-            //         if (state == Launcher.SdoLoginState.GotQRCode)
-            //         {
-            //             new Task(() =>
-            //             {
-            //                 QRDialog.OpenQRWindow(_window, () => Launcher.CancelLogin());
-            //             }).Start();
-            //         }
-            //         else if (state == Launcher.SdoLoginState.LoginSucess || state == Launcher.SdoLoginState.LoginFail || state == Launcher.SdoLoginState.OutTime)
-            //         {
-            //             QRDialog.CloseQRWindow(_window);
-            //         }
-            //     }, action == AfterLoginAction.ForceQR,
-            //     string.IsNullOrEmpty(password) && IsFastLogin, AccountManager.CurrentAccount.AutoLoginSessionKey).ConfigureAwait(false);
+                    if (state == Launcher.SdoLoginState.GotQRCode)
+                    {
+                        App.AskForQr();
+                        new Task(() =>
+                        {
+                            App.WaitForQr(() => App.Launcher.CancelLogin());
+                        }).Start();
+                    }
+                    else if (state == Launcher.SdoLoginState.LoginSucess || state == Launcher.SdoLoginState.LoginFail || state == Launcher.SdoLoginState.OutTime)
+                    {
+                        App.CloseQr();
+                    }
+                },
+                action == LoginAction.ForceQR,
+                string.IsNullOrEmpty(password) && this.loginFrame.IsAutoLogin,
+                App.Accounts.CurrentAccount.AutoLoginSessionKey
+            ).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -716,7 +723,7 @@ public class MainPage : Page
         {
             runner = new WindowsGameRunner(dalamudLauncher, dalamudOk, Program.DalamudUpdater.Runtime);
         }
-        else if (Environment.OSVersion.Platform == PlatformID.Unix)
+        else if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
         {
             if (App.Settings.WineStartupType == WineStartupType.Custom && App.Settings.WineBinaryPath == null)
                 throw new Exception("Custom wine binary path wasn't set.");
@@ -790,16 +797,29 @@ public class MainPage : Page
         }
 
         // We won't do any sanity checks here anymore, since that should be handled in StartLogin
-        var launchedProcess = App.Launcher.LaunchGame(runner,
-            loginResult.UniqueId,
-            loginResult.OauthLogin.Region,
-            loginResult.OauthLogin.MaxExpansion,
-            isSteam,
-            gameArgs,
+        // var launchedProcess = App.Launcher.LaunchGame(runner,
+        //     loginResult.UniqueId,
+        //     loginResult.OauthLogin.Region,
+        //     loginResult.OauthLogin.MaxExpansion,
+        //     isSteam,
+        //     gameArgs,
+        //     App.Settings.GamePath,
+        //     App.Settings.IsDx11 ?? true,
+        //     App.Settings.ClientLanguage.GetValueOrDefault(ClientLanguage.English),
+        //     App.Settings.IsEncryptArgs.GetValueOrDefault(true),
+        //     App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
+
+        var launchedProcess = App.Launcher.LaunchGameSdo(runner,
+            loginResult.OauthLogin.SessionId,
+            loginResult.OauthLogin.SndaId,
+            Area.Areaid,
+            Area.AreaLobby,
+            Area.AreaGm,
+            Area.AreaConfigUpload,
+            App.Settings.AdditionalArgs,
             App.Settings.GamePath,
-            App.Settings.IsDx11 ?? true,
-            App.Settings.ClientLanguage.GetValueOrDefault(ClientLanguage.English),
-            App.Settings.IsEncryptArgs.GetValueOrDefault(true),
+            App.Settings.IsDx11.GetValueOrDefault(true),
+            App.Settings.IsEncryptArgs.GetValueOrDefault(false),
             App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
 
         if (launchedProcess == null)

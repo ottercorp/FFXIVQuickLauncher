@@ -41,8 +41,8 @@ namespace XIVLauncher.Common
             var repoPath = repo.GetRepoPath(gamePath).FullName;
             switch (repo)
             {
-                //case Repository.Boot:
-                //    return new FileInfo(Path.Combine(repoPath, "ffxivboot" + (isBck ? ".bck" : ".ver")));
+                case Repository.Boot:
+                    return new FileInfo(Path.Combine(repoPath, "ffxivboot" + (isBck ? ".bck" : ".ver")));
                 case Repository.Ffxiv:
                     return new FileInfo(Path.Combine(repoPath, "ffxivgame" + (isBck ? ".bck" : ".ver")));
                 case Repository.Ex1:

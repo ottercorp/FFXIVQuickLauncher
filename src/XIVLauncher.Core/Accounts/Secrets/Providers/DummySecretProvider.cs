@@ -16,4 +16,19 @@ public class DummySecretProvider : ISecretProvider
     {
         // ignored
     }
+
+    public string? GetAutoLoginSessionKey(string accountName)
+    {
+        return null;
+    }
+
+    public void SaveAutoLoginSessionKey(string accountName, string sessionKey)
+    {
+        // ignored
+    }
+
+    public void DeleteAutoLoginSessionKey(string accountName)
+    {
+        // ignored
+    }
 }

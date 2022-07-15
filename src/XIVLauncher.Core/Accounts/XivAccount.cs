@@ -33,6 +33,25 @@ public class XivAccount
             }
         }
     }
+    
+    public string AutoLoginSessionKey
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(UserName))
+                return string.Empty;
+
+            var credentials = Program.Secrets.GetAutoLoginSessionKey(UserName);
+            return credentials ?? string.Empty;
+        }
+        set
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                Program.Secrets.SaveAutoLoginSessionKey(UserName, value);
+            }
+        }
+    }
 
     public bool SavePassword { get; set; }
     public bool UseSteamServiceAccount { get; set; }

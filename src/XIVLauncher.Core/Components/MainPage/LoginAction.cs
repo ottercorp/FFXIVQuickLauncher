@@ -7,4 +7,5 @@ public enum LoginAction
     GameNoLaunch,
     Repair,
     Fake,
+    ForceQR
 }

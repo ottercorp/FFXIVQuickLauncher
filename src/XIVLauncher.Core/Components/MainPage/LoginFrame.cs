@@ -1,5 +1,6 @@
 using System.Numerics;
 using ImGuiNET;
+using XIVLauncher.Common.Game;
 using XIVLauncher.Core.Accounts.Secrets.Providers;
 using XIVLauncher.Core.Components.Common;
 
@@ -14,14 +15,17 @@ public class LoginFrame : Component
     // private readonly Input passwordInput;
     // private readonly Checkbox oneTimePasswordCheckbox;
     // private readonly Checkbox useSteamServiceCheckbox;
-    private readonly Checkbox autoLoginCheckbox;
+    private readonly Checkbox fastLoginCheckbox;
     private readonly Button loginButton;
+    public SdoArea[] SdoAreas = Array.Empty<SdoArea>();
 
     public string Username
     {
         get => this.loginInput.Value;
         set => this.loginInput.Value = value;
     }
+    
+    public SdoArea? Area => SdoAreas.FirstOrDefault(area => area.AreaName == this.areaCombo.Value);
 
     public string Password
     {
@@ -49,8 +53,8 @@ public class LoginFrame : Component
 
     public bool IsAutoLogin
     {
-        get => this.autoLoginCheckbox.Value;
-        set => this.autoLoginCheckbox.Value = value;
+        get => this.fastLoginCheckbox.Value;
+        set => this.fastLoginCheckbox.Value = value;
     }
 
     public event Action<LoginAction>? OnLogin;
@@ -60,14 +64,7 @@ public class LoginFrame : Component
     public LoginFrame(MainPage mainPage)
     {
         this.mainPage = mainPage;
-
-        string[] areas =
-        {
-            "陆行鸟", "莫古力", "猫小胖", "豆豆柴"
-        };
-        
-        this.areaCombo = new Combo("大区", areas);
-        
+        this.areaCombo = new Combo("大区", SdoAreas.Select(area => area.AreaName).ToArray());
         this.loginInput = new Input("盛趣账号", "请输入盛趣账号", new Vector2(12f, 0f), 128);
         // this.passwordInput = new Input("Password", "Enter your password", new Vector2(12f, 0f), 128, flags: ImGuiInputTextFlags.Password | ImGuiInputTextFlags.NoUndoRedo);
 
@@ -75,10 +72,32 @@ public class LoginFrame : Component
 
         // this.useSteamServiceCheckbox = new Checkbox("Use steam service");
 
-        this.autoLoginCheckbox = new Checkbox("快速登陆");
+        this.fastLoginCheckbox = new Checkbox("快速登陆");
 
         this.loginButton = new Button("登陆");
         this.loginButton.Click += () => { this.OnLogin?.Invoke(LoginAction.Game); };
+        
+        this.ReloadAreas();
+    }
+    
+    public void ReloadAreas()
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                SdoAreas = await SdoArea.Get();
+            }
+            catch (Exception ex)
+            {
+                SdoAreas = new SdoArea[1] { new SdoArea { AreaName = "服务器状态异常", Areaid = "-1" } };
+                throw ex;
+            }
+            finally
+            {
+                this.areaCombo.Items = SdoAreas.Select(area => area.AreaName).ToArray();
+            }
+        });
     }
 
     private Vector2 GetSize()
@@ -98,11 +117,16 @@ public class LoginFrame : Component
 
             // this.oneTimePasswordCheckbox.Draw();
             // this.useSteamServiceCheckbox.Draw();
-            this.autoLoginCheckbox.Draw();
+            this.fastLoginCheckbox.Draw();
 
             ImGui.Dummy(new Vector2(10));
 
             this.loginButton.Draw();
+
+            // if (ImGui.Button("Debug"))
+            // {
+            //     
+            // }
 
             ImGui.PopStyleVar();
 
@@ -131,6 +155,13 @@ public class LoginFrame : Component
                 if (ImGui.MenuItem("Repair game files"))
                 {
                     this.OnLogin?.Invoke(LoginAction.Repair);
+                }
+
+                ImGui.Separator();
+
+                if (ImGui.MenuItem("Force QR"))
+                {
+                    this.OnLogin?.Invoke(LoginAction.ForceQR);
                 }
 
                 if (LauncherApp.IsDebug)

@@ -77,6 +77,10 @@ public class LauncherApp : Component
                     this.otpEntryPage.OnShow();
                     break;
 
+                case LauncherState.QrEntry:
+                    this.qrEntryPage.OnShow();
+                    break;
+
                 case LauncherState.Fts:
                     this.ftsPage.OnShow();
                     break;
@@ -101,6 +105,7 @@ public class LauncherApp : Component
         LauncherState.Settings => this.setPage,
         LauncherState.Loading => this.LoadingPage,
         LauncherState.OtpEntry => this.otpEntryPage,
+        LauncherState.QrEntry => this.qrEntryPage,
         LauncherState.Fts => this.ftsPage,
         LauncherState.UpdateWarn => this.updateWarnPage,
         LauncherState.SteamDeckPrompt => this.steamDeckPromptPage,
@@ -216,16 +221,23 @@ public class LauncherApp : Component
     }
     public void AskForQr()
     {
-        this.qrEntryPage.Reset();
         this.State = LauncherState.QrEntry;
     }
 
-    public string? WaitForQr()
+    public void WaitForQr(Action onCancel)
     {
-        while (this.qrEntryPage.Result == null && !this.qrEntryPage.Cancelled)
+        while (!this.qrEntryPage.Cancelled)
             Thread.Yield();
 
-        return this.qrEntryPage.Result;
+        if (this.qrEntryPage.Cancelled)
+        {
+            onCancel.Invoke();
+        }
+    }
+
+    public void CloseQr()
+    {
+        qrEntryPage.CloseDialog();
     }
 
     public void StartLoading(string line1, string line2 = "", string line3 = "", bool isIndeterminate = true, bool canCancel = false, bool canDisableAutoLogin = false)
