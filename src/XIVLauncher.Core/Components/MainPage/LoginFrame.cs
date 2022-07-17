@@ -123,11 +123,6 @@ public class LoginFrame : Component
 
             this.loginButton.Draw();
 
-            // if (ImGui.Button("Debug"))
-            // {
-            //     
-            // }
-
             ImGui.PopStyleVar();
 
             ImGui.NewLine();

@@ -819,7 +819,7 @@ public class MainPage : Page
             App.Settings.AdditionalArgs,
             App.Settings.GamePath,
             App.Settings.IsDx11.GetValueOrDefault(true),
-            App.Settings.IsEncryptArgs.GetValueOrDefault(false),
+            false,
             App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
 
         if (launchedProcess == null)
@@ -866,17 +866,17 @@ public class MainPage : Page
         if (addonMgr.IsRunning)
             addonMgr.StopAddons();
 
-        try
-        {
-            if (App.Steam.IsValid)
-            {
-                App.Steam.Shutdown();
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Could not shut down Steam");
-        }
+        // try
+        // {
+        //     if (App.Steam.IsValid)
+        //     {
+        //         App.Steam.Shutdown();
+        //     }
+        // }
+        // catch (Exception ex)
+        // {
+        //     Log.Error(ex, "Could not shut down Steam");
+        // }
 
         return launchedProcess!;
     }

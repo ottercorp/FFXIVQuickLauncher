@@ -35,10 +35,8 @@ public class QrEntryPage : Page
         ImGui.SetNextWindowPos(new Vector2(vpSize.X / 2 - childSize.X / 2, vpSize.Y / 2 - childSize.Y / 2), ImGuiCond.Always);
         ImGui.SetNextWindowBgAlpha(0.4f);
 
-        if (ImGui.BeginChild("###qr", childSize, true, ImGuiWindowFlags.AlwaysAutoResize))
+        if (ImGui.BeginChild("###qr", childSize, true, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar))
         {
-            ImGui.Dummy(new Vector2(40));
-
             // center text in window
             ImGuiHelpers.CenteredText("请扫描二维码");
 
@@ -53,6 +51,7 @@ public class QrEntryPage : Page
                 }
 
                 qrImage = TextureWrap.Load(data);
+                ImGui.SetCursorPosX((ImGui.GetWindowSize().X - qrImage.Size.X) * 0.5f);
                 ImGui.Image(qrImage.ImGuiHandle, qrImage.Size);
             }
 
