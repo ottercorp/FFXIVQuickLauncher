@@ -158,11 +158,6 @@ public class CompatibilityTools
         psi.RedirectStandardError = true;
         psi.UseShellExecute = false;
         psi.WorkingDirectory = workingDirectory;
-        var winelibPath = "/Users/yzhang1/.xlcore/wine/lib";
-        var libPaths = new string[] {winelibPath, "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib"};
-        var libPath = String.Join(":", libPaths);
-        psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
-        psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
 
         var wineEnviromentVariables = new Dictionary<string, string>();
         wineEnviromentVariables.Add("WINEPREFIX", Settings.Prefix.FullName);
