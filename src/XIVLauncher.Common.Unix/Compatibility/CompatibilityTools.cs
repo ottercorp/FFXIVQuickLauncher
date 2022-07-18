@@ -24,12 +24,18 @@ public class CompatibilityTools
 
 #if WINE_XIV_ARCH_LINUX
     private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-arch-7.7.r14.gd7507fbe.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
 #elif WINE_XIV_FEDORA_LINUX
     private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-fedora-7.7.r14.gd7507fbe.tar.xz";
-#else
-    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-ubuntu-7.7.r14.gd7507fbe.tar.xz";
-#endif
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
+#elif WINE_XIV_UBUNTU_LINUX
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-ubuntu-7.7.r14.gd7507fbe.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
+#else
+    // WINE_XIV_MACOS
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-1.1.1/wine.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine";
+#endif
 
     public bool IsToolReady { get; private set; }
 
@@ -152,6 +158,11 @@ public class CompatibilityTools
         psi.RedirectStandardError = true;
         psi.UseShellExecute = false;
         psi.WorkingDirectory = workingDirectory;
+        var winelibPath = "/Users/yzhang1/.xlcore/wine/lib";
+        var libPaths = new string[] {winelibPath, "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib"};
+        var libPath = String.Join(":", libPaths);
+        psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
+        psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
 
         var wineEnviromentVariables = new Dictionary<string, string>();
         wineEnviromentVariables.Add("WINEPREFIX", Settings.Prefix.FullName);
@@ -163,6 +174,7 @@ public class CompatibilityTools
         }
 
         wineEnviromentVariables.Add("XL_WINEONLINUX", "true");
+        wineEnviromentVariables.Add("XL_WINEONMAC", "true");
         string ldPreload = Environment.GetEnvironmentVariable("LD_PRELOAD") ?? "";
 
         string dxvkHud = hudType switch
@@ -224,8 +236,8 @@ public class CompatibilityTools
                                        ex is IndexOutOfRangeException)
             {
                 // very long wine log lines get chopped off after a (seemingly) arbitrary limit resulting in strings that are not null terminated
-                // logWriter.WriteLine("Error writing Wine log line:");
-                // logWriter.WriteLine(ex.Message);
+                logWriter.WriteLine("Error writing Wine log line:");
+                logWriter.WriteLine(ex.Message);
             }
         });
 

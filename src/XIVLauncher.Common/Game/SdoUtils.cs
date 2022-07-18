@@ -29,7 +29,7 @@ namespace XIVLauncher.Common
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                return String.Empty;
+                return GetMD5(Guid.NewGuid().ToByteArray());
             }
             var result = String.Empty;
             try
@@ -62,6 +62,10 @@ namespace XIVLauncher.Common
 
         private static string GetMacAddress()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetMD5(Guid.NewGuid().ToByteArray());
+            }
             var result = String.Empty;
             try
             {
@@ -77,6 +81,10 @@ namespace XIVLauncher.Common
 
         private static string GetDiskSerialNumber()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetMD5(Guid.NewGuid().ToByteArray());
+            }
             var result = String.Empty;
             try
             {

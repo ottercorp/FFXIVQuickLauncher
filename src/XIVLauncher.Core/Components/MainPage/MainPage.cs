@@ -164,7 +164,19 @@ public class MainPage : Page
             else
                 gameRunner = new UnixGameRunner(Program.CompatibilityTools, null, false);
 
-            App.Launcher.LaunchGame(gameRunner, "0", 1, 2, false, "", App.Settings.GamePath!, true, ClientLanguage.Japanese, true, DpiAwareness.Unaware);
+            App.Launcher.LaunchGame(
+                gameRunner,
+                "0",
+                1,
+                2,
+                false,
+                "",
+                App.Settings.GamePath!,
+                true,
+                ClientLanguage.ChineseSimplified,
+                false,
+                DpiAwareness.Unaware
+            );
 
             return false;
         }
