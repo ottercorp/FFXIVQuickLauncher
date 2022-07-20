@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.IO;
+using DeviceId;
 using System.Management;
 
 namespace XIVLauncher.Common
@@ -16,8 +17,10 @@ namespace XIVLauncher.Common
     {
         public static string GetDeviceId()
         {
-            return string.Join(":", GetMacAddress(), GetCPUId(), GetDiskSerialNumber());
+            var deviceId = string.Join(":", GetMacAddress(), GetCPUId(), GetDiskSerialNumber());
+            return deviceId;
         }
+
         public static string GetMD5(byte[] payload)
         {
             var check = MD5.Create();
@@ -27,10 +30,18 @@ namespace XIVLauncher.Common
 
         private static string GetCPUId()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return GetMD5(Guid.NewGuid().ToByteArray());
+                var processorId = new DeviceIdBuilder().OnLinux(linux => linux.AddCpuInfo()).ToString();
+                return GetMD5(ASCIIEncoding.ASCII.GetBytes(processorId));
             }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                var processorId = new DeviceIdBuilder().OnMac(mac => mac.AddPlatformSerialNumber()).ToString();
+                return GetMD5(ASCIIEncoding.ASCII.GetBytes(processorId));
+            }
+
             var result = String.Empty;
             try
             {
@@ -62,10 +73,18 @@ namespace XIVLauncher.Common
 
         private static string GetMacAddress()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return GetMD5(Guid.NewGuid().ToByteArray());
+                var macId = new DeviceIdBuilder().OnLinux(linux => linux.AddMachineId()).ToString();
+                return GetMD5(ASCIIEncoding.ASCII.GetBytes(macId));
             }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                var macId = new DeviceIdBuilder().OnMac(mac => mac.AddPlatformSerialNumber().AddSystemDriveSerialNumber()).ToString();
+                return GetMD5(ASCIIEncoding.ASCII.GetBytes(macId));
+            }
+
             var result = String.Empty;
             try
             {
@@ -81,10 +100,18 @@ namespace XIVLauncher.Common
 
         private static string GetDiskSerialNumber()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                return GetMD5(Guid.NewGuid().ToByteArray());
+                var diskId = new DeviceIdBuilder().OnLinux(linux => linux.AddSystemDriveSerialNumber()).ToString();
+                return GetMD5(ASCIIEncoding.ASCII.GetBytes(diskId));
             }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                var diskId = new DeviceIdBuilder().OnMac(mac => mac.AddSystemDriveSerialNumber()).ToString();
+                return GetMD5(ASCIIEncoding.ASCII.GetBytes(diskId));
+            }
+
             var result = String.Empty;
             try
             {

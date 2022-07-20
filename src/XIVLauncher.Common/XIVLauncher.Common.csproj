@@ -41,6 +41,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="DeviceId" Version="6.2.0" />
+        <PackageReference Include="DeviceId.Linux" Version="6.2.0" />
+        <PackageReference Include="DeviceId.Mac" Version="6.2.0" />
         <PackageReference Include="Downloader" Version="2.2.8" />
         <PackageReference Include="MonoTorrent" Version="2.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
