@@ -174,7 +174,7 @@ public class LauncherApp : Component
         this.modalOnNextFrame = true;
     }
 
-    public void ShowMessageBlocking(string text, string title = "XIVLauncher")
+    public void ShowMessageBlocking(string text, string title = "XIVLauncherCN")
     {
         if (!this.modalWaitHandle.WaitOne(0) && this.isModalDrawing)
             throw new InvalidOperationException("Cannot open modal while another modal is open");

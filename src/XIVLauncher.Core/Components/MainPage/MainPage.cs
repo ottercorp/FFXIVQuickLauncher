@@ -126,7 +126,7 @@ public class MainPage : Page
             {
                 App.ShowMessageBlocking(
                     "You enabled the UID cache in the patcher settings.\nThis setting does not allow you to reinstall FFXIV.\n\nIf you want to reinstall FFXIV, please take care to disable it first.",
-                    "XIVLauncher Error");
+                    "XIVLauncherCN Error");
 
                 this.Reactivate();
                 return;
@@ -407,11 +407,20 @@ public class MainPage : Page
             action = LoginAction.Game;
         }
 
+        if (loginResult.State == Launcher.LoginState.NeedRetry)
+        {
+            App.ShowMessageBlocking(
+                Loc.Localize("LoginCancelled",
+                    "The login process is cancelled."));
+
+            return false;
+        }
+
         if (action == LoginAction.GameNoLaunch)
         {
             App.ShowMessageBlocking(
                 Loc.Localize("LoginNoStartOk",
-                    "An update check was executed and any pending updates were installed."), "XIVLauncher");
+                    "An update check was executed and any pending updates were installed."));
 
             return false;
         }
@@ -988,8 +997,7 @@ public class MainPage : Page
         {
             App.ShowMessageBlocking(
                 Loc.Localize("GameIsOpenError",
-                    "The game and/or the official launcher are open. XIVLauncher cannot patch the game if this is the case.\nPlease close the official launcher and try again."),
-                "XIVLauncher");
+                    "The game and/or the official launcher are open. XIVLauncher cannot patch the game if this is the case.\nPlease close the official launcher and try again."));
 
             return false;
         }
@@ -1055,7 +1063,7 @@ public class MainPage : Page
             var message = Loc.Localize("PatchManNoInstaller",
                 "The patch installer could not start correctly.\n{0}\n\nIf you have denied access to it, please try again. If this issue persists, please contact us via Discord.");
 
-            App.ShowMessageBlocking(string.Format(message, ex.Message), "XIVLauncher Error");
+            App.ShowMessageBlocking(string.Format(message, ex.Message), "XIVLauncherCN Error");
         }
         catch (NotEnoughSpaceException sex)
         {
@@ -1066,7 +1074,7 @@ public class MainPage : Page
                         string.Format(
                             Loc.Localize("FreeSpaceError",
                                 "There is not enough space on your drive to download patches.\n\nYou can change the location patches are downloaded to in the settings.\n\nRequired:{0}\nFree:{1}"),
-                            ApiHelpers.BytesToString(sex.BytesRequired), ApiHelpers.BytesToString(sex.BytesFree)), "XIVLauncher Error");
+                            ApiHelpers.BytesToString(sex.BytesRequired), ApiHelpers.BytesToString(sex.BytesFree)), "XIVLauncherCN Error");
                     break;
 
                 case NotEnoughSpaceException.SpaceKind.AllPatches:
@@ -1074,7 +1082,7 @@ public class MainPage : Page
                         string.Format(
                             Loc.Localize("FreeSpaceErrorAll",
                                 "There is not enough space on your drive to download all patches.\n\nYou can change the location patches are downloaded to in the XIVLauncher settings.\n\nRequired:{0}\nFree:{1}"),
-                            ApiHelpers.BytesToString(sex.BytesRequired), ApiHelpers.BytesToString(sex.BytesFree)), "XIVLauncher Error");
+                            ApiHelpers.BytesToString(sex.BytesRequired), ApiHelpers.BytesToString(sex.BytesFree)), "XIVLauncherCN Error");
                     break;
 
                 case NotEnoughSpaceException.SpaceKind.Game:
@@ -1082,7 +1090,7 @@ public class MainPage : Page
                         string.Format(
                             Loc.Localize("FreeSpaceGameError",
                                 "There is not enough space on your drive to install patches.\n\nYou can change the location the game is installed to in the settings.\n\nRequired:{0}\nFree:{1}"),
-                            ApiHelpers.BytesToString(sex.BytesRequired), ApiHelpers.BytesToString(sex.BytesFree)), "XIVLauncher Error");
+                            ApiHelpers.BytesToString(sex.BytesRequired), ApiHelpers.BytesToString(sex.BytesFree)), "XIVLauncherCN Error");
                     break;
 
                 default:
@@ -1111,11 +1119,11 @@ public class MainPage : Page
         switch (reason)
         {
             case PatchManager.FailReason.DownloadProblem:
-                App.ShowMessageBlocking(string.Format(dlFailureLoc, "Problem", versionId), "XIVLauncher Error");
+                App.ShowMessageBlocking(string.Format(dlFailureLoc, "Problem", versionId), "XIVLauncherCN Error");
                 break;
 
             case PatchManager.FailReason.HashCheck:
-                App.ShowMessageBlocking(string.Format(dlFailureLoc, "IsHashCheckPass", versionId), "XIVLauncher Error");
+                App.ShowMessageBlocking(string.Format(dlFailureLoc, "IsHashCheckPass", versionId), "XIVLauncherCN Error");
                 break;
 
             default:
@@ -1129,7 +1137,7 @@ public class MainPage : Page
     {
         App.ShowMessageBlocking(
             Loc.Localize("PatchInstallerInstallFailed", "The patch installer ran into an error.\nPlease report this error.\n\nPlease try again or use the official launcher."),
-            "XIVLauncher Error");
+            "XIVLauncherCN Error");
 
         Environment.Exit(0);
     }
