@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Serilog;
 using XIVLauncher.Common.Util;
@@ -33,7 +34,7 @@ public class CompatibilityTools
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
 #else
     // WINE_XIV_MACOS
-    private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-1.1.1/wine.tar.xz";
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-1.1/wine.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine";
 #endif
 
@@ -42,8 +43,8 @@ public class CompatibilityTools
     public WineSettings Settings { get; private set; }
 
     private string WineBinPath => Settings.StartupType == WineStartupType.Managed ?
-                                    Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin") :
-                                    Settings.CustomBinPath;
+                                    Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
+                                    : Settings.CustomBinPath;
     private string Wine64Path => Path.Combine(WineBinPath, "wine64");
     private string WineServerPath => Path.Combine(WineBinPath, "wineserver");
 
@@ -160,6 +161,15 @@ public class CompatibilityTools
         psi.RedirectStandardError = true;
         psi.UseShellExecute = false;
         psi.WorkingDirectory = workingDirectory;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            var winelibPath = Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "lib");
+            var libPaths = new string[] {winelibPath, "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib"};
+            var libPath = String.Join(":", libPaths);
+            psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
+            psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
+        }
 
         var wineEnviromentVariables = new Dictionary<string, string>();
         wineEnviromentVariables.Add("WINEPREFIX", Settings.Prefix.FullName);
