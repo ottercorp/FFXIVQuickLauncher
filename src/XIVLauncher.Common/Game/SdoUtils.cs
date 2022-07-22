@@ -38,6 +38,7 @@ namespace XIVLauncher.Common
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
+                // return String.Empty;
                 var processorId = new DeviceIdBuilder().OnMac(mac => mac.AddPlatformSerialNumber()).ToString();
                 return GetMD5(ASCIIEncoding.ASCII.GetBytes(processorId));
             }

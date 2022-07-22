@@ -259,13 +259,14 @@ public class MainPage : Page
 
         try
         {
-            Area = this.loginFrame.Area;
+            Area = loginFrame.Area;
             var enableUidCache = App.Settings.IsUidCacheEnabled ?? false;
             var gamePath = App.Settings.GamePath;
             var checkResult = await App.Launcher.CheckGameUpdate(Area, gamePath, false);
             if (checkResult.State == Launcher.LoginState.NeedsPatchGame)
                 return checkResult;
             if (username == null) username = string.Empty;
+            var autoLoginSessionKey = App.Accounts.CurrentAccount.AutoLoginSessionKey;
             return await App.Launcher.LoginSdo(
                 username,
                 password,
@@ -289,7 +290,7 @@ public class MainPage : Page
                 },
                 action == LoginAction.ForceQR,
                 string.IsNullOrEmpty(password) && this.loginFrame.IsAutoLogin,
-                App.Accounts.CurrentAccount.AutoLoginSessionKey
+                autoLoginSessionKey
             ).ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -426,6 +427,12 @@ public class MainPage : Page
         }
 
         Debug.Assert(loginResult.State == Launcher.LoginState.Ok);
+
+        if (loginResult.State == Launcher.LoginState.Ok && App.Accounts.CurrentAccount != null && loginResult.OauthLogin.AutoLoginSessionKey != null)
+        {
+            App.Accounts.CurrentAccount.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
+            App.Accounts.Save();
+        }
 
         while (true)
         {
