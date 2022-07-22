@@ -52,6 +52,13 @@ namespace XIVLauncher.Windows
             if (App.Settings.GamePath != null)
                 ViewModel.GamePath = App.Settings.GamePath.FullName;
 
+            if (App.Settings.PatchPath is { Exists: false })
+            {
+                App.Settings.PatchPath = null;
+            }
+
+            App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patches"));
+
             if (App.Settings.PatchPath != null)
                 ViewModel.PatchPath = App.Settings.PatchPath.FullName;
 

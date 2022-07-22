@@ -172,8 +172,8 @@ namespace XIVLauncher.Windows.ViewModel
         {
             ProblemCheck.RunCheck(_window);
 
-            //var bootRes = await HandleBootCheck().ConfigureAwait(false);
-            var bootRes = true;
+            var bootRes = await HandleBootCheck().ConfigureAwait(false);
+
             if (!bootRes)
                 return;
 
@@ -1226,24 +1226,24 @@ namespace XIVLauncher.Windows.ViewModel
                 }
 
                 App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patches"));
+                //PatchListEntry[] bootPatches = null;
+                //try
+                //{
+                //    bootPatches = await this.Launcher.CheckBootVersion(App.Settings.GamePath).ConfigureAwait(false);
+                //}
+                //catch (Exception ex)
+                //{
+                //    Log.Error(ex, "Unable to check boot version.");
+                //    CustomMessageBox.Show(Loc.Localize("CheckBootVersionError", "XIVLauncher was not able to check the boot version for the select game installation. This can happen if a maintenance is currently in progress or if your connection to the version check server is not available. Please report this error if you are able to login with the official launcher, but not XIVLauncher."), "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
-                PatchListEntry[] bootPatches = null;
-                try
-                {
-                    bootPatches = await this.Launcher.CheckBootVersion(App.Settings.GamePath).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Unable to check boot version.");
-                    CustomMessageBox.Show(Loc.Localize("CheckBootVersionError", "XIVLauncher was not able to check the boot version for the select game installation. This can happen if a maintenance is currently in progress or if your connection to the version check server is not available. Please report this error if you are able to login with the official launcher, but not XIVLauncher."), "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+                //    return false;
+                //}
 
-                    return false;
-                }
+                //if (bootPatches == null)
+                //    return true;
 
-                if (bootPatches == null)
-                    return true;
-
-                return await TryHandlePatchAsync(Repository.Boot, bootPatches, null).ConfigureAwait(false);
+                //return await TryHandlePatchAsync(Repository.Boot, bootPatches, null).ConfigureAwait(false);
+                return true;
             }
             catch (Exception ex)
             {
@@ -1278,13 +1278,6 @@ namespace XIVLauncher.Windows.ViewModel
 
                 return false;
             }
-
-            if (App.Settings.PatchPath is { Exists: false })
-            {
-                App.Settings.PatchPath = null;
-            }
-
-            App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patches"));
 
             using var installer = new Common.Game.Patch.PatchInstaller(App.Settings.KeepPatches ?? false);
             var patcher = new PatchManager(App.Settings.PatchAcquisitionMethod ?? AcquisitionMethod.Aria, App.Settings.SpeedLimitBytes,
