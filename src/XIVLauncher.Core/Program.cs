@@ -296,7 +296,7 @@ class Program
         var winePrefix = storage.GetFolder("wineprefix");
         var wineSettings = new WineSettings(Config.WineStartupType, Config.WineBinaryPath, Config.WineDebugVars, wineLogFile, winePrefix, Config.ESyncEnabled, Config.FSyncEnabled);
         var toolsFolder = storage.GetFolder("compatibilitytool");
-        CompatibilityTools = new CompatibilityTools(wineSettings, Config.DxvkHudType, Config.GameModeEnabled, Config.DxvkAsyncEnabled,Config.DxvkFrameLimit, toolsFolder);
+        CompatibilityTools = new CompatibilityTools(wineSettings, Config.DxvkHudType, Config.GameModeEnabled, Config.DxvkAsyncEnabled, Config.DxvkFrameLimit, toolsFolder);
     }
 
     public static void ShowWindow()
