@@ -123,7 +123,7 @@ namespace XIVLauncher.Common
                 foreach (ManagementObject mo in getPartitionsOnDisk.Get())
                 {
                     if (mo["Index"].ToString() != "0") continue;
-                    hardDiskID = mo["SerialNumber"].ToString().Trim();
+                    hardDiskID = mo["SerialNumber"].ToString();
                     break;
                 }
                 result = GetMD5(ASCIIEncoding.ASCII.GetBytes(hardDiskID));
