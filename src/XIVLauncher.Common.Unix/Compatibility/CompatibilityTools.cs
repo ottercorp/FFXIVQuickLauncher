@@ -43,8 +43,8 @@ public class CompatibilityTools
     public WineSettings Settings { get; private set; }
 
     private string WineBinPath => Settings.StartupType == WineStartupType.Managed ?
-                                    Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
-                                    : Settings.CustomBinPath;
+        Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
+        : Settings.CustomBinPath;
     private string Wine64Path => Path.Combine(WineBinPath, "wine64");
     private string WineServerPath => Path.Combine(WineBinPath, "wineserver");
 
@@ -164,11 +164,14 @@ public class CompatibilityTools
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            var winelibPath = Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "lib");
-            var libPaths = new string[] {winelibPath, "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib"};
-            var libPath = String.Join(":", libPaths);
-            psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
-            psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
+            var winelibPath = Path.Combine(WineBinPath, "..", "lib");
+            if (Directory.Exists(winelibPath))
+            {
+                var libPaths = new string[] {winelibPath, "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib"};
+                var libPath = String.Join(":", libPaths);
+                psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
+                psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
+            }
         }
 
         var wineEnviromentVariables = new Dictionary<string, string>();
