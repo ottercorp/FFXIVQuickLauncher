@@ -51,7 +51,7 @@ class Program
     public static bool IsSteamDeckHardware => Directory.Exists("/home/deck");
     public static bool IsSteamDeckGamingMode => Steam != null && Steam.IsValid && Steam.IsRunningOnSteamDeck();
 
-    private const string APP_NAME = "xlcore";
+    private const string APP_NAME = "xlcore_cn";
 
     private static uint invalidationFrames = 0;
     private static Vector2 lastMousePosition;
