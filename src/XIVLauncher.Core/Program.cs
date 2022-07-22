@@ -185,6 +185,22 @@ class Program
 #endif
 
         // Create window, GraphicsDevice, and all resources necessary for the demo.
+        try
+        {
+            var runtimes = new List<string>();
+
+            var directory = new DirectoryInfo(Path.Join(Directory.GetCurrentDirectory(),"runtimes"));
+            foreach (var subdir in directory.GetDirectories())
+            {
+                runtimes.Add(Path.Join("runtimes",subdir.Name,"native"));
+            }
+
+            AppUtil.AddEnvironmentPaths(runtimes);
+        }
+        catch (Exception e)
+        {
+            Log.Error("Native runtime can't added");
+        }
         VeldridStartup.CreateWindowAndGraphicsDevice(
             new WindowCreateInfo(50, 50, 1280, 800, WindowState.Normal, $"XIVLauncherCN {version}"),
             new GraphicsDeviceOptions(false, null, true, ResourceBindingModel.Improved, true, true),

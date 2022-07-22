@@ -61,4 +61,11 @@ public static partial class AppUtil
             PlatformHelpers.OpenBrowser(url);
         }
     }
+
+    public static void AddEnvironmentPaths(IEnumerable<string> paths)
+    {
+        var path = new[] { Environment.GetEnvironmentVariable("PATH") ?? string.Empty };
+        string newPath = string.Join(Path.PathSeparator.ToString(), path.Concat(paths));
+        Environment.SetEnvironmentVariable("PATH", newPath);
+    }
 }
