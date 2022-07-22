@@ -86,5 +86,6 @@ public interface ILauncherConfig
 
     public int DalamudLoadDelay { get; set; }
 
+    public int DxvkFrameLimit { get; set; }
     #endregion
 }

@@ -52,13 +52,15 @@ public class CompatibilityTools
     private readonly Dxvk.DxvkHudType hudType;
     private readonly bool gamemodeOn;
     private readonly string dxvkAsyncOn;
+    private readonly int dxvkFrameLimit;
 
-    public CompatibilityTools(WineSettings wineSettings, Dxvk.DxvkHudType hudType, bool? gamemodeOn, bool? dxvkAsyncOn, DirectoryInfo toolsFolder)
+    public CompatibilityTools(WineSettings wineSettings, Dxvk.DxvkHudType hudType, bool? gamemodeOn, bool? dxvkAsyncOn,int dxvkFrameLimit, DirectoryInfo toolsFolder)
     {
         this.Settings = wineSettings;
         this.hudType = hudType;
         this.gamemodeOn = gamemodeOn ?? false;
         this.dxvkAsyncOn = (dxvkAsyncOn ?? false) ? "1" : "0";
+        this.dxvkFrameLimit = dxvkFrameLimit;
 
         this.toolDirectory = new DirectoryInfo(Path.Combine(toolsFolder.FullName, "beta"));
         this.dxvkDirectory = new DirectoryInfo(Path.Combine(toolsFolder.FullName, "dxvk"));
@@ -189,6 +191,11 @@ public class CompatibilityTools
         wineEnviromentVariables.Add("DXVK_ASYNC", dxvkAsyncOn);
         wineEnviromentVariables.Add("WINEESYNC", Settings.EsyncOn);
         wineEnviromentVariables.Add("WINEFSYNC", Settings.FsyncOn);
+
+        if (dxvkFrameLimit!=0)
+        {
+            wineEnviromentVariables.Add("DXVK_FRAME_RATE", dxvkFrameLimit.ToString());
+        }
 
         wineEnviromentVariables.Add("LD_PRELOAD", ldPreload);
 
