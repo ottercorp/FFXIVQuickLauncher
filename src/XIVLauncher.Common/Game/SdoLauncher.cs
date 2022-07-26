@@ -73,59 +73,68 @@ namespace XIVLauncher.Common.Game
             var sessionId = String.Empty;
             // /authen/getGuid.json
             (var dynamicKey, var guid) = await GetGuid();
-            var tryFast = autoLogin;
-            //TODO:密码登录？
+            var fastLogin = autoLogin;
 
-            //用户名及密码非空,跳过叨鱼部分
-            if ((!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password)) || string.IsNullOrEmpty(autoLoginSessionKey) || forceQR) tryFast = false;
+            if (forceQR) fastLogin = false;
 
-            if (tryFast)//刷新SessionKey
+            //尝试密码登录
+            if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password) && !forceQR && !fastLogin)
             {
-                try
-                {
-                    (autoLoginSessionKey, tgt, sndaId) = await UpdateAutoLoginSessionKey(autoLoginSessionKey, guid);
-
-                }
-                catch (OauthLoginException ex)
-                {
-                    logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
-                    tryFast = false;
-                }
-                if (autoLoginSessionKey == null) tryFast = false;
-                else (sndaId, tgt) = await FastLogin(tgt, guid);
+                (sndaId, tgt) = await StaticLogin(userName, password, guid);
+                (dynamicKey, guid) = await GetGuid();
             }
-
-            if (!tryFast) //手机叨鱼相关
+            
+            //未成功密码登录
+            if (string.IsNullOrEmpty(tgt))
             {
-                var pushMsgSessionKey = String.Empty;
-                await CancelPushMessageLogin(pushMsgSessionKey, guid);
-
-                (var returnCode, var failReason, var pushMsgSerialNum, pushMsgSessionKey) = await SendPushMessage(userName);
-                // 叨鱼已经打开/未打开，其余情况一律扫码
-                if ((returnCode == 0|| returnCode == -14001710) && !forceQR) //叨鱼滑动登录
+                if (fastLogin)//快速登录,刷新SessionKey
                 {
-                    if (pushMsgSerialNum == null || pushMsgSessionKey == null)
+                    try
                     {
-                        logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
-                        return null;
-                    }
-                    logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
-                    CTS = new CancellationTokenSource();
-                    CTS.CancelAfter(30 * 1000);
-                    (sndaId, tgt, autoLoginSessionKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, logEvent, CTS, autoLogin);
-                    CTS.Dispose();
-                }
-                else //扫码
-                {
-                    var codeKey = await GetQRCode();
-                    logEvent?.Invoke(SdoLoginState.GotQRCode, null);
-                    CTS = new CancellationTokenSource();
-                    CTS.CancelAfter(60 * 1000);
-                    (sndaId, tgt, userName,autoLoginSessionKey) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS, autoLogin);
-                    CTS.Dispose();
-                }
+                        (autoLoginSessionKey, tgt, sndaId) = await UpdateAutoLoginSessionKey(autoLoginSessionKey, guid);
 
-                if (File.Exists(qrPath)) File.Delete(qrPath);
+                    }
+                    catch (OauthLoginException ex)
+                    {
+                        logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
+                        fastLogin = false;
+                    }
+                    if (autoLoginSessionKey == null) fastLogin = false;
+                    else (sndaId, tgt) = await FastLogin(tgt, guid);
+                }
+                
+                if (!fastLogin)//手机叨鱼相关
+                {
+                    var pushMsgSessionKey = String.Empty;
+                    await CancelPushMessageLogin(pushMsgSessionKey, guid);
+
+                    (var returnCode, var failReason, var pushMsgSerialNum, pushMsgSessionKey) = await SendPushMessage(userName);
+                    // 叨鱼已经打开/未打开，其余情况一律扫码
+                    if ((returnCode == 0 || returnCode == -14001710) && !forceQR) //叨鱼滑动登录
+                    {
+                        if (pushMsgSerialNum == null || pushMsgSessionKey == null)
+                        {
+                            logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
+                            return null;
+                        }
+                        logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
+                        CTS = new CancellationTokenSource();
+                        CTS.CancelAfter(30 * 1000);
+                        (sndaId, tgt, autoLoginSessionKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, logEvent, CTS, autoLogin);
+                        CTS.Dispose();
+                    }
+                    else //扫码
+                    {
+                        var codeKey = await GetQRCode();
+                        logEvent?.Invoke(SdoLoginState.GotQRCode, null);
+                        CTS = new CancellationTokenSource();
+                        CTS.CancelAfter(60 * 1000);
+                        (sndaId, tgt, userName, autoLoginSessionKey) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS, autoLogin);
+                        CTS.Dispose();
+                    }
+
+                    if (File.Exists(qrPath)) File.Delete(qrPath);
+                }
             }
 
             //tgt或ID空白则返回
@@ -152,6 +161,7 @@ namespace XIVLauncher.Common.Game
             {
                 SessionId = sessionId,
                 InputUserId = userName,
+                Password = string.IsNullOrEmpty(password) ? string.Empty : password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
                 MaxExpansion = Constants.MaxExpansion
@@ -359,6 +369,25 @@ namespace XIVLauncher.Common.Game
         }
 
         #endregion
+
+        #region 密码登录
+
+        private async Task<(string sndaId, string tgt)> StaticLogin(string username, string password, string guid)
+        {
+            var macAddress = WINGetAdaptersInfo.GetAdapters();
+            //密码登录
+            var result = await GetJsonAsSdoClient("staticLogin.json", new List<string>() { "checkCodeFlag=1", "encryptFlag=0", $"inputUserId={username}", $"password={password}",$"mac={macAddress}", $"guid={guid}", "inputUserType=0&accountDomain=1&autoLoginFlag=0&autoLoginKeepTime=0&supportPic=2" }, SdoClient.Launcher);
+
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+            {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
+            Log.Information($"staticLogin.json:{result.Data.SndaId}:{result.Data.Tgt}");
+            return (result.Data.SndaId, result.Data.Tgt);
+        }
+
+        #endregion
+
 
         private class SdoLoginResult
         {

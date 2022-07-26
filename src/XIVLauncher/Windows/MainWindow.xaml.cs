@@ -614,15 +614,15 @@ namespace XIVLauncher.Windows
 
         private void FastLoginCheckBox_OnClick(object sender, RoutedEventArgs e)
         {
-            if (Model.IsFastLogin)
-            {
-                LoginPassword.IsEnabled = false;
-                LoginPassword.Password = String.Empty;
-            }
-            else
-            {
-                LoginPassword.IsEnabled = true;
-            }
+            //if (Model.IsFastLogin)
+            //{
+            //    LoginPassword.IsEnabled = false;
+            //    LoginPassword.Password = String.Empty;
+            //}
+            //else
+            //{
+            //    LoginPassword.IsEnabled = true;
+            //}
         }
 
         private void RadioButton_MouseEnter(object sender, MouseEventArgs e)
@@ -637,6 +637,16 @@ namespace XIVLauncher.Windows
         private void RadioButton_MouseLeave(object sender, MouseEventArgs e)
         {
             _bannerChangeTimer.Start();
+        }
+
+        private void ShowPassword_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (LoginPassword.Visibility == Visibility.Collapsed) LoginPassword.Visibility = Visibility.Visible;
+            else
+            {
+                LoginPassword.Visibility = Visibility.Collapsed;
+                LoginPassword.Password = String.Empty;
+            }
         }
     }
 }
