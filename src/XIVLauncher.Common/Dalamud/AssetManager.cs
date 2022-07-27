@@ -31,7 +31,10 @@ namespace XIVLauncher.Common.Dalamud
 
         public static async Task<DirectoryInfo> EnsureAssets(DirectoryInfo baseDir)
         {
-            using var client = new HttpClient
+            using var client = new HttpClient(new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            })
             {
                 Timeout = TimeSpan.FromMinutes(4),
             };
@@ -41,7 +44,7 @@ namespace XIVLauncher.Common.Dalamud
                 NoCache = true,
             };
             client.DefaultRequestHeaders.Add("User-Agent", "Wget/1.21.1 (linux-gnu)");
-            client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate, br");
+            client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate");
 
             using var sha1 = SHA1.Create();
 
