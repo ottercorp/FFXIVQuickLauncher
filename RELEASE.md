@@ -1,8 +1,9 @@
-﻿This is a maintenance release.
+这是一个测试版本。
 
-This release is intended to test the update system. Please use a regular release instead.
+此版本旨在测试更新系统。请改用常规版本。
 
-**:warning: Attention!**
-If you receive errors during the installation or if the launcher doesn't work correctly, make sure to check your antivirus first and disable it for XIVLauncher. Many commercial antivirus programs detect XIVLauncher as a false positive. Please also see this FAQ entry with more information: https://goatcorp.github.io/faq/xl_troubleshooting#q-how-do-i-whitelist-xivlauncher-and-dalamud-so-my-antivirus-leaves-them-alone
+**:warning: 注意！**
 
-**Please download ``Setup.exe`` from below to install XIVLauncher, if you have not used it before.**
+如果您在安装过程中收到错误或启动器无法正常工作，请确保首先检查您的防病毒软件并为 XIVLauncherCN 添加白名单。 许多商业防病毒程序将 XIVLauncherCN 检测为误报。 请参阅此常见问题解答条目以获取更多信息：https://ottercorp.github.io/faq/xl_troubleshooting#q-how-do-i-whitelist-xivlauncher-and-dalamud-so-my-antivirus-leaves-them-alone
+
+**如果您之前没有使用过 XIVLauncher，请从下面下载 ``Setup.exe`` 来安装它。**
