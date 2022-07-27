@@ -42,9 +42,11 @@ public class CompatibilityTools
 
     public WineSettings Settings { get; private set; }
 
-    private string WineBinPath => Settings.StartupType == WineStartupType.Managed ?
-        Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
+    private string WineBinPath => Settings.StartupType == WineStartupType.Managed
+        ? Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
         : Settings.CustomBinPath;
+
+    private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK", Settings.MoltenVk ?? "modern");
     private string Wine64Path => Path.Combine(WineBinPath, "wine64");
     private string WineServerPath => Path.Combine(WineBinPath, "wineserver");
 
@@ -164,14 +166,23 @@ public class CompatibilityTools
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
+            var additionalPaths = Array.Empty<string>();
             var winelibPath = Path.Combine(WineBinPath, "..", "lib");
+
             if (Directory.Exists(winelibPath))
             {
-                var libPaths = new string[] {winelibPath, "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib"};
-                var libPath = String.Join(":", libPaths);
-                psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
-                psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
+                additionalPaths = additionalPaths.Append(winelibPath).ToArray();
             }
+
+            if (Directory.Exists(MoltenVkPath))
+            {
+                additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
+            }
+
+            var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
+            var libPath = String.Join(":", libPaths);
+            psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
+            psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
         }
 
         var wineEnviromentVariables = new Dictionary<string, string>();

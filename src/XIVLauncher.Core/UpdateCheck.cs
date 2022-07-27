@@ -4,7 +4,7 @@ namespace XIVLauncher.Core;
 
 public static class UpdateCheck
 {
-    private const string UPDATE_URL = "https://raw.githubusercontent.com/goatcorp/xlcore-distrib/main/version.txt";
+    private const string UPDATE_URL = "https://raw.githubusercontent.com/ottercorp/xlcore-distrib/main/version.txt";
 
     public static async Task<VersionCheckResult> CheckForUpdate()
     {

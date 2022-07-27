@@ -40,6 +40,11 @@ public class SettingsTabWine : SettingsTab
 
             new SettingsEntry<bool>("Enable DXVK ASYNC", "Enable DXVK ASYNC patch.", () => Program.Config.DxvkAsyncEnabled ?? true, b => Program.Config.DxvkAsyncEnabled = b),
             new SettingsEntry<bool>("Enable ESync", "Enable eventfd-based synchronization.", () => Program.Config.ESyncEnabled ?? true, b => Program.Config.ESyncEnabled = b),
+
+            new SettingsEntry<bool>("Enable Modern MoltenVK", "Enable modern MoltenVK.", () => Program.Config.ModernMvkEnabled ?? true, b => Program.Config.ModernMvkEnabled = b)
+            {
+                CheckVisibility = () => RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+            },
             new SettingsEntry<bool>("Enable FSync", "Enable fast user mutex (futex2).", () => Program.Config.FSyncEnabled ?? true, b => Program.Config.FSyncEnabled = b)
             {
                 CheckVisibility = () => RuntimeInformation.IsOSPlatform(OSPlatform.Linux),
@@ -51,11 +56,10 @@ public class SettingsTabWine : SettingsTab
                     return null;
                 }
             },
-            new NumericSettingsEntry("DXVK Frame Limit", "Limit rendering to the given number of frames per second. Set to 0 for unlimited", () => Program.Config.DxvkFrameLimit, fps => Program.Config.DxvkFrameLimit = fps, 1, int.MaxValue, 1),
+            new NumericSettingsEntry("DXVK Frame Limit", "Limit rendering to the given number of frames per second. Set to 0 for unlimited", () => Program.Config.DxvkFrameLimit, fps => Program.Config.DxvkFrameLimit = fps, 0, int.MaxValue, 1),
 
             new SettingsEntry<Dxvk.DxvkHudType>("DXVK Overlay", "Configure how much of the DXVK overlay is to be shown.", () => Program.Config.DxvkHudType, type => Program.Config.DxvkHudType = type),
             new SettingsEntry<string>("WINEDEBUG Variables", "Configure debug logging for wine. Useful for troubleshooting.", () => Program.Config.WineDebugVars ?? string.Empty, s => Program.Config.WineDebugVars = s)
-
         };
     }
 
