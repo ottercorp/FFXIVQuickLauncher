@@ -133,12 +133,13 @@ namespace XIVLauncher.Common.Game
                         logEvent?.Invoke(SdoLoginState.GotQRCode, null);
                         CTS = new CancellationTokenSource();
                         CTS.CancelAfter(60 * 1000);
-                        (sndaId, tgt) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS);
+                        (sndaId, tgt, userName) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS);
                         CTS.Dispose();
 
                         if (!string.IsNullOrEmpty(sndaId) && !string.IsNullOrEmpty(tgt))
                         {
-                            userName = await GetAccountGroup(tgt, sndaId);
+                            var account= await GetAccountGroup(tgt, sndaId);
+                            userName = string.IsNullOrEmpty(account) ? userName : account;
                             if (autoLogin) (tgt, autoLoginSessionKey) = await AccountGroupLogin(tgt, sndaId, autoLogin);
                         }
                     }
@@ -330,7 +331,7 @@ namespace XIVLauncher.Common.Game
             return codeKey;
         }
 
-        private async Task<(string sndaId, string tgt)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation, bool autoLogin = false)
+        private async Task<(string sndaId, string tgt, string userName)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation, bool autoLogin = false)
         {
             while (!cancellation.IsCancellationRequested)
             {
@@ -338,8 +339,7 @@ namespace XIVLauncher.Common.Game
 
                 if (result.ReturnCode == 0 && result.Data.NextAction == 0)
                 {
-                    if (autoLogin) return (result.Data.SndaId, result.Data.Tgt);
-                    return (result.Data.SndaId, result.Data.Tgt);
+                    return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId);
                 }
                 else
                 {
@@ -354,7 +354,7 @@ namespace XIVLauncher.Common.Game
                 }
             }
             logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "登陆超时或被取消");
-            return (null, null);
+            return (null, null, null);
         }
 
         #endregion
@@ -411,6 +411,8 @@ namespace XIVLauncher.Common.Game
                 throw new OauthLoginException(result.Data.FailReason);
             }
             Log.Information($"getAccountGroup:{result.Data.SndaIdArray}");
+
+            if (!result.Data.SndaIdArray.Contains(sndaId)) throw new OauthLoginException($"获取用户名失败");
 
             return result.Data.SndaIdArray.Contains(sndaId) ? result.Data.AccountArray[result.Data.SndaIdArray.IndexOf(sndaId)] : null;
         }
@@ -528,7 +530,7 @@ namespace XIVLauncher.Common.Game
                 if (cookies.Count(x => x.StartsWith("CODEKEY=")) > 0)
                 {
                     CODEKEY = (CODEKEY != cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0]) ? cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0] : CODEKEY;
-                    CODEKEY_COUNT = (CODEKEY_COUNT == null) ? cookies.FirstOrDefault(x => x.StartsWith("CODEKEY_COUNT=")).Split(';')[0] : CODEKEY_COUNT;
+                    CODEKEY_COUNT = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY_COUNT=")).Split(';')[0];
                 }
             }
             try
