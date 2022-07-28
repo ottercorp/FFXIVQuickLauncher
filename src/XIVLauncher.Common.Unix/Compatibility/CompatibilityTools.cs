@@ -166,6 +166,7 @@ public class CompatibilityTools
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
+            bool moltenVkEnabled = false;
             var additionalPaths = Array.Empty<string>();
             var winelibPath = Path.Combine(WineBinPath, "..", "lib");
 
@@ -176,6 +177,7 @@ public class CompatibilityTools
 
             if (Directory.Exists(MoltenVkPath))
             {
+                moltenVkEnabled = true;
                 additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
             }
 
@@ -183,6 +185,14 @@ public class CompatibilityTools
             var libPath = String.Join(":", libPaths);
             psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
             psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
+
+            if (moltenVkEnabled)
+            {
+                psi.EnvironmentVariables.Add("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1");
+                psi.EnvironmentVariables.Add("MVK_CONFIG_RESUME_LOST_DEVICE", "1");
+                psi.EnvironmentVariables.Add("MVK_ALLOW_METAL_FENCES", "1");
+                psi.EnvironmentVariables.Add("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1");
+            }
         }
 
         var wineEnviromentVariables = new Dictionary<string, string>();
