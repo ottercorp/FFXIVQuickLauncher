@@ -99,6 +99,30 @@ namespace XIVLauncher.Common
             return result;
         }
 
+        public static string GetMac()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return new DeviceIdBuilder().OnLinux(linux => linux.AddMachineId()).ToString();
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return new DeviceIdBuilder().OnMac(mac => mac.AddPlatformSerialNumber().AddSystemDriveSerialNumber()).ToString();
+            }
+
+            var result = String.Empty;
+            try
+            {
+                return  WINGetAdaptersInfo.GetAdapters();
+            }
+            catch
+            {
+                Log.Error("Failed to get MacAddress");
+            }
+            return result;
+        }
+
         private static string GetDiskSerialNumber()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))

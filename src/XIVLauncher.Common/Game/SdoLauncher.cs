@@ -71,39 +71,38 @@ namespace XIVLauncher.Common.Game
             var sndaId = String.Empty;
             var tgt = String.Empty;
             var sessionId = String.Empty;
-            // /authen/getGuid.json
             (var dynamicKey, var guid) = await GetGuid();
             var fastLogin = autoLogin;
 
             if (forceQR) fastLogin = false;
 
-            //尝试密码登录
-            if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password) && !forceQR && !fastLogin)
+            if (fastLogin)//快速登录,刷新SessionKey
             {
-                (sndaId, tgt) = await StaticLogin(userName, password, guid);
-                (dynamicKey, guid) = await GetGuid();
+                try
+                {
+                    (autoLoginSessionKey, tgt, sndaId) = await UpdateAutoLoginSessionKey(autoLoginSessionKey, guid);
+
+                }
+                catch (OauthLoginException ex)
+                {
+                    logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
+                    fastLogin = false;
+                }
+
+                if (autoLoginSessionKey == null) fastLogin = false;
+                else (sndaId, tgt) = await FastLogin(tgt, guid);
             }
-            
-            //未成功密码登录
+
+            //未成功自动登录
             if (string.IsNullOrEmpty(tgt))
             {
-                if (fastLogin)//快速登录,刷新SessionKey
+                //尝试密码登录
+                if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password) && !forceQR && !fastLogin)
                 {
-                    try
-                    {
-                        (autoLoginSessionKey, tgt, sndaId) = await UpdateAutoLoginSessionKey(autoLoginSessionKey, guid);
-
-                    }
-                    catch (OauthLoginException ex)
-                    {
-                        logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
-                        fastLogin = false;
-                    }
-                    if (autoLoginSessionKey == null) fastLogin = false;
-                    else (sndaId, tgt) = await FastLogin(tgt, guid);
+                    (sndaId, tgt) = await StaticLogin(userName, password, guid);
                 }
-                
-                if (!fastLogin)//手机叨鱼相关
+
+                if (!fastLogin) //手机叨鱼相关
                 {
                     var pushMsgSessionKey = String.Empty;
 
@@ -136,20 +135,15 @@ namespace XIVLauncher.Common.Game
                         CTS.CancelAfter(60 * 1000);
                         (sndaId, tgt) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS);
                         CTS.Dispose();
-                    }
-
-                    if (File.Exists(qrPath))
-                    {
-                        File.Delete(qrPath);
 
                         if (!string.IsNullOrEmpty(sndaId) && !string.IsNullOrEmpty(tgt))
                         {
-                            //await GetPromotionInfo(tgt, guid);
-                            //await SsoLogin(tgt, guid);
-                            userName = await GetAccountGroup(tgt,sndaId);
-                            if (autoLogin) (tgt,autoLoginSessionKey) = await AccountGroupLogin(tgt,sndaId,autoLogin);
+                            userName = await GetAccountGroup(tgt, sndaId);
+                            if (autoLogin) (tgt, autoLoginSessionKey) = await AccountGroupLogin(tgt, sndaId, autoLogin);
                         }
                     }
+
+                    if (File.Exists(qrPath)) File.Delete(qrPath);
                 }
             }
 
@@ -391,7 +385,7 @@ namespace XIVLauncher.Common.Game
 
         private async Task<(string sndaId, string tgt)> StaticLogin(string username, string password, string guid)
         {
-            var macAddress = WINGetAdaptersInfo.GetAdapters();
+            var macAddress = SdoUtils.GetMac();
             //密码登录
             var result = await GetJsonAsSdoClient("staticLogin.json", new List<string>() { "checkCodeFlag=1", "encryptFlag=0", $"inputUserId={username}", $"password={password}",$"mac={macAddress}", $"guid={guid}", "inputUserType=0&accountDomain=1&autoLoginFlag=0&autoLoginKeepTime=0&supportPic=2" }, SdoClient.Launcher);
 

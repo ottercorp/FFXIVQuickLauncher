@@ -622,6 +622,7 @@ namespace XIVLauncher.Windows
             else
             {
                LoginPassword.IsEnabled = true;
+               LoginPassword.Password = _accountManager.CurrentAccount.Password;
             }
         }
 
@@ -641,7 +642,11 @@ namespace XIVLauncher.Windows
 
         private void ShowPassword_OnClick(object sender, RoutedEventArgs e)
         {
-            if (LoginPassword.Visibility == Visibility.Collapsed) LoginPassword.Visibility = Visibility.Visible;
+            if (LoginPassword.Visibility == Visibility.Collapsed)
+            {
+                LoginPassword.Visibility = Visibility.Visible;
+                LoginPassword.Password = _accountManager.CurrentAccount.Password;
+            }
             else
             {
                 LoginPassword.Visibility = Visibility.Collapsed;
