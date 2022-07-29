@@ -236,8 +236,11 @@ namespace XIVLauncher
                         new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "runtime")),
                         new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "dalamudAssets")),
                         new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming")),
-                        UniqueIdCache);
-
+                        UniqueIdCache,
+                        Settings.DalamudRolloutBucket);
+                    
+                    Settings.DalamudRolloutBucket = DalamudUpdater.RolloutBucket;
+                    
                     var dalamudWindowThread = new Thread(DalamudOverlayThreadStart);
                     dalamudWindowThread.SetApartmentState(ApartmentState.STA);
                     dalamudWindowThread.IsBackground = true;

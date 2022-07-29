@@ -40,6 +40,7 @@ namespace XIVLauncher.Settings
         bool? TreatNonZeroExitCodeAsFailure { get; set; }
         bool? ExitLauncherAfterGameExit { get; set; }
         bool? IsFt { get; set; }
+        string DalamudRolloutBucket { get; set; }
         int? SelectedServer { get; set; }
         bool FastLogin { get; set; }
 

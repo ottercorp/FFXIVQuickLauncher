@@ -44,6 +44,14 @@ namespace XIVLauncher.Windows
 
         private ObservableCollection<BannerDotInfo> _bannerDotList;
 
+        class BannerDotInfo
+        {
+            public bool Active { get; set; }
+            public int Index { get; set; }
+        }
+
+        private ObservableCollection<BannerDotInfo> _bannerDotList;
+
         private Timer _maintenanceQueueTimer;
 
         private AccountManager _accountManager;
@@ -488,7 +496,7 @@ namespace XIVLauncher.Windows
                 if (bootPatches != null)
                 {
                     CustomMessageBox.Show(Loc.Localize("MaintenanceQueueBootPatch",
-                        "A patch for the FFXIV launcher was detected.\nThis usually means that there is a patch for the game as well.\n\nYou will now be logged in."), "XIVLauncher", parentWindow: this);
+                        "A patch for the official launcher was detected.\nThis usually means that there is a patch for the game as well.\n\nYou will now be logged in."), "XIVLauncherCN", parentWindow: this);
                 }
 
                 Dispatcher.Invoke(() =>
@@ -597,6 +605,20 @@ namespace XIVLauncher.Windows
         {
             if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).Password = ((PasswordBox)sender).Password;
+        }
+
+        private void RadioButton_MouseEnter(object sender, MouseEventArgs e)
+        {
+            ((RadioButton)sender).IsChecked = true;
+            _currentBannerIndex = _bannerDotList.FirstOrDefault(x => x.Active)?.Index ?? _currentBannerIndex;
+            Dispatcher.BeginInvoke(new Action(() => BannerImage.Source = _bannerBitmaps[_currentBannerIndex]));
+
+            _bannerChangeTimer.Stop();
+        }
+
+        private void RadioButton_MouseLeave(object sender, MouseEventArgs e)
+        {
+            _bannerChangeTimer.Start();
         }
 
         private void ServerSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)

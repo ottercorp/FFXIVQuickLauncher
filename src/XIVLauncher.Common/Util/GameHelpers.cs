@@ -17,7 +17,7 @@ public static class GameHelpers
         return RegionInfo.CurrentRegion.TwoLetterISORegionName is "US" or "MX" or "CA";
     }
 
-    public static bool IsValidFfxivPath(string path)
+    public static bool IsValidGamePath(string path)
     {
         if (string.IsNullOrEmpty(path))
             return false;
@@ -25,7 +25,7 @@ public static class GameHelpers
         return Directory.Exists(Path.Combine(path, "game")) && Directory.Exists(Path.Combine(path, "boot")) || Directory.Exists(Path.Combine(path, "sdo"));
     }
 
-    public static bool CanFfxivMightNotBeInternationalClient(string path) 
+    public static bool CanMightNotBeInternationalClient(string path) 
     {
         if (Directory.Exists(Path.Combine(path, "sdo")))
             return true;
