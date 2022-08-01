@@ -72,11 +72,11 @@
                                   <Style TargetType="materialDesign:PackIcon">
                                       <Style.Triggers>
                                           <DataTrigger
-                                              Binding="{Binding Account.HasTgt}" Value="True">
+                                              Binding="{Binding Account.HasKey}" Value="True">
                                               <Setter Property="Kind" Value="AccountKeyOutline" />
                                           </DataTrigger>
                                           <DataTrigger
-                                              Binding="{Binding Account.HasTgt}" Value="False">
+                                              Binding="{Binding Account.HasKey}" Value="False">
                                               <Setter Property="Visibility" Value="Collapsed" />
                                           </DataTrigger>
                                       </Style.Triggers>
