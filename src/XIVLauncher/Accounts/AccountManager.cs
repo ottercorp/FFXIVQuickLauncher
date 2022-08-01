@@ -78,7 +78,7 @@ namespace XIVLauncher.Accounts
 
         #region SaveLoad
 
-        private static readonly string ConfigPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "accountsList.json");
+        private static readonly string ConfigPath = Path.Combine(Paths.RoamingPath, "accountsList.json");
 
         public void Save()
         {

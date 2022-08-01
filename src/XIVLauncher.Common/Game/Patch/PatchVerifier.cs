@@ -475,7 +475,7 @@ namespace XIVLauncher.Common.Game.Patch
 
             _repoMetaPaths.Clear();
 
-            var metaFolder = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patchMeta");
+            var metaFolder = Path.Combine(Paths.RoamingPath, "patchMeta");
             Directory.CreateDirectory(metaFolder);
 
             CurrentFile = "latest.json";

@@ -20,7 +20,7 @@ namespace XIVLauncher.PatchInstaller
             {
                 Log.Logger = new LoggerConfiguration()
                              .WriteTo.Console()
-                             .WriteTo.File(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patcher.log"))
+                             .WriteTo.File(Path.Combine(Paths.RoamingPath, "patcher.log"))
                              .WriteTo.Debug()
                              .MinimumLevel.Verbose()
                              .CreateLogger();

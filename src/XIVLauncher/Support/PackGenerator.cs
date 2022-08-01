@@ -11,7 +11,7 @@ namespace XIVLauncher.Support
     {
         public static string SavePack()
         {
-            var outFile = new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", $"trouble-{DateTime.Now:yyyyMMddhhmmss}.tspack"));
+            var outFile = new FileInfo(Path.Combine(Paths.RoamingPath, $"trouble-{DateTime.Now:yyyyMMddhhmmss}.tspack"));
             using var archive = ZipFile.Open(outFile.FullName, ZipArchiveMode.Create);
 
             var troubleBytes = Encoding.UTF8.GetBytes(Troubleshooting.GetTroubleshootingJson());
@@ -19,10 +19,10 @@ namespace XIVLauncher.Support
             troubleEntry.Write(troubleBytes, 0, troubleBytes.Length);
             troubleEntry.Close();
 
-            var xlLogFile = new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "output.log"));
-            var patcherLogFile = new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patcher.log"));
-            var dalamudLogFile = new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "dalamud.log"));
-            var ariaLogFile = new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "aria.log"));
+            var xlLogFile = new FileInfo(Path.Combine(Paths.RoamingPath, "output.log"));
+            var patcherLogFile = new FileInfo(Path.Combine(Paths.RoamingPath, "patcher.log"));
+            var dalamudLogFile = new FileInfo(Path.Combine(Paths.RoamingPath, "dalamud.log"));
+            var ariaLogFile = new FileInfo(Path.Combine(Paths.RoamingPath, "aria.log"));
 
             var dalamudRunnerDirectory = App.DalamudUpdater.Runner?.DirectoryName;
 

@@ -7,7 +7,7 @@ namespace XIVLauncher.Common
     {
         static Paths()
         {
-            RoamingPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "XIVLauncher");
+            RoamingPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming");
         }
 
         public static string RoamingPath { get; private set; }

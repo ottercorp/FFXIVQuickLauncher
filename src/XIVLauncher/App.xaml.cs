@@ -84,7 +84,7 @@ namespace XIVLauncher
             {
                 Log.Logger = new LoggerConfiguration()
                              .WriteTo.Async(a =>
-                                 a.File(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "output.log")))
+                                 a.File(Path.Combine(Paths.RoamingPath, "output.log")))
                              .WriteTo.Sink(SerilogEventSink.Instance)
 #if DEBUG
                              .WriteTo.Debug()
@@ -210,7 +210,7 @@ namespace XIVLauncher
                 Settings.AcceptLanguage = ApiHelpers.GenerateAcceptLanguage();
             }
 
-            UniqueIdCache = new CommonUniqueIdCache(new FileInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "uidCache.json")));
+            UniqueIdCache = new CommonUniqueIdCache(new FileInfo(Path.Combine(Paths.RoamingPath, "uidCache.json")));
         }
 
         private void OnUpdateCheckFinished(bool finishUp)
@@ -232,10 +232,10 @@ namespace XIVLauncher
 
                 try
                 {
-                    DalamudUpdater = new DalamudUpdater(new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "addon")),
-                        new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "runtime")),
-                        new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "dalamudAssets")),
-                        new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming")),
+                    DalamudUpdater = new DalamudUpdater(new DirectoryInfo(Path.Combine(Paths.RoamingPath, "addon")),
+                        new DirectoryInfo(Path.Combine(Paths.RoamingPath, "runtime")),
+                        new DirectoryInfo(Path.Combine(Paths.RoamingPath, "dalamudAssets")),
+                        new DirectoryInfo(Paths.RoamingPath,
                         UniqueIdCache,
                         Settings.DalamudRolloutBucket);
                     
@@ -301,7 +301,7 @@ namespace XIVLauncher
             });
         }
 
-        private static string GetConfigPath(string prefix) => Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", $"{prefix}ConfigV3.json");
+        private static string GetConfigPath(string prefix) => Path.Combine(Paths.RoamingPath, $"{prefix}ConfigV3.json");
 
         private void App_OnStartup(object sender, StartupEventArgs e)
         {
@@ -334,7 +334,7 @@ namespace XIVLauncher
                     if (arg == "--genIntegrity")
                     {
                         var result = IntegrityCheck.RunIntegrityCheckAsync(Settings.GamePath, null).GetAwaiter().GetResult();
-                        string saveIntegrityPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", $"{result.GameVersion}.json");
+                        string saveIntegrityPath = Path.Combine(Paths.RoamingPath, $"{result.GameVersion}.json");
 #if DEBUG
                         Log.Information("Saving integrity to " + saveIntegrityPath);
 #endif
