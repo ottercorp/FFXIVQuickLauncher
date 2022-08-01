@@ -71,15 +71,12 @@ namespace XIVLauncher.Common.Game
             var sndaId = String.Empty;
             var tgt = String.Empty;
             var sessionId = String.Empty;
-            // /authen/getGuid.json
             (var dynamicKey, var guid) = await GetGuid();
-            var tryFast = autoLogin;
-            //TODO:密码登录？
+            var fastLogin = autoLogin;
 
-            //用户名及密码非空,跳过叨鱼部分
-            if ((!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password)) || string.IsNullOrEmpty(autoLoginSessionKey) || forceQR) tryFast = false;
+            if (forceQR) fastLogin = false;
 
-            if (tryFast)//刷新SessionKey
+            if (fastLogin)//快速登录,刷新SessionKey
             {
                 try
                 {
@@ -89,43 +86,66 @@ namespace XIVLauncher.Common.Game
                 catch (OauthLoginException ex)
                 {
                     logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
-                    tryFast = false;
+                    fastLogin = false;
                 }
-                if (autoLoginSessionKey == null) tryFast = false;
+
+                if (autoLoginSessionKey == null) fastLogin = false;
                 else (sndaId, tgt) = await FastLogin(tgt, guid);
             }
 
-            if (!tryFast) //手机叨鱼相关
+            //未成功自动登录
+            if (string.IsNullOrEmpty(tgt))
             {
-                var pushMsgSessionKey = String.Empty;
-                await CancelPushMessageLogin(pushMsgSessionKey, guid);
-
-                (var returnCode, var failReason, var pushMsgSerialNum, pushMsgSessionKey) = await SendPushMessage(userName);
-                // 叨鱼已经打开/未打开，其余情况一律扫码
-                if ((returnCode == 0|| returnCode == -14001710) && !forceQR) //叨鱼滑动登录
+                //尝试密码登录
+                if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password) && !forceQR && !fastLogin)
                 {
-                    if (pushMsgSerialNum == null || pushMsgSessionKey == null)
+                    (sndaId, tgt) = await StaticLogin(userName, password, guid);
+                }
+
+                if (!fastLogin) //手机叨鱼相关
+                {
+                    var pushMsgSessionKey = String.Empty;
+
+                    if (!forceQR) //非强制扫码,尝试滑动登录
                     {
-                        logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
-                        return null;
-                    }
-                    logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
-                    CTS = new CancellationTokenSource();
-                    CTS.CancelAfter(30 * 1000);
-                    (sndaId, tgt, autoLoginSessionKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, logEvent, CTS, autoLogin);
-                    CTS.Dispose();
-                }
-                else //扫码
-                {
-                    var codeKey = await GetQRCode();
-                    logEvent?.Invoke(SdoLoginState.GotQRCode, null);
-                    CTS = new CancellationTokenSource();
-                    CTS.CancelAfter(60 * 1000);
-                    (sndaId, tgt, userName,autoLoginSessionKey) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS, autoLogin);
-                    CTS.Dispose();
-                }
+                        await CancelPushMessageLogin(pushMsgSessionKey, guid);
+                        (var returnCode, var failReason, var pushMsgSerialNum, pushMsgSessionKey) = await SendPushMessage(userName);
 
-                if (File.Exists(qrPath)) File.Delete(qrPath);
+                        if (returnCode == 0 || returnCode == -14001710)
+                        {
+                            if (pushMsgSerialNum == null || pushMsgSessionKey == null)
+                            {
+                                logEvent?.Invoke(SdoLoginState.LoginFail, failReason);
+                                return null;
+                            }
+
+                            logEvent?.Invoke(SdoLoginState.WaitingConfirm, $"操作码:{pushMsgSerialNum}");
+                            CTS = new CancellationTokenSource();
+                            CTS.CancelAfter(30 * 1000);
+                            (sndaId, tgt, autoLoginSessionKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, logEvent, CTS, autoLogin);
+                            CTS.Dispose();
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(tgt)) //滑动失败,扫码
+                    {
+                        var codeKey = await GetQRCode();
+                        logEvent?.Invoke(SdoLoginState.GotQRCode, null);
+                        CTS = new CancellationTokenSource();
+                        CTS.CancelAfter(60 * 1000);
+                        (sndaId, tgt, userName) = await WaitingForScanQRCode(codeKey, guid, logEvent, CTS);
+                        CTS.Dispose();
+
+                        if (!string.IsNullOrEmpty(sndaId) && !string.IsNullOrEmpty(tgt))
+                        {
+                            var account= await GetAccountGroup(tgt, sndaId);
+                            userName = string.IsNullOrEmpty(account) ? userName : account;
+                            if (autoLogin) (tgt, autoLoginSessionKey) = await AccountGroupLogin(tgt, sndaId, autoLogin);
+                        }
+                    }
+
+                    if (File.Exists(qrPath)) File.Delete(qrPath);
+                }
             }
 
             //tgt或ID空白则返回
@@ -152,6 +172,7 @@ namespace XIVLauncher.Common.Game
             {
                 SessionId = sessionId,
                 InputUserId = userName,
+                Password = string.IsNullOrEmpty(password) ? string.Empty : password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
                 MaxExpansion = Constants.MaxExpansion
@@ -162,6 +183,8 @@ namespace XIVLauncher.Common.Game
         private static string DeviceId => _deviceId.Value;
         private static string CASCID;
         private static string SECURE_CASCID;
+        private static string CODEKEY;
+        private static string CODEKEY_COUNT;
 
         public void CancelLogin()
         {
@@ -308,17 +331,15 @@ namespace XIVLauncher.Common.Game
             return codeKey;
         }
 
-        private async Task<(string sndaId, string tgt,string userName, string AutoLoginSessionKey)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation, bool autoLogin = false)
+        private async Task<(string sndaId, string tgt, string userName)> WaitingForScanQRCode(string codeKey, string guid, LogEventHandler logEvent, CancellationTokenSource cancellation, bool autoLogin = false)
         {
             while (!cancellation.IsCancellationRequested)
             {
-                // /authen/pushMessageLogin.json
-                var result = await GetJsonAsSdoClient("codeKeyLogin.json", autoLogin ? new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime=7", $"maxsize=97" }
-                                                                                     : new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=0", $"autoLoginKeepTime=0", $"maxsize=97" }, SdoClient.Launcher);
+                var result = await GetJsonAsSdoClient("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime=7", $"maxsize=97" }, SdoClient.Launcher);
+
                 if (result.ReturnCode == 0 && result.Data.NextAction == 0)
                 {
-                    if (autoLogin) return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId, result.Data.AutoLoginSessionKey);
-                    return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId, null);
+                    return (result.Data.SndaId, result.Data.Tgt, result.Data.InputUserId);
                 }
                 else
                 {
@@ -333,7 +354,7 @@ namespace XIVLauncher.Common.Game
                 }
             }
             logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "登陆超时或被取消");
-            return (null, null, null, null);
+            return (null, null, null);
         }
 
         #endregion
@@ -356,6 +377,57 @@ namespace XIVLauncher.Common.Game
         {
             // /authen/getPromotion.json 不知道为什么要有,但就是有
             return await GetJsonAsSdoClient("getPromotionInfo.json", new List<string>() { $"tgt={tgt}" }, SdoClient.Launcher, tgt);
+        }
+
+        #endregion
+
+        #region 密码登录
+
+        private async Task<(string sndaId, string tgt)> StaticLogin(string username, string password, string guid)
+        {
+            var macAddress = SdoUtils.GetMac();
+            //密码登录
+            var result = await GetJsonAsSdoClient("staticLogin.json", new List<string>() { "checkCodeFlag=1", "encryptFlag=0", $"inputUserId={username}", $"password={password}",$"mac={macAddress}", $"guid={guid}", "inputUserType=0&accountDomain=1&autoLoginFlag=0&autoLoginKeepTime=0&supportPic=2" }, SdoClient.Launcher);
+
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+            {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
+            Log.Information($"staticLogin.json:{result.Data.SndaId}:{result.Data.Tgt}");
+            return (result.Data.SndaId, result.Data.Tgt);
+        }
+
+        #endregion
+
+        #region AccountGroup
+
+        private async Task<string> GetAccountGroup(string tgt, string sndaId)
+        {
+            
+            var result = await GetJsonAsSdoClient("getAccountGroup", new List<string>() { "serviceUrl=http%3A%2F%2Fwww.sdo.com", $"tgt={tgt}" }, SdoClient.Launcher);
+
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+            {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
+            Log.Information($"getAccountGroup:{result.Data.SndaIdArray}");
+
+            if (!result.Data.SndaIdArray.Contains(sndaId)) throw new OauthLoginException($"获取用户名失败");
+
+            return result.Data.SndaIdArray.Contains(sndaId) ? result.Data.AccountArray[result.Data.SndaIdArray.IndexOf(sndaId)] : null;
+        }
+
+        #endregion
+
+        #region AccountGroupLogin
+
+        private async Task<(string tgt, string autoLoginSessionKey)> AccountGroupLogin(string tgt, string sndaId, bool autoLogin = false)
+        {
+            var result = await GetJsonAsSdoClient("accountGroupLogin", new List<string>() { "serviceUrl=http%3A%2F%2Fwww.sdo.com", $"tgt={tgt}", $"sndaId={sndaId}", "autoLoginFlag=1", "autoLoginKeepTime=7" }, SdoClient.Launcher);
+            Log.Information($"accountGroupLogin:AutoLoginMaxAge:{result.Data.AutoLoginMaxAge}");
+            if (result.ReturnCode == 0 && result.Data.NextAction == 0) return (result.Data.Tgt, result.Data.AutoLoginSessionKey);
+
+            return (null,null);
         }
 
         #endregion
@@ -394,6 +466,12 @@ namespace XIVLauncher.Common.Game
                 public int AutoLoginMaxAge;
                 [JsonProperty("inputUserId")]
                 public string InputUserId;
+
+                [JsonProperty("accountArray")]
+                public List<string> AccountArray;
+                [JsonProperty("sndaIdArray")]
+                public List<string> SndaIdArray;
+
             }
         }
 
@@ -419,6 +497,7 @@ namespace XIVLauncher.Common.Game
             commonParas.Add($"tag=0");
             para.AddRange(commonParas);
             var request = new HttpRequestMessage(method, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
+            //Log.Information($"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("Cache-Control", "no-cache");
             request.Headers.AddWithoutValidation("User-Agent", _userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
@@ -430,6 +509,7 @@ namespace XIVLauncher.Common.Game
                     request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC={tgt}; CAS_LOGIN_STATE=1");
                     //Log.Information($"Added Cookie:CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC=***; CAS_LOGIN_STATE=1");
                 }
+                else if (CODEKEY != null) request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CODEKEY={CODEKEY}; CODEKEY_COUNT={CODEKEY_COUNT}");
                 else request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
             }
             return request;
@@ -446,12 +526,18 @@ namespace XIVLauncher.Common.Game
             {
                 CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
                 SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
+
+                if (cookies.Count(x => x.StartsWith("CODEKEY=")) > 0)
+                {
+                    CODEKEY = (CODEKEY != cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0]) ? cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0] : CODEKEY;
+                    CODEKEY_COUNT = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY_COUNT=")).Split(';')[0];
+                }
             }
             try
             {
                 var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
                 Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}");
-                //Log.Information($"{string.Join("&", para)}:{reply}");
+                //Log.Information($"Reply:{reply}");
                 return result;
             }
             catch (JsonReaderException ex)

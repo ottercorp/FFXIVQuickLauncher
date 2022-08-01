@@ -280,10 +280,14 @@ namespace XIVLauncher.Windows.ViewModel
                     if (AccountManager.CurrentAccount == null || AccountManager.CurrentAccount.Id != $"{loginResult.OauthLogin.InputUserId}-{IsOtp}-{IsSteam}")
                     {
                         var accountToSave = new XivAccount(loginResult.OauthLogin.InputUserId);
+                        accountToSave.Password = loginResult.OauthLogin.Password;
+                        accountToSave.AreaID = Area.Areaid;
+                        accountToSave.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
+
                         AccountManager.AddAccount(accountToSave);
                         AccountManager.CurrentAccount = accountToSave;
                     }
-                    AccountManager.CurrentAccount.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
+
                     AccountManager.Save();
                 }
 

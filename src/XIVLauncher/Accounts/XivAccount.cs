@@ -5,6 +5,7 @@ using System;
 using System.ComponentModel;
 using System.Net;
 using System.Threading.Tasks;
+using Castle.Core.Internal;
 using Newtonsoft.Json.Linq;
 
 namespace XIVLauncher.Accounts
@@ -114,6 +115,9 @@ namespace XIVLauncher.Accounts
                 });
             }
         }
+
+        [JsonIgnore]
+        public bool HasKey => !AutoLoginSessionKey.IsNullOrEmpty();
 
         public string ChosenCharacterName;
         public string ChosenCharacterWorld;

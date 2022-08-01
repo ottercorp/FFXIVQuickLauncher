@@ -638,12 +638,13 @@ namespace XIVLauncher.Windows
         {
             if (Model.IsFastLogin)
             {
-                LoginPassword.IsEnabled = false;
-                LoginPassword.Password = String.Empty;
+               LoginPassword.IsEnabled = false;
+               LoginPassword.Password = String.Empty;
             }
             else
             {
-                LoginPassword.IsEnabled = true;
+               LoginPassword.IsEnabled = true;
+               LoginPassword.Password = _accountManager.CurrentAccount.Password;
             }
         }
 
@@ -659,6 +660,20 @@ namespace XIVLauncher.Windows
         private void RadioButton_MouseLeave(object sender, MouseEventArgs e)
         {
             _bannerChangeTimer.Start();
+        }
+
+        private void ShowPassword_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (LoginPassword.Visibility == Visibility.Collapsed)
+            {
+                LoginPassword.Visibility = Visibility.Visible;
+                LoginPassword.Password = _accountManager.CurrentAccount.Password;
+            }
+            else
+            {
+                LoginPassword.Visibility = Visibility.Collapsed;
+                LoginPassword.Password = String.Empty;
+            }
         }
     }
 }
