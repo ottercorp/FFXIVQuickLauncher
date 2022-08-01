@@ -44,14 +44,6 @@ namespace XIVLauncher.Windows
 
         private ObservableCollection<BannerDotInfo> _bannerDotList;
 
-        class BannerDotInfo
-        {
-            public bool Active { get; set; }
-            public int Index { get; set; }
-        }
-
-        private ObservableCollection<BannerDotInfo> _bannerDotList;
-
         private Timer _maintenanceQueueTimer;
 
         private AccountManager _accountManager;
@@ -646,20 +638,6 @@ namespace XIVLauncher.Windows
                LoginPassword.IsEnabled = true;
                LoginPassword.Password = _accountManager.CurrentAccount.Password;
             }
-        }
-
-        private void RadioButton_MouseEnter(object sender, MouseEventArgs e)
-        {
-            ((RadioButton)sender).IsChecked = true;
-            _currentBannerIndex = _bannerDotList.FirstOrDefault(x => x.Active)?.Index ?? _currentBannerIndex;
-            Dispatcher.BeginInvoke(new Action(() => BannerImage.Source = _bannerBitmaps[_currentBannerIndex]));
-
-            _bannerChangeTimer.Stop();
-        }
-
-        private void RadioButton_MouseLeave(object sender, MouseEventArgs e)
-        {
-            _bannerChangeTimer.Start();
         }
 
         private void ShowPassword_OnClick(object sender, RoutedEventArgs e)
