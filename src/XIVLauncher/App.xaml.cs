@@ -235,7 +235,7 @@ namespace XIVLauncher
                     DalamudUpdater = new DalamudUpdater(new DirectoryInfo(Path.Combine(Paths.RoamingPath, "addon")),
                         new DirectoryInfo(Path.Combine(Paths.RoamingPath, "runtime")),
                         new DirectoryInfo(Path.Combine(Paths.RoamingPath, "dalamudAssets")),
-                        new DirectoryInfo(Paths.RoamingPath,
+                        new DirectoryInfo(Paths.RoamingPath),
                         UniqueIdCache,
                         Settings.DalamudRolloutBucket);
                     
