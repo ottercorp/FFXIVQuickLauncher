@@ -410,9 +410,10 @@ namespace XIVLauncher.Common.Game
             {
                 throw new OauthLoginException(result.Data.FailReason);
             }
-            Log.Information($"getAccountGroup:{result.Data.SndaIdArray}");
 
             if (!result.Data.SndaIdArray.Contains(sndaId)) throw new OauthLoginException($"获取用户名失败");
+
+            Log.Information($"getAccountGroup:{string.Join(",", result.Data.SndaIdArray)}");
 
             return result.Data.SndaIdArray.Contains(sndaId) ? result.Data.AccountArray[result.Data.SndaIdArray.IndexOf(sndaId)] : null;
         }
