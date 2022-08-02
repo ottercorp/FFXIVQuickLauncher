@@ -102,7 +102,7 @@ namespace XIVLauncher.Common.Game
                     (sndaId, tgt) = await StaticLogin(userName, password, guid);
                 }
 
-                if (!fastLogin) //手机叨鱼相关
+                if (!fastLogin && string.IsNullOrEmpty(tgt)) //手机叨鱼相关
                 {
                     var pushMsgSessionKey = String.Empty;
 
