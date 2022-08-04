@@ -1,3 +1,1 @@
-·修复更新路径为空
-·优化Linux/Mac兼容性
-·下载DalamudAssets启用gzip
+·修复用户名存储失败的问题
