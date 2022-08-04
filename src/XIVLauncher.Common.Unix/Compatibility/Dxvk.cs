@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Serilog;
 using XIVLauncher.Common.Util;
@@ -32,6 +33,15 @@ public static class Dxvk
         foreach (string fileName in files)
         {
             File.Copy(fileName, Path.Combine(system32, Path.GetFileName(fileName)), true);
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            File.Copy(
+                Path.Combine(Paths.ResourcesPath, "ffxiv_dx11.dxvk-cache-base"),
+                Path.Combine(prefix.FullName, "drive_c", "ffxiv_dx11.dxvk-cache"),
+                true
+            );
         }
     }
 

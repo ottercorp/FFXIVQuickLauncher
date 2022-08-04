@@ -95,6 +95,11 @@ public static class PlatformHelpers
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             sevenzaPath = "7za";
+
+            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+            {
+                sevenzaPath = "arch -x86_64 7za";
+            }
         }
 
         var psi = new ProcessStartInfo(sevenzaPath)
