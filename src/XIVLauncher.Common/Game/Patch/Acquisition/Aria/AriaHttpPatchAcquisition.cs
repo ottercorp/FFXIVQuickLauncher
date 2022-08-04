@@ -49,6 +49,11 @@ namespace XIVLauncher.Common.Game.Patch.Acquisition.Aria
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
                     ariaPath = "aria2c";
+
+                    if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                    {
+                        ariaPath = "arch -x86_64 aria2c";
+                    }
                 }
 
                 var ariaPort = PlatformHelpers.GetAvailablePort();

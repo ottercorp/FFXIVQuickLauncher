@@ -46,7 +46,7 @@ public class CompatibilityTools
         ? Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
         : Settings.CustomBinPath;
 
-    private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK", Settings.MoltenVk ?? "modern");
+    private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK");
     private string Wine64Path => Path.Combine(WineBinPath, "wine64");
     private string WineServerPath => Path.Combine(WineBinPath, "wineserver");
 
@@ -182,6 +182,12 @@ public class CompatibilityTools
             {
                 moltenVkEnabled = true;
                 additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
+                var badMvkFile = Path.Combine(winelibPath, "libMoltenVK.dylib");
+
+                if (File.Exists(badMvkFile))
+                {
+                    File.Delete(badMvkFile);
+                }
             }
 
             var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
@@ -229,6 +235,9 @@ public class CompatibilityTools
 
         wineEnviromentVariables.Add("DXVK_HUD", dxvkHud);
         wineEnviromentVariables.Add("DXVK_ASYNC", dxvkAsyncOn);
+        wineEnviromentVariables.Add("DXVK_STATE_CACHE_PATH", "C:\\");
+        wineEnviromentVariables.Add("DXVK_LOG_PATH", "C:\\");
+        wineEnviromentVariables.Add("DXVK_CONFIG_FILE", "C:\\ffxiv_dx11.conf");
         wineEnviromentVariables.Add("WINEESYNC", Settings.EsyncOn);
         wineEnviromentVariables.Add("WINEFSYNC", Settings.FsyncOn);
 
