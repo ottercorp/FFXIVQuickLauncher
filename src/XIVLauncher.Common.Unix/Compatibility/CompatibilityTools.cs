@@ -173,21 +173,15 @@ public class CompatibilityTools
             var additionalPaths = Array.Empty<string>();
             var winelibPath = Path.Combine(WineBinPath, "..", "lib");
 
-            if (Directory.Exists(winelibPath))
-            {
-                additionalPaths = additionalPaths.Append(winelibPath).ToArray();
-            }
-
             if (Directory.Exists(MoltenVkPath))
             {
                 moltenVkEnabled = true;
                 additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
-                var badMvkFile = Path.Combine(winelibPath, "libMoltenVK.dylib");
+            }
 
-                if (File.Exists(badMvkFile))
-                {
-                    File.Delete(badMvkFile);
-                }
+            if (Directory.Exists(winelibPath))
+            {
+                additionalPaths = additionalPaths.Append(winelibPath).ToArray();
             }
 
             var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
