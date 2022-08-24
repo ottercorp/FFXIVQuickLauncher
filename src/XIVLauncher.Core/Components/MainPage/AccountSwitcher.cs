@@ -45,7 +45,8 @@ public class AccountSwitcher : Component
                 if (account.UseOtp)
                     name += " (OTP)";
 
-                name += $" ({account.AreaName})";
+                if (!string.IsNullOrEmpty(account.AreaName))
+                    name += $" ({account.AreaName})";
 
                 var textLength = ImGui.CalcTextSize(name).X;
 
