@@ -81,7 +81,7 @@ public class MainPage : Page
 
     private void SwitchAccount(XivAccount account, bool saveAsCurrent)
     {
-        loginFrame.Area = loginFrame.SdoAreas.FirstOrDefault(area => area.Areaid == account.Area.ToString());
+        loginFrame.Area = loginFrame.SdoAreas.FirstOrDefault(area => area.AreaName == account.AreaName);
         this.loginFrame.Username = account.UserName;
         this.loginFrame.IsOtp = account.UseOtp;
         this.loginFrame.IsSteam = account.UseSteamServiceAccount;
@@ -918,7 +918,7 @@ public class MainPage : Page
         if (App.Accounts.CurrentAccount == null ||
             App.Accounts.CurrentAccount.Id != $"{username}-{isOtp}-{isSteam}")
         {
-            var accountToSave = new XivAccount(Int32.Parse(area.Areaid), username)
+            var accountToSave = new XivAccount(area.AreaName, username)
             {
                 Password = password,
                 SavePassword = true,

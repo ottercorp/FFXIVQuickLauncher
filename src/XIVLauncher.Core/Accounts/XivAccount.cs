@@ -8,11 +8,11 @@ namespace XIVLauncher.Core.Accounts;
 public class XivAccount
 {
     [JsonIgnore]
-    public string Id => $"{UserName}-{UseOtp}-{UseSteamServiceAccount}";
+    public string Id => $"{AreaName}-{UserName}-{UseOtp}-{UseSteamServiceAccount}";
 
     public override string ToString() => Id;
 
-    public int Area { get; private set; }
+    public string AreaName { get; private set; }
 
     public string UserName { get; private set; }
 
@@ -66,9 +66,9 @@ public class XivAccount
 
     public string LastSuccessfulOtp;
 
-    public XivAccount(int area, string userName)
+    public XivAccount(string areaName, string userName)
     {
-        Area = area;
+        AreaName = areaName;
         UserName = userName.ToLower();
     }
 
