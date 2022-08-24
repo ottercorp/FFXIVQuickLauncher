@@ -25,6 +25,8 @@ public class LoginFrame : Component
         set => this.loginInput.Value = value;
     }
 
+    public SdoArea? Area => SdoAreas.FirstOrDefault(area => area.AreaName == this.areaCombo.Value);
+
     // Stores area name since areas may come later from async task.
     private string _areaName;
     public string AreaName
@@ -35,11 +37,6 @@ public class LoginFrame : Component
             areaCombo.Value = value;
             _areaName = value;
         }
-    }
-
-    public SdoArea? Area
-    {
-        get => SdoAreas.FirstOrDefault(area => area.AreaName == this.areaCombo.Value);
     }
 
     public string Password
