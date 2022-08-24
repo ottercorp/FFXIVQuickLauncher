@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using ImGuiNET;
 using System.Numerics;
 using CheapLoc;
@@ -81,7 +81,7 @@ public class MainPage : Page
 
     private void SwitchAccount(XivAccount account, bool saveAsCurrent)
     {
-        loginFrame.Area = loginFrame.SdoAreas.FirstOrDefault(area => area.AreaName == account.AreaName);
+        loginFrame.AreaName = account.AreaName;
         this.loginFrame.Username = account.UserName;
         this.loginFrame.IsOtp = account.UseOtp;
         this.loginFrame.IsSteam = account.UseSteamServiceAccount;
