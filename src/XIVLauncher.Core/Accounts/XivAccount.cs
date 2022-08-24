@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Serilog;
 using System.Net;
 using Newtonsoft.Json.Linq;
@@ -11,6 +11,8 @@ public class XivAccount
     public string Id => $"{UserName}-{UseOtp}-{UseSteamServiceAccount}";
 
     public override string ToString() => Id;
+
+    public int Area { get; private set; }
 
     public string UserName { get; private set; }
 
@@ -64,8 +66,9 @@ public class XivAccount
 
     public string LastSuccessfulOtp;
 
-    public XivAccount(string userName)
+    public XivAccount(int area, string userName)
     {
+        Area = area;
         UserName = userName.ToLower();
     }
 

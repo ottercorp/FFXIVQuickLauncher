@@ -24,8 +24,12 @@ public class LoginFrame : Component
         get => this.loginInput.Value;
         set => this.loginInput.Value = value;
     }
-    
-    public SdoArea? Area => SdoAreas.FirstOrDefault(area => area.AreaName == this.areaCombo.Value);
+
+    public SdoArea? Area
+    {
+        get => SdoAreas.FirstOrDefault(area => area.AreaName == this.areaCombo.Value);
+        set => areaCombo.Value = value?.AreaName ?? "";
+    }
 
     public string Password
     {
