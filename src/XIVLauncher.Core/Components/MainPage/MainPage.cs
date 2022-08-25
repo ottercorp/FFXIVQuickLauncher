@@ -81,8 +81,8 @@ public class MainPage : Page
 
     private void SwitchAccount(XivAccount account, bool saveAsCurrent)
     {
-        loginFrame.AreaName = account.AreaName;
         this.loginFrame.Username = account.UserName;
+        this.loginFrame.AreaName = account.AreaName;
         this.loginFrame.IsOtp = account.UseOtp;
         this.loginFrame.IsSteam = account.UseSteamServiceAccount;
         this.loginFrame.IsAutoLogin = App.Settings.IsAutologin ?? false;
@@ -136,7 +136,7 @@ public class MainPage : Page
 
             App.Settings.IsAutologin = this.loginFrame.IsAutoLogin;
 
-            var result = await Login(loginFrame.Area, loginFrame.Username, loginFrame.Password, loginFrame.IsOtp, loginFrame.IsSteam, false, action).ConfigureAwait(false);
+            var result = await Login(loginFrame.Username, loginFrame.Password, loginFrame.Area, loginFrame.IsOtp, loginFrame.IsSteam, false, action).ConfigureAwait(false);
 
             if (result)
             {
@@ -154,7 +154,7 @@ public class MainPage : Page
         });
     }
 
-    public async Task<bool> Login(SdoArea area, string username, string password, bool isOtp, bool isSteam, bool doingAutoLogin, LoginAction action)
+    public async Task<bool> Login(string username, string password, SdoArea area, bool isOtp, bool isSteam, bool doingAutoLogin, LoginAction action)
     {
         if (action == LoginAction.Fake)
         {
@@ -201,14 +201,14 @@ public class MainPage : Page
         if (otp == null)
             return false;
 
-        PersistAccount(area, username, password, isOtp, isSteam);
+        PersistAccount(username, password, area, isOtp, isSteam);
 
-        var loginResult = await TryLoginToGame(area, username, password, otp, isSteam, action).ConfigureAwait(false);
+        var loginResult = await TryLoginToGame(username, password, area, otp, isSteam, action).ConfigureAwait(false);
 
-        return await TryProcessLoginResult(area, loginResult, isSteam, action).ConfigureAwait(false);
+        return await TryProcessLoginResult(loginResult, area, isSteam, action).ConfigureAwait(false);
     }
 
-    private async Task<Launcher.LoginResult> TryLoginToGame(SdoArea area, string username, string password, string otp, bool isSteam, LoginAction action)
+    private async Task<Launcher.LoginResult> TryLoginToGame(string username, string password, SdoArea area, string otp, bool isSteam, LoginAction action)
     {
         bool? gateStatus = null;
 
@@ -299,7 +299,7 @@ public class MainPage : Page
         }
     }
 
-    private async Task<bool> TryProcessLoginResult(SdoArea area, Launcher.LoginResult loginResult, bool isSteam, LoginAction action)
+    private async Task<bool> TryProcessLoginResult(Launcher.LoginResult loginResult, SdoArea area, bool isSteam, LoginAction action)
     {
         if (loginResult.State == Launcher.LoginState.NoService)
         {
@@ -439,7 +439,7 @@ public class MainPage : Page
 
             try
             {
-                using var process = await StartGameAndAddon(area, loginResult, isSteam, action == LoginAction.GameNoDalamud).ConfigureAwait(false);
+                using var process = await StartGameAndAddon(loginResult, area, isSteam, action == LoginAction.GameNoDalamud).ConfigureAwait(false);
 
                 if (process is null)
                     throw new Exception("Could not obtain Process Handle");
@@ -662,7 +662,7 @@ public class MainPage : Page
         }
     }
 
-    public async Task<Process> StartGameAndAddon(SdoArea area, Launcher.LoginResult loginResult, bool isSteam, bool forceNoDalamud)
+    public async Task<Process> StartGameAndAddon(Launcher.LoginResult loginResult, SdoArea area, bool isSteam, bool forceNoDalamud)
     {
         var dalamudOk = false;
 
@@ -908,19 +908,24 @@ public class MainPage : Page
         return launchedProcess!;
     }
 
-    private void PersistAccount(SdoArea area, string username, string password, bool isOtp, bool isSteam)
+    private void PersistAccount(string username, string password, SdoArea area, bool isOtp, bool isSteam)
     {
         if (App.Accounts.CurrentAccount != null && App.Accounts.CurrentAccount.UserName.Equals(username) &&
             App.Accounts.CurrentAccount.Password != password &&
             App.Accounts.CurrentAccount.SavePassword)
             App.Accounts.UpdatePassword(App.Accounts.CurrentAccount, password);
 
+        if (App.Accounts.CurrentAccount != null && App.Accounts.CurrentAccount.UserName.Equals(username) &&
+            App.Accounts.CurrentAccount.AreaName != area.AreaName)
+            App.Accounts.UpdateArea(App.Accounts.CurrentAccount, area.AreaName);
+
         if (App.Accounts.CurrentAccount == null ||
             App.Accounts.CurrentAccount.Id != $"{username}-{isOtp}-{isSteam}")
         {
-            var accountToSave = new XivAccount(area.AreaName, username)
+            var accountToSave = new XivAccount(username)
             {
                 Password = password,
+                AreaName = area.AreaName,
                 SavePassword = true,
                 UseOtp = isOtp,
                 UseSteamServiceAccount = isSteam

@@ -34,6 +34,13 @@ public class AccountManager
         existingAccount.Password = password;
     }
 
+    public void UpdateArea(XivAccount account, string area)
+    {
+        var existingAccount = Accounts.FirstOrDefault(a => a.Id == account.Id);
+        existingAccount.AreaName = area;
+        Save();
+    }
+
     public void UpdateLastSuccessfulOtp(XivAccount account, string lastOtp)
     {
         var existingAccount = Accounts.FirstOrDefault(a => a.Id == account.Id);
