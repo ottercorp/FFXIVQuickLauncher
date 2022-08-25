@@ -45,9 +45,6 @@ public class AccountSwitcher : Component
                 if (account.UseOtp)
                     name += " (OTP)";
 
-                if (!string.IsNullOrEmpty(account.AreaName))
-                    name += $" ({account.AreaName})";
-
                 var textLength = ImGui.CalcTextSize(name).X;
 
                 if (ImGui.Button(name + $"###{account.Id}", new Vector2(textLength + 15, 40)))
