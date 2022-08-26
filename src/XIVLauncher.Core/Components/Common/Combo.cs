@@ -36,6 +36,7 @@ public class Combo : Component
         Color = color ?? ImGuiColors.Blue;
         HoverColor = hoverColor ?? ImGuiColors.BlueShade3;
         TextColor = textColor ?? ImGuiColors.DalamudWhite;
+        _currentItem = Program.Config.SelectedServer ?? 0;
     }
 
     public override void Draw()
@@ -58,6 +59,7 @@ public class Combo : Component
         if (ImGui.Combo($"###{Label}", ref _currentItem, Items, Items.Length))
         {
             this.Click?.Invoke();
+            Program.Config.SelectedServer = _currentItem;
         }
 
         if (!IsEnabled)

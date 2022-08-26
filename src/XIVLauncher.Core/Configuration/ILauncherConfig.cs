@@ -45,6 +45,7 @@ public interface ILauncherConfig
     public bool? IsFt { get; set; }
 
     public bool? IsOtpServer { get; set; }
+    public int? SelectedServer { get; set; }
 
     #region Patching
 
