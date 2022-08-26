@@ -43,7 +43,7 @@ namespace AheadLib
                 pszProcName = szProcName;
             }
 
-            wsprintf(tzTemp, TEXT("无法找到%s"), pszProcName);
+            wsprintf(tzTemp, TEXT("Can not find %s"), pszProcName);
             MessageBox(NULL, tzTemp, title, MB_ICONSTOP);
             ExitProcess(-2);
         }
@@ -71,7 +71,7 @@ namespace AheadLib
         m_hModule = LoadLibrary(tzPath);
         if (m_hModule == NULL)
         {
-            wsprintf(tzTemp, TEXT("无法加载%s"), tzPath);
+            wsprintf(tzTemp, TEXT("Can not load %s"), tzPath);
             MessageBox(NULL, tzTemp, title, MB_ICONSTOP);
             ExitProcess(-2);
         }
@@ -230,7 +230,7 @@ extern "C" __declspec(dllexport) int SDOLInitialize(UINT64 *a)
         printf_s("%x\n", ret);
         if (ret == 0xFFFFFFFF)
         {
-            MessageBox(NULL, TEXT("尝试盛趣方式启动失败"), title, MB_ICONSTOP);
+            MessageBox(NULL, TEXT("Failed to init COM component of sdoentry64"), title, MB_ICONSTOP);
             SDOLTerminal();
             ExitProcess(-2);
         }
