@@ -252,6 +252,16 @@ namespace XIVLauncher.Windows.ViewModel
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
+            if (loginResult.State == Launcher.LoginState.NeedsPatchGame)
+            {
+                // 如果需要打补丁且登陆异常，登陆异常状态会覆盖掉NeedsPatchGame，除非和国际服一样，登陆成功才能获取到补丁信息
+                // 所以直接改成打完补丁再登陆一遍算了
+                // 其实把补丁写到PendingPatches里面也行，通过PendingPatches是否为空来判定是否打补丁
+                // 但是考虑到tgt的有效期也就十分钟(大概)
+                // 网烂硬盘卡的人打完补丁，tgt也失效了，还得重新登陆
+                // 所以还是打好补丁再登陆吧
+                action = AfterLoginAction.UpdateOnly;
+            }
             if (action != AfterLoginAction.UpdateOnly)
             {
                 if (loginResult.State == Launcher.LoginState.Ok)
@@ -633,7 +643,6 @@ namespace XIVLauncher.Windows.ViewModel
                 }
 
                 loginResult.State = Launcher.LoginState.Ok;
-                action = AfterLoginAction.Start;
             }
 
             if (action == AfterLoginAction.UpdateOnly)
