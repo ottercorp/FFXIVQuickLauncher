@@ -68,6 +68,9 @@ public class LoginFrame : Component
         this.loginInput = new Input("盛趣账号", "请输入盛趣账号", new Vector2(12f, 0f), 128);
         // this.passwordInput = new Input("Password", "Enter your password", new Vector2(12f, 0f), 128, flags: ImGuiInputTextFlags.Password | ImGuiInputTextFlags.NoUndoRedo);
 
+        // this.loginInput = new Input("Username", "Enter your Username", new Vector2(12f, 0f), 128);
+        // this.passwordInput = new Input("Password", "Enter your password", new Vector2(12f, 0f), 128, flags: ImGuiInputTextFlags.Password | ImGuiInputTextFlags.NoUndoRedo);
+
         // this.oneTimePasswordCheckbox = new Checkbox("Use one-time password");
 
         // this.useSteamServiceCheckbox = new Checkbox("Use steam service");

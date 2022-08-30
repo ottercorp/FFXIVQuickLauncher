@@ -57,7 +57,7 @@ namespace XIVLauncher.Windows
                 App.Settings.PatchPath = null;
             }
 
-            App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "patches"));
+            App.Settings.PatchPath ??= new DirectoryInfo(Path.Combine(Paths.RoamingPath, "patches"));
 
             if (App.Settings.PatchPath != null)
                 ViewModel.PatchPath = App.Settings.PatchPath.FullName;
@@ -276,7 +276,7 @@ namespace XIVLauncher.Windows
             {
                 window.Dispatcher.Invoke(() => window.Close());
 
-                string saveIntegrityPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "integrityreport.txt");
+                string saveIntegrityPath = Path.Combine(Paths.RoamingPath, "integrityreport.txt");
 #if DEBUG
                 Log.Information("Saving integrity to " + saveIntegrityPath);
 #endif
@@ -337,17 +337,17 @@ namespace XIVLauncher.Windows
         {
             try
             {
-                if (!string.IsNullOrEmpty(ViewModel.GamePath) && GameHelpers.IsValidFfxivPath(ViewModel.GamePath) && !DalamudLauncher.CanRunDalamud(new DirectoryInfo(ViewModel.GamePath)))
+                if (!string.IsNullOrEmpty(ViewModel.GamePath) && GameHelpers.IsValidGamePath(ViewModel.GamePath) && !DalamudLauncher.CanRunDalamud(new DirectoryInfo(ViewModel.GamePath)))
                 {
                     CustomMessageBox.Show(
-                        Loc.Localize("DalamudIncompatible", "Dalamud was not yet updated for your current FFXIV version.\nThis is common after patches, so please be patient or ask on the Discord for a status update!"),
+                        Loc.Localize("DalamudIncompatible", "Dalamud was not yet updated for your current game version.\nThis is common after patches, so please be patient or ask on the Discord for a status update!"),
                         "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Asterisk, parentWindow: Window.GetWindow(this));
                 }
             }
             catch (Exception exc)
             {
                 CustomMessageBox.Show(Loc.Localize("DalamudCompatCheckFailed",
-                    "Could not contact the server to get the current compatible FFXIV version Dalamud. This might mean that your .NET installation is too old.\nPlease check the Discord for more information."), "XIVLauncher Problem", MessageBoxButton.OK, MessageBoxImage.Hand, parentWindow: Window.GetWindow(this));
+                    "Could not contact the server to get the current compatible game version for Dalamud. This might mean that your .NET installation is too old.\nPlease check the Discord for more information."), "XIVLauncher Problem", MessageBoxButton.OK, MessageBoxImage.Hand, parentWindow: Window.GetWindow(this));
 
                 Log.Error(exc, "Couldn't check dalamud compatibility.");
             }
@@ -357,7 +357,7 @@ namespace XIVLauncher.Windows
         {
             string selectedPath = null;
 
-            var definitionFiles = Directory.GetFiles(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins"), "*.json", SearchOption.AllDirectories);
+            var definitionFiles = Directory.GetFiles(Path.Combine(Paths.RoamingPath, "installedPlugins"), "*.json", SearchOption.AllDirectories);
             foreach (var path in definitionFiles)
             {
                 dynamic definition = JObject.Parse(File.ReadAllText(path));
@@ -389,7 +389,7 @@ namespace XIVLauncher.Windows
                 return;
             }
 
-            if (PluginListView.SelectedValue.ToString().Contains(Loc.Localize("DisabledPlugin","(disabled)"))) //If it's disabled...
+            if (PluginListView.SelectedValue.ToString().Contains(ViewModel.PluginDisabledTagLoc)) //If it's disabled...
             {
                 if (File.Exists(Path.Combine(pluginVersionPath, ".disabled")))
                 {
@@ -426,7 +426,7 @@ namespace XIVLauncher.Windows
             var pluginDirectory = Directory.GetParent(pluginVersionPath);
 
             //Just to be safe
-            if (pluginDirectory.Parent.FullName != Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins"))
+            if (pluginDirectory.Parent.FullName != Path.Combine(Paths.RoamingPath, "installedPlugins"))
             {
                 CustomMessageBox.Show(Loc.Localize("PluginPathNotFound", "Couldn't find plugin directory path."), "XIVLauncher Problem", parentWindow: Window.GetWindow(this));
                 return;
@@ -443,7 +443,7 @@ namespace XIVLauncher.Windows
 
             try
             {
-                var pluginsDirectory = new DirectoryInfo(Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins"));
+                var pluginsDirectory = new DirectoryInfo(Path.Combine(Paths.RoamingPath, "installedPlugins"));
 
                 if (!pluginsDirectory.Exists)
                     return;
@@ -478,8 +478,7 @@ namespace XIVLauncher.Windows
 
                     if (isDisabled)
                     {
-                        PluginListView.Items.Add(pluginConfig.Name + " " + pluginConfig.AssemblyVersion +
-                                                 Loc.Localize("DisabledPlugin", " (disabled)"));
+                        PluginListView.Items.Add(pluginConfig.Name + " " + pluginConfig.AssemblyVersion + ViewModel.PluginDisabledTagLoc);
                     }
                     else
                     {
@@ -495,7 +494,7 @@ namespace XIVLauncher.Windows
 
         private void PluginsFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            var pluginsPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "installedPlugins");
+            var pluginsPath = Path.Combine(Paths.RoamingPath, "installedPlugins");
 
             try
             {
@@ -524,7 +523,7 @@ namespace XIVLauncher.Windows
             try
             {
                 isBootOrGame = !GameHelpers.LetChoosePath(ViewModel.GamePath);
-                mightBeNonInternationalVersion = GameHelpers.CanFfxivMightNotBeInternationalClient(ViewModel.GamePath);
+                mightBeNonInternationalVersion = GameHelpers.CanMightNotBeInternationalClient(ViewModel.GamePath);
             }
             catch (Exception ex)
             {

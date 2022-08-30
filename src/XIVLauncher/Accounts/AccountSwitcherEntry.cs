@@ -20,7 +20,7 @@ namespace XIVLauncher.Accounts
             if (string.IsNullOrEmpty(Account.ThumbnailUrl))
                 return;
 
-            var cacheFolder = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "Roaming", "profilePictures");
+            var cacheFolder = Path.Combine(Paths.RoamingPath, "profilePictures");
             Directory.CreateDirectory(cacheFolder);
 
             var uri = new Uri(Account.ThumbnailUrl);

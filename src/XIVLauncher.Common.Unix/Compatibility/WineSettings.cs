@@ -32,7 +32,7 @@ public class WineSettings
         this.CustomBinPath = customBinPath;
         this.EsyncOn = (esyncOn ?? false) ? "1" : "0";
         this.FsyncOn = (fsyncOn ?? false) ? "1" : "0";
-        this.MoltenVk = (modernMvkOn ?? true) ? "modern" : "stable";
+        this.MoltenVk = (modernMvkOn ?? false) ? "modern" : "stable";
         this.DebugVars = debugVars;
         this.LogFile = logFile;
         this.Prefix = prefix;

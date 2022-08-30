@@ -24,14 +24,14 @@ public class CompatibilityTools
     private StreamWriter logWriter;
 
 #if WINE_XIV_ARCH_LINUX
-    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-arch-7.7.r14.gd7507fbe.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-arch-7.10.r3.g560db77d.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
 #elif WINE_XIV_FEDORA_LINUX
-    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-fedora-7.7.r14.gd7507fbe.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-fedora-7.10.r3.g560db77d.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
 #elif WINE_XIV_UBUNTU_LINUX
-    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-ubuntu-7.7.r14.gd7507fbe.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.7.r14.gd7507fbe";
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
 #else
     // WINE_XIV_MACOS
     private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-1.1/wine.tar.xz";
@@ -46,7 +46,7 @@ public class CompatibilityTools
         ? Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
         : Settings.CustomBinPath;
 
-    private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK", Settings.MoltenVk ?? "modern");
+    private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK");
     private string Wine64Path => Path.Combine(WineBinPath, "wine64");
     private string WineServerPath => Path.Combine(WineBinPath, "wineserver");
 
@@ -70,11 +70,14 @@ public class CompatibilityTools
 
         this.logWriter = new StreamWriter(wineSettings.LogFile.FullName);
 
-        if (!this.toolDirectory.Exists)
-            this.toolDirectory.Create();
+        if (wineSettings.StartupType == WineStartupType.Managed)
+        {
+            if (!this.toolDirectory.Exists)
+                this.toolDirectory.Create();
 
-        if (!this.dxvkDirectory.Exists)
-            this.dxvkDirectory.Create();
+            if (!this.dxvkDirectory.Exists)
+                this.dxvkDirectory.Create();
+        }
 
         if (!wineSettings.Prefix.Exists)
             wineSettings.Prefix.Create();
@@ -124,23 +127,23 @@ public class CompatibilityTools
         RunInPrefix("cmd /c dir %userprofile%/Documents > nul").WaitForExit();
     }
 
-    public Process RunInPrefix(string command, string workingDirectory = "", IDictionary<string, string> environment = null, bool redirectOutput = false)
+    public Process RunInPrefix(string command, string workingDirectory = "", IDictionary<string, string> environment = null, bool redirectOutput = false, bool writeLog = false, bool wineD3D = false)
     {
         var psi = new ProcessStartInfo(Wine64Path);
         psi.Arguments = command;
 
         Log.Verbose("Running in prefix: {FileName} {Arguments}", psi.FileName, command);
-        return RunInPrefix(psi, workingDirectory, environment, redirectOutput);
+        return RunInPrefix(psi, workingDirectory, environment, redirectOutput, writeLog, wineD3D);
     }
 
-    public Process RunInPrefix(string[] args, string workingDirectory = "", IDictionary<string, string> environment = null, bool redirectOutput = false)
+    public Process RunInPrefix(string[] args, string workingDirectory = "", IDictionary<string, string> environment = null, bool redirectOutput = false, bool writeLog = false, bool wineD3D = false)
     {
         var psi = new ProcessStartInfo(Wine64Path);
         foreach (var arg in args)
             psi.ArgumentList.Add(arg);
 
         Log.Verbose("Running in prefix: {FileName} {Arguments}", psi.FileName, psi.ArgumentList.Aggregate(string.Empty, (a, b) => a + " " + b));
-        return RunInPrefix(psi, workingDirectory, environment, redirectOutput);
+        return RunInPrefix(psi, workingDirectory, environment, redirectOutput, writeLog, wineD3D);
     }
 
     private void MergeDictionaries(StringDictionary a, IDictionary<string, string> b)
@@ -157,10 +160,10 @@ public class CompatibilityTools
         }
     }
 
-    private Process RunInPrefix(ProcessStartInfo psi, string workingDirectory = "", IDictionary<string, string> environment = null, bool redirectOutput = false)
+    private Process RunInPrefix(ProcessStartInfo psi, string workingDirectory, IDictionary<string, string> environment, bool redirectOutput, bool writeLog, bool wineD3D)
     {
         psi.RedirectStandardOutput = redirectOutput;
-        psi.RedirectStandardError = true;
+        psi.RedirectStandardError = writeLog;
         psi.UseShellExecute = false;
         psi.WorkingDirectory = workingDirectory;
 
@@ -170,15 +173,15 @@ public class CompatibilityTools
             var additionalPaths = Array.Empty<string>();
             var winelibPath = Path.Combine(WineBinPath, "..", "lib");
 
-            if (Directory.Exists(winelibPath))
-            {
-                additionalPaths = additionalPaths.Append(winelibPath).ToArray();
-            }
-
             if (Directory.Exists(MoltenVkPath))
             {
                 moltenVkEnabled = true;
                 additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
+            }
+
+            if (Directory.Exists(winelibPath))
+            {
+                additionalPaths = additionalPaths.Append(winelibPath).ToArray();
             }
 
             var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
@@ -197,7 +200,7 @@ public class CompatibilityTools
 
         var wineEnviromentVariables = new Dictionary<string, string>();
         wineEnviromentVariables.Add("WINEPREFIX", Settings.Prefix.FullName);
-        wineEnviromentVariables.Add("WINEDLLOVERRIDES", "d3d9,d3d11,d3d10core,dxgi,mscoree=n");
+        wineEnviromentVariables.Add("WINEDLLOVERRIDES", $"mscoree=n;d3d9,d3d11,d3d10core,dxgi={(wineD3D ? "b" : "n")}");
 
         if (!string.IsNullOrEmpty(Settings.DebugVars))
         {
@@ -205,7 +208,10 @@ public class CompatibilityTools
         }
 
         wineEnviromentVariables.Add("XL_WINEONLINUX", "true");
-        wineEnviromentVariables.Add("XL_WINEONMAC", "true");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            wineEnviromentVariables.Add("XL_WINEONMAC", "true");
+
         string ldPreload = Environment.GetEnvironmentVariable("LD_PRELOAD") ?? "";
 
         string dxvkHud = hudType switch
@@ -223,10 +229,13 @@ public class CompatibilityTools
 
         wineEnviromentVariables.Add("DXVK_HUD", dxvkHud);
         wineEnviromentVariables.Add("DXVK_ASYNC", dxvkAsyncOn);
+        wineEnviromentVariables.Add("DXVK_STATE_CACHE_PATH", "C:\\");
+        wineEnviromentVariables.Add("DXVK_LOG_PATH", "C:\\");
+        wineEnviromentVariables.Add("DXVK_CONFIG_FILE", "C:\\ffxiv_dx11.conf");
         wineEnviromentVariables.Add("WINEESYNC", Settings.EsyncOn);
         wineEnviromentVariables.Add("WINEFSYNC", Settings.FsyncOn);
 
-        if (dxvkFrameLimit!=0)
+        if (dxvkFrameLimit != 0)
         {
             wineEnviromentVariables.Add("DXVK_FRAME_RATE", dxvkFrameLimit.ToString());
         }
@@ -266,19 +275,22 @@ public class CompatibilityTools
             try
             {
                 logWriter.WriteLine(errLine.Data);
+                Console.Error.WriteLine(errLine.Data);
             }
             catch (Exception ex) when (ex is ArgumentOutOfRangeException ||
                                        ex is OverflowException ||
                                        ex is IndexOutOfRangeException)
             {
                 // very long wine log lines get chopped off after a (seemingly) arbitrary limit resulting in strings that are not null terminated
-                logWriter.WriteLine("Error writing Wine log line:");
-                logWriter.WriteLine(ex.Message);
+                // logWriter.WriteLine("Error writing Wine log line:");
+                // logWriter.WriteLine(ex.Message);
             }
         });
 
         helperProcess.Start();
-        helperProcess.BeginErrorReadLine();
+        if (writeLog)
+            helperProcess.BeginErrorReadLine();
+
         return helperProcess;
     }
 
