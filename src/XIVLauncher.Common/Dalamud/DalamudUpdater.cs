@@ -445,7 +445,7 @@ namespace XIVLauncher.Common.Dalamud
                 Log.Verbose("Hashes file does not exist, redownloading...");
 
                 using var client = new HttpClient();
-                runtimeHashes = await client.GetStringAsync($"https://kamori.goats.dev/Dalamud/Release/Runtime/Hashes/{version}").ConfigureAwait(false);
+                runtimeHashes = await client.GetStringAsync($"https://aonyx.ffxiv.wang/Dalamud/Release/Runtime/Hashes/{version}").ConfigureAwait(false);
 
                 File.WriteAllText(hashesFile.FullName, runtimeHashes);
             }
