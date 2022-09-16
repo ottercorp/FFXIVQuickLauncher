@@ -26,6 +26,7 @@ namespace XIVLauncher.Common.Dalamud
         private readonly TimeSpan defaultTimeout = TimeSpan.FromMinutes(15);
 
         private bool forceProxy = false;
+        private static string onlineHash = string.Empty;
 
         public DownloadState State { get; private set; } = DownloadState.Unknown;
         public bool IsStaging { get; private set; } = false;
@@ -181,6 +182,8 @@ namespace XIVLauncher.Common.Dalamud
 
             var versionInfoJson = JsonConvert.SerializeObject(remoteVersionInfo);
 
+            onlineHash = remoteVersionInfo.Hash;
+
             var addonPath = new DirectoryInfo(Path.Combine(this.addonDirectory.FullName, "Hooks"));
             var currentVersionPath = new DirectoryInfo(Path.Combine(addonPath.FullName, remoteVersionInfo.AssemblyVersion));
             var runtimePaths = new DirectoryInfo[]
@@ -315,7 +318,16 @@ namespace XIVLauncher.Common.Dalamud
                     Log.Error("[DUPDATE] No hashes.json");
                     return false;
                 }
-
+                using var stream = File.OpenRead(hashesPath);
+                using var md5 = MD5.Create();
+                
+                var hashHash = BitConverter.ToString(md5.ComputeHash(stream)).ToUpperInvariant().Replace("-",string.Empty);
+                
+                if (!string.IsNullOrEmpty(onlineHash) && (onlineHash != hashHash)){
+                    Log.Error("[UPDATE] Hash Check Failed");
+                    return false;
+                }
+                
                 return CheckIntegrity(addonPath, File.ReadAllText(hashesPath));
             }
             catch (Exception ex)

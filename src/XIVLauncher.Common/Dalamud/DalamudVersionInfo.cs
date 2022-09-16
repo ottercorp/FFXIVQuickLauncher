@@ -11,6 +11,7 @@ namespace XIVLauncher.Common.Dalamud
         public bool RuntimeRequired { get; set; }
         public string Key { get; set; }
         public string DownloadUrl { get; set; }
+        public string Hash { get; set;}
 
         public static DalamudVersionInfo Load(FileInfo file) =>
             JsonConvert.DeserializeObject<DalamudVersionInfo>(File.ReadAllText(file.FullName));
