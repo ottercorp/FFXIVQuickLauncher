@@ -5,6 +5,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using Serilog;
+using SharpCompress.Archives;
+using SharpCompress.Common;
 
 namespace XIVLauncher.Common.Util;
 
@@ -92,7 +95,26 @@ public static class PlatformHelpers
     {
         var sevenzaPath = Path.Combine(Paths.ResourcesPath, "7za.exe");
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Log.Information("[DUPDATE] Extracting 7z dalamud slowly.");
+
+            using (var archive = ArchiveFactory.Open(path))
+            {
+                foreach (var entry in archive.Entries)
+                {
+                    if (!entry.IsDirectory) {
+                        entry.WriteToDirectory(output, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
+                        Log.Verbose($"[DUPDATE] Extracting {entry}");
+                    }
+                }
+            }
+
+            Log.Information("[DUPDATE] Extracting finished.");
+            return;
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             sevenzaPath = "7za";
 
