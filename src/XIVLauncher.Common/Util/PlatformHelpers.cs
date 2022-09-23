@@ -8,6 +8,7 @@ using System.Security.Principal;
 using Serilog;
 using SharpCompress.Archives;
 using SharpCompress.Common;
+using SharpCompress.Readers;
 
 namespace XIVLauncher.Common.Util;
 
@@ -101,12 +102,12 @@ public static class PlatformHelpers
 
             using (var archive = ArchiveFactory.Open(path))
             {
-                foreach (var entry in archive.Entries)
+                var reader = archive.ExtractAllEntries();
+
+                while (reader.MoveToNextEntry())
                 {
-                    if (!entry.IsDirectory) {
-                        entry.WriteToDirectory(output, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
-                        Log.Verbose($"[DUPDATE] Extracting {entry}");
-                    }
+                    if (!reader.Entry.IsDirectory)
+                        reader.WriteEntryToDirectory(output, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
                 }
             }
 

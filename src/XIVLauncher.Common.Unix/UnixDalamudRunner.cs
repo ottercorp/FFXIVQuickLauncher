@@ -78,12 +78,29 @@ public class UnixDalamudRunner : IDalamudRunner
         {
             while (!dalamudProcess.StandardOutput.EndOfStream)
             {
-                var output = dalamudProcess.StandardOutput.ReadLine();
-                if (output != null)
-                    Console.WriteLine(output);
-            }
+                var tempOutput = dalamudProcess.StandardOutput.ReadLine();
 
+                if (tempOutput != null)
+                {
+                    Console.WriteLine(tempOutput);
+
+                    if (tempOutput.Contains("pid"))
+                    {
+                        output = tempOutput;
+                    }
+                }
+            }
         }).Start();
+
+        var totalWaitSeconds = 0;
+
+        while (!output.Contains("pid")) // make sure output is updated
+        {
+            Thread.Sleep(1000);
+            totalWaitSeconds += 1;
+            if (totalWaitSeconds > 15)
+                break;
+        }
 
         try
         {

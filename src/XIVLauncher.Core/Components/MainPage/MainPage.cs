@@ -426,7 +426,7 @@ public class MainPage : Page
             try
             {
                 using var process = await StartGameAndAddon(loginResult, isSteam, action == LoginAction.GameNoDalamud).ConfigureAwait(false);
-
+                
                 if (process is null)
                     throw new Exception("Could not obtain Process Handle");
 
@@ -670,7 +670,7 @@ public class MainPage : Page
         }
 
         var dalamudLauncher = new DalamudLauncher(dalamudRunner, Program.DalamudUpdater, App.Settings.DalamudLoadMethod.GetValueOrDefault(DalamudLoadMethod.DllInject),
-            App.Settings.GamePath, App.Storage.Root, App.Settings.ClientLanguage ?? ClientLanguage.English, App.Settings.DalamudLoadDelay);
+            App.Settings.GamePath, App.Storage.Root, ClientLanguage.ChineseSimplified, App.Settings.DalamudLoadDelay);
 
         try
         {
