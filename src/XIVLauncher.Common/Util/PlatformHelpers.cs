@@ -96,7 +96,7 @@ public static class PlatformHelpers
     {
         var sevenzaPath = Path.Combine(Paths.ResourcesPath, "7za.exe");
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             Log.Information("[DUPDATE] Extracting 7z dalamud slowly.");
 
@@ -113,16 +113,6 @@ public static class PlatformHelpers
 
             Log.Information("[DUPDATE] Extracting finished.");
             return;
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            sevenzaPath = "7za";
-
-            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-            {
-                sevenzaPath = "arch -x86_64 7za";
-            }
         }
 
         var psi = new ProcessStartInfo(sevenzaPath)
