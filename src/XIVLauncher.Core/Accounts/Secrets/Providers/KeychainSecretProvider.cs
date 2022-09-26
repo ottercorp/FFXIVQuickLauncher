@@ -5,7 +5,7 @@ namespace XIVLauncher.Core.Accounts.Secrets.Providers;
 
 public class KeychainSecretProvider : ISecretProvider
 {
-    public const string PACKAGE = "wang.ffxiv.xivlauncher";
+    public const string PACKAGE = "cn.ottercorp.xivlaunchercn";
     // public const string SERVICE = "SDOID";
     public const string SERVICE_SESSION = "SDOID";
 

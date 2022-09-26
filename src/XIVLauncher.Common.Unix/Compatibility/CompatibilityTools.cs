@@ -29,13 +29,12 @@ public class CompatibilityTools
 #elif WINE_XIV_FEDORA_LINUX
     private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-fedora-7.10.r3.g560db77d.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
-#elif WINE_XIV_UBUNTU_LINUX
-    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
-#else
-    // WINE_XIV_MACOS
+#elif WINE_XIV_MACOS
     private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-1.1/wine.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine";
+#else
+    private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.7.r14.gd7507fbe/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
 #endif
 
     public bool IsToolReady { get; private set; }
