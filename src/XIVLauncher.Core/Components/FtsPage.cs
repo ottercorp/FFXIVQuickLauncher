@@ -56,7 +56,7 @@ public class FtsPage : Page
         {
             if (!this.isSteamDeckAppIdError)
             {
-                AppUtil.OpenBrowser("https://goatcorp.github.io/faq/steamdeck");
+                AppUtil.OpenBrowser("https://ottercorp.github.io/faq/steamdeck");
             }
             else
             {

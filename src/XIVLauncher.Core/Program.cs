@@ -20,6 +20,8 @@ using XIVLauncher.Core.Accounts.Secrets.Providers;
 using XIVLauncher.Core.Components.LoadingPage;
 using XIVLauncher.Core.Configuration;
 using XIVLauncher.Core.Configuration.Parsers;
+using XIVLauncher.Common.Windows;
+using XIVLauncher.Common.Unix;
 
 namespace XIVLauncher.Core;
 
@@ -134,7 +136,6 @@ class Program
         Secrets = GetSecretProvider(storage);
 
         Loc.SetupWithFallbacks();
-        /*
         try
         {
             switch (Environment.OSVersion.Platform)
@@ -166,7 +167,6 @@ class Program
         {
             Log.Error(ex, "Steam couldn't load");
         }
-        */
 
         DalamudLoadInfo = new DalamudOverlayInfoProxy();
         DalamudUpdater = new DalamudUpdater(storage.GetFolder("dalamud"), storage.GetFolder("runtime"), storage.GetFolder("dalamudAssets"), storage.Root, null, null)
