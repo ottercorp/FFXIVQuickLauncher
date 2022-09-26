@@ -605,6 +605,10 @@ namespace XIVLauncher.Common.Game
             var entryDll = Path.Combine(bootPath, "sdologinentry64.dll");
             var sdoEntryDll = Path.Combine(bootPath, "sdologinentry64.sdo.dll");
             var xlEntryDll = Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll");
+            if (!File.Exists(xlEntryDll))
+            {
+                xlEntryDll = Path.Combine(Paths.ResourcesPath, "binaries", "sdologinentry64.dll");
+            }
             var entryDllVersion = FileVersionInfo.GetVersionInfo(entryDll);
             var xlEntryDllVersion = FileVersionInfo.GetVersionInfo(xlEntryDll);
 
