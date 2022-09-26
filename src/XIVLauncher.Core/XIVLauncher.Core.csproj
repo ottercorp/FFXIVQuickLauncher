@@ -99,6 +99,13 @@
     </Content>
   </ItemGroup>
 
+	<ItemGroup>
+		<Resource Remove="Resources/binaries/sdologinentry64.dll" />
+		<Content Include="Resources/binaries/sdologinentry64.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\XIVLauncher.Common\XIVLauncher.Common.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common.Unix\XIVLauncher.Common.Unix.csproj" />
