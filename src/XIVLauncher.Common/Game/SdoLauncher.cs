@@ -321,6 +321,10 @@ namespace XIVLauncher.Common.Game
             var bytes = await response.Content.ReadAsByteArrayAsync();
 
             if (File.Exists(qrPath)) File.Delete(qrPath);
+            var qrDir = qrPath.Replace("QR.png", "");
+            if (!Directory.Exists(qrDir)) {
+                Directory.CreateDirectory(qrDir);
+            }
             using (var fileStream = File.Create(qrPath))
             {
                 fileStream.Write(bytes, 0, bytes.Length);
