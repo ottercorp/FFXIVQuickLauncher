@@ -33,7 +33,8 @@ public class XivAccount
             }
         }
     }
-    
+
+    [JsonIgnore]
     public string AutoLoginSessionKey
     {
         get

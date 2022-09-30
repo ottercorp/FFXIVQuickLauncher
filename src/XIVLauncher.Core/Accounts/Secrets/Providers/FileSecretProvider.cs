@@ -21,7 +21,7 @@ public class FileSecretProvider : ISecretProvider
 
         if (configFile2.Exists)
         {
-            this.savedSessionKeys = JsonSerializer.Deserialize<Dictionary<string, string>>(configFile.OpenText().ReadToEnd())!;
+            this.savedSessionKeys = JsonSerializer.Deserialize<Dictionary<string, string>>(configFile2.OpenText().ReadToEnd())!;
         }
 
         this.savedPasswords ??= new Dictionary<string, string>();
