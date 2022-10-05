@@ -23,7 +23,7 @@ public class SettingsTabAbout : SettingsTab
     public override void Draw()
     {
         ImGui.Text($"This is XIVLauncher Core v{AppUtil.GetAssemblyVersion()}({AppUtil.GetGitHash()})");
-        ImGui.Text("By goaaats");
+        ImGui.Text("By goaaats & Bluefissure");
 
 #if FLATPAK
         ImGui.TextColored(ImGuiColors.DalamudRed, "THIS IS A FLATPAK!!!");

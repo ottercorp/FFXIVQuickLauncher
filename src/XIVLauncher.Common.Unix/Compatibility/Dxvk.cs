@@ -10,10 +10,12 @@ namespace XIVLauncher.Common.Unix.Compatibility;
 public static class Dxvk
 {
 #if WINE_XIV_MACOS
-    private const string DXVK_DOWNLOAD = "https://github.com/Gcenx/DXVK-macOS/releases/download/v1.10.2/dxvk-macOS-async-1.10.2.tar.gz";
+    // private const string DXVK_DOWNLOAD = "https://github.com/Gcenx/DXVK-macOS/releases/download/v1.10.2/dxvk-macOS-async-1.10.2.tar.gz";
+    private const string DXVK_DOWNLOAD = "https://s3.ffxiv.wang/xlcore/deps/dxvk/osx/dxvk-macOS-async-1.10.2.tar.gz";
     private const string DXVK_NAME = "dxvk-macOS-async-1.10.2";
 #else
-    private const string DXVK_DOWNLOAD = "https://github.com/Sporif/dxvk-async/releases/download/1.10.1/dxvk-async-1.10.1.tar.gz";
+    // private const string DXVK_DOWNLOAD = "https://github.com/Sporif/dxvk-async/releases/download/1.10.1/dxvk-async-1.10.1.tar.gz";
+    private const string DXVK_DOWNLOAD = "https://s3.ffxiv.wang/xlcore/deps/dxvk/linux/dxvk-async-1.10.1.tar.gz";
     private const string DXVK_NAME = "dxvk-async-1.10.1";
 #endif
 
