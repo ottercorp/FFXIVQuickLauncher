@@ -72,7 +72,7 @@ namespace XIVLauncher.Common.Game
             var tgt = String.Empty;
             var sessionId = String.Empty;
             (var dynamicKey, var guid) = await GetGuid();
-            var fastLogin = autoLogin;
+            var fastLogin = autoLogin && !string.IsNullOrEmpty(autoLoginSessionKey);
 
             if (forceQR) fastLogin = false;
 
@@ -99,7 +99,12 @@ namespace XIVLauncher.Common.Game
                 //尝试密码登录
                 if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password) && !forceQR && !fastLogin)
                 {
-                    (sndaId, tgt) = await StaticLogin(userName, password, guid);
+                    long number;
+                    if (long.TryParse(userName, out number) && number is >20000000000 or < 9999999999)
+                    {
+                        (sndaId, tgt, autoLoginSessionKey) = await ThirdPartyLogin(userName, password, autoLogin);
+                    }
+                    else (sndaId, tgt) = await StaticLogin(userName, password, guid);
                 }
 
                 if (!fastLogin && string.IsNullOrEmpty(tgt)) //手机叨鱼相关
@@ -391,7 +396,10 @@ namespace XIVLauncher.Common.Game
         {
             var macAddress = SdoUtils.GetMac();
             //密码登录
-            var result = await GetJsonAsSdoClient("staticLogin.json", new List<string>() { "checkCodeFlag=1", "encryptFlag=0", $"inputUserId={username}", $"password={password}",$"mac={macAddress}", $"guid={guid}", "inputUserType=0&accountDomain=1&autoLoginFlag=0&autoLoginKeepTime=0&supportPic=2" }, SdoClient.Launcher);
+            var result = await GetJsonAsSdoClient("staticLogin.json", new List<string>()
+            {
+                "checkCodeFlag=1", "encryptFlag=0", $"inputUserId={username}", $"password={password}",$"mac={macAddress}", $"guid={guid}", "inputUserType=0&accountDomain=1&autoLoginFlag=0&autoLoginKeepTime=0&supportPic=2"
+            }, SdoClient.Launcher);
 
             if (result.ReturnCode != 0 || result.ErrorType != 0)
             {
@@ -399,6 +407,24 @@ namespace XIVLauncher.Common.Game
             }
             Log.Information($"staticLogin.json:{result.Data.SndaId}:{result.Data.Tgt}");
             return (result.Data.SndaId, result.Data.Tgt);
+        }
+
+        #endregion
+
+        #region 第三方登录
+
+        private async Task<(string sndaId, string tgt, string autoLoginSessionKey)> ThirdPartyLogin(string thridUserId, string token , bool autoLogin = false)
+        {
+            Log.Error($"TOKEN:{token}");
+            //第三方登录
+            var result = await GetJsonAsSdoClient("thirdPartyLogin", new List<string>() { "companyid=310", "islimited=0", $"thridUserId={thridUserId}", $"token={token}",autoLogin? "autoLoginFlag=1&autoLoginKeepTime=7" : "autoLoginFlag=0&autoLoginKeepTime=0" }, SdoClient.Launcher);
+
+            if (result.ReturnCode != 0 || result.ErrorType != 0)
+            {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
+            Log.Information($"thirdPartyLogin:{result.Data.SndaId}:{result.Data.Tgt}");
+            return (result.Data.SndaId, result.Data.Tgt, result.Data.AutoLoginSessionKey);
         }
 
         #endregion
