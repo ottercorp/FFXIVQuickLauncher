@@ -1,4 +1,4 @@
-using System;
+ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -318,16 +318,21 @@ namespace XIVLauncher.Common.Dalamud
                     Log.Error("[DUPDATE] No hashes.json");
                     return false;
                 }
-                using var stream = File.OpenRead(hashesPath);
-                using var md5 = MD5.Create();
-                
-                var hashHash = BitConverter.ToString(md5.ComputeHash(stream)).ToUpperInvariant().Replace("-",string.Empty);
-                
-                if (!string.IsNullOrEmpty(onlineHash) && (onlineHash != hashHash)){
-                    Log.Error("[UPDATE] Hash Check Failed");
-                    return false;
+
+                if (!string.IsNullOrEmpty(onlineHash))
+                {
+                    using var stream = File.OpenRead(hashesPath);
+                    using var md5 = MD5.Create();
+
+                    var hashHash = BitConverter.ToString(md5.ComputeHash(stream)).ToUpperInvariant().Replace("-", string.Empty);
+
+                    if (onlineHash != hashHash)
+                    {
+                        Log.Error("[UPDATE] hashes.json Hash Check Failed");
+                        return false;
+                    }
                 }
-                
+
                 return CheckIntegrity(addonPath, File.ReadAllText(hashesPath));
             }
             catch (Exception ex)

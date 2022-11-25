@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CheapLoc;
@@ -153,7 +154,7 @@ namespace XIVLauncher
             Steam = new WindowsSteam();
 
 #if !XL_NOAUTOUPDATE
-            if (!EnvironmentSettings.IsDisableUpdates)
+            if (!EnvironmentSettings.IsDisableUpdates && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
                 try
                 {
