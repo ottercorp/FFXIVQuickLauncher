@@ -154,7 +154,7 @@ namespace XIVLauncher
             Steam = new WindowsSteam();
 
 #if !XL_NOAUTOUPDATE
-            if (!EnvironmentSettings.IsDisableUpdates && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            if (!EnvironmentSettings.IsDisableUpdates)
             {
                 try
                 {

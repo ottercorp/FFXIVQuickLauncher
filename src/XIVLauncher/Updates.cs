@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using CheapLoc;
 using Serilog;
 using Squirrel;
@@ -37,7 +38,8 @@ namespace XIVLauncher
                         onAppUninstall: v => updateManager.RemoveShortcutForThisExe());
 
                     //var a = await updateManager.CheckForUpdate();
-                    newRelease = await updateManager.UpdateApp();
+                    var key = changelogWindow.Dispatcher.Invoke(() => Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
+                    if (!key) newRelease = await updateManager.UpdateApp();
                 }
 
                 if (newRelease != null)
