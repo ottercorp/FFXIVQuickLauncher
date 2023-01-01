@@ -8,7 +8,7 @@
     <owners>ottercorp</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectUrl>https://github.com/ottercorp/FFXIVQuickLauncher</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/ottercorp/FFXIVQuickLauncher/master/XIVLauncher/Resources/dalamud_icon.ico</iconUrl>
+    <iconUrl>https://aonyx.ffxiv.wang/static/dalamud_icon.ico</iconUrl>
     <description>最终幻想14国服第三方启动器</description>
   </metadata>
 
