@@ -54,6 +54,7 @@ namespace XIVLauncher.Windows.ViewModel
         {
             Start,
             StartWithoutDalamud,
+            StartWithoutThird,
             UpdateOnly,
             Repair,
             CancelLogin,
@@ -69,12 +70,15 @@ namespace XIVLauncher.Windows.ViewModel
             StartLoginCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.Start), () => !IsLoggingIn);
             LoginNoStartCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.UpdateOnly), () => !IsLoggingIn);
             LoginNoDalamudCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.StartWithoutDalamud), () => !IsLoggingIn);
+            LoginNoThirdCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.StartWithoutThird), () => !IsLoggingIn);
             LoginRepairCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.Repair), () => !IsLoggingIn);
+
+
             LoginCancelCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.CancelLogin));
             LoginForceQRCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.ForceQR));
-            Launcher = App.GlobalSteamTicket == null ?
-                new(App.Steam, App.UniqueIdCache, CommonSettings.Instance) :
-                new(App.GlobalSteamTicket, App.UniqueIdCache, CommonSettings.Instance);
+            Launcher = App.GlobalSteamTicket == null
+                ? new(App.Steam, App.UniqueIdCache, CommonSettings.Instance, Updates.UpdateLease?.FrontierUrl)
+                : new(App.GlobalSteamTicket, App.UniqueIdCache, CommonSettings.Instance, Updates.UpdateLease?.FrontierUrl);
         }
 
         private Action<object> GetLoginFunc(AfterLoginAction action)
@@ -478,7 +482,7 @@ namespace XIVLauncher.Windows.ViewModel
                 else if (ex is SteamException)
                 {
                     msgbox.WithTextFormatted(Loc.Localize("LoginSteamIssue",
-                        "Could not authenticate with Steam. Please make sure that Steam is running and that you are logged in with the account tied to your SE ID.\nIf you play using the Free Trial, please check the \"Free Trial mode\" checkbox in the \"About\" tab of the XIVLauncher settings.\n\nContext: {0}"), ex.Message);
+                        "Could not authenticate with Steam. Please make sure that Steam is running and that you are logged in with the account tied to your SE ID.\nIf you play using the Free Trial, please check the \"Using Free Trial account\" checkbox in the \"Game Settings\" tab of the XIVLauncher settings.\n\nContext: {0}"), ex.Message);
 
                     if (ex.InnerException != null)
                         msgbox.WithAppendDescription(ex.InnerException.ToString());
@@ -613,7 +617,6 @@ namespace XIVLauncher.Windows.ViewModel
                             return false;
 
                         loginResult.State = Launcher.LoginState.Ok;
-                        action = AfterLoginAction.Start;
                     }
                     else
                     {
@@ -686,7 +689,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                 try
                 {
-                    using var process = await StartGameAndAddon(loginResult, isSteam, action == AfterLoginAction.StartWithoutDalamud).ConfigureAwait(false);
+                    using var process = await StartGameAndAddon(loginResult, isSteam, action == AfterLoginAction.StartWithoutDalamud, action == AfterLoginAction.StartWithoutThird).ConfigureAwait(false);
 
                     if (process == null)
                         return false;
@@ -914,6 +917,15 @@ namespace XIVLauncher.Windows.ViewModel
 
                 Log.Information("STARTING REPAIR");
 
+                if (!AppUtil.TryYellOnGameFilesBeingOpen(_window, n => n switch
+                    {
+                        1 => Loc.Localize("GameRepairProcessExitRequired1",
+                            "Close the following application to repair the game."),
+                        _ => string.Format(Loc.Localize("GameRepairProcessExitRequiredPlural",
+                            "Close the following applications to repair the game.")),
+                    }))
+                    return false;
+
                 using var verify = new PatchVerifier(CommonSettings.Instance, loginResult, 20, loginResult.OauthLogin.MaxExpansion);
 
                 Hide();
@@ -1063,13 +1075,17 @@ namespace XIVLauncher.Windows.ViewModel
             Environment.Exit(0);
         }
 
-        public async Task<Process?> StartGameAndAddon(Launcher.LoginResult loginResult, bool isSteam, bool forceNoDalamud)
+        public async Task<Process?> StartGameAndAddon(Launcher.LoginResult loginResult, bool isSteam, bool forceNoDalamud, bool noThird)
         {
             var dalamudLauncher = new DalamudLauncher(new WindowsDalamudRunner(), App.DalamudUpdater, App.Settings.InGameAddonLoadMethod.GetValueOrDefault(DalamudLoadMethod.DllInject),
                 App.Settings.GamePath,
                 new DirectoryInfo(Paths.RoamingPath),
                 App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
-                (int)App.Settings.DalamudInjectionDelayMs);
+                (int)App.Settings.DalamudInjectionDelayMs,
+                false,
+                false,
+                noThird,
+                Troubleshooting.GetTroubleshootingJson());
 
             var dalamudOk = false;
 
@@ -1126,16 +1142,22 @@ namespace XIVLauncher.Windows.ViewModel
 
                 if (showEnsurementWarning)
                 {
-                    var ensurementErrorMessage = Loc.Localize("DalamudEnsurementError",
-                        "Could not download necessary data files to use Dalamud and plugins.\nThis is likely a problem with your internet connection - the game will start, but you will not be able to use plugins.");
+                    var errorNews = await Updates.GetErrorNews().ConfigureAwait(false);
 
-                    CustomMessageBox.Builder
-                                    .NewFrom(ensurementErrorMessage)
-                                    .WithImage(MessageBoxImage.Warning)
-                                    .WithButtons(MessageBoxButton.OK)
-                                    .WithShowHelpLinks()
-                                    .WithParentWindow(_window)
-                                    .Show();
+                    // If we have valid error news, let's not show this because it probably doesn't matter
+                    if (errorNews != null)
+                    {
+                        var ensurementErrorMessage = Loc.Localize("DalamudEnsurementError",
+                            "Could not download necessary data files to use Dalamud and plugins.\nThis could be a problem with your internet connection, or might be caused by your antivirus application blocking necessary files. The game will start, but you will not be able to use plugins.\n\nPlease check our FAQ for more information.");
+
+                        CustomMessageBox.Builder
+                                        .NewFrom(ensurementErrorMessage)
+                                        .WithImage(MessageBoxImage.Warning)
+                                        .WithButtons(MessageBoxButton.OK)
+                                        .WithShowHelpLinks()
+                                        .WithParentWindow(_window)
+                                        .Show();
+                    }
                 }
             }
 
@@ -1319,12 +1341,31 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (GameHelpers.CheckIsGameOpen())
             {
-                CustomMessageBox.Show(
-                    Loc.Localize("GameIsOpenError", "The game and/or the official launcher are open. XIVLauncher cannot patch the game if this is the case.\nPlease close the official launcher and try again."),
-                    "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: _window);
-
-                return false;
+                while (GameHelpers.CheckIsGameOpen())
+                {
+                    if (CustomMessageBox
+                        .Builder
+                        .NewFrom(Loc.Localize("GameIsOpenError",
+                            "The game and/or the official launcher are open. XIVLauncher cannot patch the game if this is the case.\nPlease close the official launcher and try again."))
+                        .WithImage(MessageBoxImage.Exclamation)
+                        .WithButtons(MessageBoxButton.OKCancel)
+                        .WithOkButtonText(Loc.Localize("Refresh", "_Refresh"))
+                        .WithDefaultResult(MessageBoxResult.OK)
+                        .Show() == MessageBoxResult.Cancel)
+                    {
+                        return false;
+                    }
+                }
             }
+
+            if (!AppUtil.TryYellOnGameFilesBeingOpen(_window, n => n switch
+                {
+                    1 => Loc.Localize("GameUpdateExitRequired1",
+                        "Close the following application to patch the game."),
+                    _ => string.Format(Loc.Localize("GameUpdateExitRequiredPlural",
+                        "Close the following applications to patch the game.")),
+                }))
+                return false;
 
             using var installer = new Common.Game.Patch.PatchInstaller(App.Settings.KeepPatches ?? false);
             var patcher = new PatchManager(App.Settings.PatchAcquisitionMethod ?? AcquisitionMethod.Aria, App.Settings.SpeedLimitBytes,
@@ -1406,6 +1447,8 @@ namespace XIVLauncher.Windows.ViewModel
         public ICommand LoginNoStartCommand { get; set; }
 
         public ICommand LoginNoDalamudCommand { get; set; }
+
+        public ICommand LoginNoThirdCommand { get; set; }
 
         public ICommand LoginRepairCommand { get; set; }
 
@@ -1562,8 +1605,9 @@ namespace XIVLauncher.Windows.ViewModel
             LoginLoc = Loc.Localize("LoginBoxLogin", "Log in");
             LoginNoStartLoc = Loc.Localize("LoginBoxNoStartLogin", "Update without starting");
             LoginRepairLoc = Loc.Localize("LoginBoxRepairLogin", "Repair game files");
-            LoginNoDalamudLoc = Loc.Localize("LoginBoxNoDalamudLogin", "Start without Dalamud");
             LoginTooltipLoc = Loc.Localize("LoginBoxLoginTooltip", "如需扫码登录\n请右键登录按钮进行选择");
+            LoginNoDalamudLoc = Loc.Localize("LoginBoxNoDalamudLogin", "Start w/o Dalamud");
+            LoginNoThirdLoc = Loc.Localize("LoginBoxNoThirdLogin", "Start w/o Third-Party Plugins");
             WaitingForMaintenanceLoc = Loc.Localize("LoginBoxWaitingForMaint", "Waiting for maintenance to be over...");
             CancelWithShortcutLoc = Loc.Localize("CancelWithShortcut", "_Cancel");
             OpenAccountSwitcherLoc = Loc.Localize("OpenAccountSwitcher", "Open Account Switcher");
@@ -1581,6 +1625,7 @@ namespace XIVLauncher.Windows.ViewModel
         public string LoginLoc { get; private set; }
         public string LoginNoStartLoc { get; private set; }
         public string LoginNoDalamudLoc { get; private set; }
+        public string LoginNoThirdLoc { get; private set; }
         public string LoginRepairLoc { get; private set; }
         public string WaitingForMaintenanceLoc { get; private set; }
         public string CancelWithShortcutLoc { get; private set; }

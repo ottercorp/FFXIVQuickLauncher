@@ -4,6 +4,7 @@ using XIVLauncher.Common;
 using XIVLauncher.Common.Addon;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game.Patch.Acquisition;
+using XIVLauncher.Xaml;
 
 namespace XIVLauncher.Settings
 {
@@ -41,6 +42,10 @@ namespace XIVLauncher.Settings
         bool? ExitLauncherAfterGameExit { get; set; }
         bool? IsFt { get; set; }
         string DalamudRolloutBucket { get; set; }
+        bool? AutoStartSteam { get; set; }
+        bool? ForceNorthAmerica { get; set; }
+
+        PreserveWindowPosition.WindowPlacement? MainWindowPlacement { get; set; }
         int? SelectedServer { get; set; }
         bool FastLogin { get; set; }
 

@@ -73,6 +73,7 @@ namespace XIVLauncher.Accounts
 
         public void RemoveAccount(XivAccount account)
         {
+            account.Password = string.Empty;
             Accounts.Remove(account);
         }
 

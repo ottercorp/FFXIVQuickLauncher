@@ -23,7 +23,7 @@ public class UnixDalamudRunner : IDalamudRunner
         this.dotnetRuntime = dotnetRuntime;
     }
 
-    public Process? Run(FileInfo runner, bool fakeLogin, FileInfo gameExe, string gameArgs, IDictionary<string, string> environment, DalamudLoadMethod loadMethod, DalamudStartInfo startInfo)
+    public Process? Run(FileInfo runner, bool fakeLogin, bool noPlugins, bool noThirdPlugins, FileInfo gameExe, string gameArgs, IDictionary<string, string> environment, DalamudLoadMethod loadMethod, DalamudStartInfo startInfo)
     {
         var gameExePath = "";
         var dotnetRuntimePath = "";
@@ -42,9 +42,9 @@ public class UnixDalamudRunner : IDalamudRunner
         if (string.IsNullOrWhiteSpace(prevDalamudRuntime))
             environment.Add("DALAMUD_RUNTIME", dotnetRuntimePath);
 
-        var launchArguments = new List<string> 
-        { 
-            $"\"{runner.FullName}\"", 
+        var launchArguments = new List<string>
+        {
+            $"\"{runner.FullName}\"",
             "launch",
             $"--mode={(loadMethod == DalamudLoadMethod.EntryPoint ? "entrypoint" : "inject")}",
             $"--game=\"{gameExePath}\"",
@@ -54,7 +54,8 @@ public class UnixDalamudRunner : IDalamudRunner
             $"--dalamud-dev-plugin-directory=\"{startInfo.DefaultPluginDirectory}\"",
             $"--dalamud-asset-directory=\"{startInfo.AssetDirectory}\"",
             $"--dalamud-client-language={(int)startInfo.Language}",
-            $"--dalamud-delay-initialize={startInfo.DelayInitializeMs}"
+            $"--dalamud-delay-initialize={startInfo.DelayInitializeMs}",
+            $"--dalamud-tspack-b64={Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(startInfo.TroubleshootingPackData))}",
         };
 
         if (loadMethod == DalamudLoadMethod.ACLonly)
@@ -62,6 +63,12 @@ public class UnixDalamudRunner : IDalamudRunner
 
         if (fakeLogin)
             launchArguments.Add("--fake-arguments");
+
+        if (noPlugins)
+            launchArguments.Add("--no-plugins");
+
+        if (noThirdPlugins)
+            launchArguments.Add("--no-third-plugins");
 
         launchArguments.Add("--");
         launchArguments.Add(gameArgs);

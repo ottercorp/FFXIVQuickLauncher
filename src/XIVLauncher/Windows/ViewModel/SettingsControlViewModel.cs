@@ -69,6 +69,9 @@ namespace XIVLauncher.Windows.ViewModel
                 "XIVLauncher does not support Chinese or Korean version of the game. Make sure this path indeed is for the international version.");
             SteamCheckBoxLoc = Loc.Localize("FirstTimeSteamCheckBox", "Enable Steam integration");
             OtpServerCheckBoxLoc = Loc.Localize("OtpServerCheckBox", "Enable XL Authenticator app/OTP macro support");
+            OtpServerTooltipLoc = Loc.Localize("OtpServerTooltip", "This will allow you to send your OTP code to XIVLauncher directly from your phone.\nClick \"Learn more\" to see how to set this up.");
+            LearnMoreLoc = Loc.Localize("LearnMore", "Learn More");
+            OtpLearnMoreTooltipLoc = Loc.Localize("OtpLearnMoreTooltipLoc", "Open a guide in your web browser.");
             AdditionalArgumentsLoc = Loc.Localize("AdditionalArguments", "Additional launch arguments");
             ChooseDpiAwarenessLoc = Loc.Localize("ChooseDpiAwareness", "Game DPI Awareness");
             DpiAwarenessAwareLoc = Loc.Localize("DpiAwarenessAware", "Aware");
@@ -77,6 +80,8 @@ namespace XIVLauncher.Windows.ViewModel
             RunIntegrityCheckLoc = Loc.Localize("RunIntegrityCheck", "Run integrity check");
             RunIntegrityCheckTooltipLoc =
                 Loc.Localize("RunIntegrityCheckTooltip", "Run integrity check on game files.");
+            AutoStartSteamLoc = Loc.Localize("AutoStartSteam", "Start Steam when starting XIVLauncher");
+            AutoStartSteamTooltipLoc = Loc.Localize("AutoStartSteamTooltip", "Whenever you open XIVLauncher, it will check if Steam is running and start it if it isn't.\nYou will automatically show as \"Playing\" on Steam.");
 
             SettingsGameSettingsLoc = Loc.Localize("SettingsGameSettings", "Game Settings");
             DirectXLoc = Loc.Localize("ChooseDirectX", "Please select which DirectX version you want to use.");
@@ -154,12 +159,10 @@ namespace XIVLauncher.Windows.ViewModel
             OpenFaqLoc = Loc.Localize("OpenFaq", "Open FAQ");
             StartBackupToolLoc = Loc.Localize("StartBackupTool", "Start Backup Tool");
             StartOriginalLauncherLoc = Loc.Localize("StartOriginalLauncher", "Start Original Launcher");
-            EnabledUidCacheLoc = Loc.Localize("EnabledUidCache", "Enable experimental UID cache (this will break on game updates!)");
-            ResetUidCacheTipLoc = Loc.Localize("ResetUidCacheTip", "Hold control while starting the launcher to reset the UID cache");
-            EnableEncryptionLoc = Loc.Localize("EnableEncryption", "Enable encrypting arguments to the client");
-            ExitLauncherAfterGameExitLoc = Loc.Localize("ExitLauncherAfterGameExitLoc", "Exit XIVLauncher after game exit");
-            TreatNonZeroExitCodeAsFailureLoc = Loc.Localize("TreatNonZeroExitCodeAsFailureLoc", "Treat non-zero game exit code as failure");
-            IsFreeTrialLoc = Loc.Localize("IsFreeTrial", "Start in free trial mode");
+            IsFreeTrialLoc = Loc.Localize("IsFreeTrial", "Using free trial account");
+
+            OpenAdvancedSettingsLoc = Loc.Localize("OpenAdvancedSettings", "Open Advanced Settings");
+            OpenAdvancedSettingsTipLoc = Loc.Localize("OpenAdvancedSettingsTip", "Opens some settings for advanced users. Please only use these if you know what you're doing.");
 
             PluginDisabledTagLoc = Loc.Localize("DisabledPlugin", " (disabled)");
         }
@@ -173,6 +176,9 @@ namespace XIVLauncher.Windows.ViewModel
         public string GamePathSafeguardRegionLoc { get; private set; }
         public string SteamCheckBoxLoc { get; private set; }
         public string OtpServerCheckBoxLoc { get; private set; }
+        public string OtpServerTooltipLoc { get; private set; }
+        public string LearnMoreLoc { get; private set; }
+        public string OtpLearnMoreTooltipLoc { get; private set; }
         public string AdditionalArgumentsLoc { get; private set; }
         public string ChooseDpiAwarenessLoc { get; private set; }
         public string ChooseDpiAwarenessHintLoc { get; private set; }
@@ -180,6 +186,8 @@ namespace XIVLauncher.Windows.ViewModel
         public string DpiAwarenessUnawareLoc { get; private set; }
         public string RunIntegrityCheckLoc { get; private set; }
         public string RunIntegrityCheckTooltipLoc { get; private set; }
+        public string AutoStartSteamLoc { get; private set; }
+        public string AutoStartSteamTooltipLoc { get; private set; }
 
         public string SettingsGameSettingsLoc { get; private set; }
         public string DirectXLoc { get; private set; }
@@ -237,12 +245,9 @@ namespace XIVLauncher.Windows.ViewModel
         public string OpenFaqLoc { get; private set; }
         public string StartBackupToolLoc { get; private set; }
         public string StartOriginalLauncherLoc { get; private set; }
-        public string EnabledUidCacheLoc { get; private set; }
-        public string ResetUidCacheTipLoc { get; private set; }
-        public string EnableEncryptionLoc { get; private set; }
-        public string ExitLauncherAfterGameExitLoc { get; private set; }
-        public string TreatNonZeroExitCodeAsFailureLoc { get; private set; }
         public string IsFreeTrialLoc { get; private set; }
+        public string OpenAdvancedSettingsLoc { get; private set; }
+        public string OpenAdvancedSettingsTipLoc { get; private set; }
 
         public string PluginDisabledTagLoc { get; private set; }
     }

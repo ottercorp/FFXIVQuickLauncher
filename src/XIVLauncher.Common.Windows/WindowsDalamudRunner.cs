@@ -12,7 +12,7 @@ namespace XIVLauncher.Common.Windows;
 
 public class WindowsDalamudRunner : IDalamudRunner
 {
-    public Process? Run(FileInfo runner, bool fakeLogin, FileInfo gameExe, string gameArgs, IDictionary<string, string> environment, DalamudLoadMethod loadMethod, DalamudStartInfo startInfo)
+    public Process? Run(FileInfo runner, bool fakeLogin, bool noPlugins, bool noThirdPlugins, FileInfo gameExe, string gameArgs, IDictionary<string, string> environment, DalamudLoadMethod loadMethod, DalamudStartInfo startInfo)
     {
         var inheritableCurrentProcess = GetInheritableCurrentProcessHandle();
 
@@ -28,7 +28,8 @@ public class WindowsDalamudRunner : IDalamudRunner
             $"--dalamud-dev-plugin-directory=\"{startInfo.DefaultPluginDirectory}\"",
             $"--dalamud-asset-directory=\"{startInfo.AssetDirectory}\"",
             $"--dalamud-client-language={(int)startInfo.Language}",
-            $"--dalamud-delay-initialize={startInfo.DelayInitializeMs}"
+            $"--dalamud-delay-initialize={startInfo.DelayInitializeMs}",
+            $"--dalamud-tspack-b64={Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(startInfo.TroubleshootingPackData))}",
         };
 
         if (loadMethod == DalamudLoadMethod.ACLonly)
@@ -36,6 +37,12 @@ public class WindowsDalamudRunner : IDalamudRunner
 
         if (fakeLogin)
             launchArguments.Add("--fake-arguments");
+
+        if (noPlugins)
+            launchArguments.Add("--no-plugin");
+
+        if (noThirdPlugins)
+            launchArguments.Add("--no-3rd-plugin");
 
         launchArguments.Add("--");
         launchArguments.Add(gameArgs);

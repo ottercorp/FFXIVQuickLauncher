@@ -19,6 +19,9 @@ namespace XIVLauncher.Common.Dalamud
         private readonly DalamudUpdater updater;
         private readonly int injectionDelay;
         private readonly bool fakeLogin;
+        private readonly bool noPlugin;
+        private readonly bool noThirdPlugin;
+        private readonly string troubleshootingData;
 
         public enum DalamudInstallState
         {
@@ -27,7 +30,7 @@ namespace XIVLauncher.Common.Dalamud
             OutOfDate,
         }
 
-        public DalamudLauncher(IDalamudRunner runner, DalamudUpdater updater, DalamudLoadMethod loadMethod, DirectoryInfo gamePath, DirectoryInfo configDirectory, ClientLanguage clientLanguage, int injectionDelay, bool fakeLogin = false)
+        public DalamudLauncher(IDalamudRunner runner, DalamudUpdater updater, DalamudLoadMethod loadMethod, DirectoryInfo gamePath, DirectoryInfo configDirectory, ClientLanguage clientLanguage, int injectionDelay, bool fakeLogin, bool noPlugin, bool noThirdPlugin, string troubleshootingData)
         {
             this.runner = runner;
             this.updater = updater;
@@ -37,6 +40,9 @@ namespace XIVLauncher.Common.Dalamud
             this.language = clientLanguage;
             this.injectionDelay = injectionDelay;
             this.fakeLogin = fakeLogin;
+            this.noPlugin = noPlugin;
+            this.noThirdPlugin = noThirdPlugin;
+            this.troubleshootingData = troubleshootingData;
         }
 
         public const string REMOTE_BASE = "https://aonyx.ffxiv.wang/Dalamud/Release/VersionInfo?track=";
@@ -100,6 +106,7 @@ namespace XIVLauncher.Common.Dalamud
                 GameVersion = Repository.Ffxiv.GetVer(gamePath),
                 WorkingDirectory = this.updater.Runner.Directory?.FullName,
                 DelayInitializeMs = this.injectionDelay,
+                TroubleshootingPackData = this.troubleshootingData,
             };
 
             if (this.loadMethod != DalamudLoadMethod.ACLonly)
@@ -120,7 +127,7 @@ namespace XIVLauncher.Common.Dalamud
                     break;
             }
 
-            var process = this.runner.Run(this.updater.Runner, this.fakeLogin, gameExe, gameArgs, environment, this.loadMethod, startInfo);
+            var process = this.runner.Run(this.updater.Runner, this.fakeLogin, this.noPlugin, this.noThirdPlugin, gameExe, gameArgs, environment, this.loadMethod, startInfo);
 
             this.updater.CloseOverlay();
 

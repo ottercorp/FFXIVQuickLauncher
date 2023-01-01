@@ -36,11 +36,17 @@ public partial class Launcher
     private readonly IUniqueIdCache uniqueIdCache;
     private readonly ISettings settings;
     private readonly HttpClient client;
-    public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings)
+    private readonly string frontierUrlTemplate;
+
+    private const string FALLBACK_FRONTIER_URL_TEMPLATE = "https://launcher.finalfantasyxiv.com/v620/index.html?rc_lang={0}&time={1}";
+
+    public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings, string? frontierUrl =  null)
     {
         this.steam = steam;
         this.uniqueIdCache = uniqueIdCache;
         this.settings = settings;
+        this.frontierUrlTemplate =
+            string.IsNullOrWhiteSpace(frontierUrl) ? FALLBACK_FRONTIER_URL_TEMPLATE : frontierUrl;
 
         ServicePointManager.Expect100Continue = false;
 
@@ -77,7 +83,8 @@ public partial class Launcher
         this.client = new HttpClient(handler);
     }
 
-    public Launcher(byte[] steamTicket, IUniqueIdCache uniqueIdCache, ISettings settings) : this(steam: null, uniqueIdCache, settings)
+    public Launcher(byte[] steamTicket, IUniqueIdCache uniqueIdCache, ISettings settings, string? frontierUrl = null)
+        : this(steam: null, uniqueIdCache, settings, frontierUrl)
     {
         this.steamTicket = steamTicket;
     }
@@ -416,7 +423,8 @@ public partial class Launcher
         request.Headers.AddWithoutValidation("X-Hash-Check", "enabled");
         request.Headers.AddWithoutValidation("User-Agent", Constants.PatcherUserAgent);
 
-        EnsureVersionSanity(gamePath, loginResult.MaxExpansion);
+        if (!forceBaseVersion)
+            EnsureVersionSanity(gamePath, loginResult.MaxExpansion);
         request.Content = new StringContent(GetVersionReport(gamePath, loginResult.MaxExpansion, forceBaseVersion));
 
         var resp = await this.client.SendAsync(request);
@@ -684,12 +692,12 @@ public partial class Launcher
         return await resp.Content.ReadAsByteArrayAsync();
     }
 
-    private static string GenerateFrontierReferer(ClientLanguage language)
+    private string GenerateFrontierReferer(ClientLanguage language)
     {
         var langCode = language.GetLangCode().Replace("-", "_");
         var formattedTime = GetLauncherFormattedTimeLong();
 
-        return $"https://launcher.finalfantasyxiv.com/v610/index.html?rc_lang={langCode}&time={formattedTime}";
+        return string.Format(this.frontierUrlTemplate, langCode, formattedTime);
     }
 
     // Used to be used for frontier top, they now use the un-rounded long timestamp

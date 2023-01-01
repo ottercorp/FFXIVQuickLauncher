@@ -78,11 +78,14 @@ namespace XIVLauncher.Accounts
                     // ignored
                 }
 
-                CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW}-{UserName.ToLower()}", new NetworkCredential
+                if (!string.IsNullOrWhiteSpace(value))
                 {
-                    UserName = UserName,
-                    Password = value
-                });
+                    CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW}-{UserName.ToLower()}", new NetworkCredential
+                    {
+                        UserName = UserName,
+                        Password = value
+                    });
+                }
             }
         }
 

@@ -3,7 +3,7 @@
     <Product>XIVLauncherCN</Product>
     <AssemblyTitle>XIVLauncher</AssemblyTitle>
     <Description>Custom launcher for the most critically acclaimed MMO.</Description>
-    <VersionPrefix>6.2.45-beta1</VersionPrefix>
+    <VersionPrefix>6.3.1-beta1</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -92,10 +92,10 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Microsoft.WindowsAPICodePack-Shell" Version="1.1.0" />
     <PackageReference Include="MonoTorrent" Version="2.0.0" />
-    <PackageReference Include="Serilog" Version="2.9.0" />
-    <PackageReference Include="Serilog.Sinks.Async" Version="1.4.0" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
+    <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="1.0.1" />
-    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="SharedMemory" Version="2.3.2" />
     <PackageReference Include="SharpCompress" Version="0.32.2" />
     <PackageReference Include="squirrel.windows" Version="1.9.1" />

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -8,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CheapLoc;
+using CommandLine;
 using Config.Net;
 using Newtonsoft.Json;
 using Serilog;
@@ -16,6 +18,7 @@ using XIVLauncher.Common;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Common.PlatformAbstractions;
+using XIVLauncher.Common.Support;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Common.Windows;
 using XIVLauncher.PlatformAbstractions;
@@ -23,6 +26,7 @@ using XIVLauncher.Settings;
 using XIVLauncher.Settings.Parsers;
 using XIVLauncher.Support;
 using XIVLauncher.Windows;
+using XIVLauncher.Xaml;
 
 namespace XIVLauncher
 {
@@ -31,16 +35,62 @@ namespace XIVLauncher
     /// </summary>
     public partial class App : Application
     {
+        public class CmdLineOptions
+        {
+            [CommandLine.Option("dalamud-runner-override", Required = false, HelpText = "Path to a folder to override the dalamud runner with.")]
+            public string RunnerOverride { get; set; }
+
+            [CommandLine.Option("roamingPath", Required = false, HelpText = "Path to a folder to override the roaming path for XL with.")]
+            public string RoamingPath { get; set; }
+
+            [CommandLine.Option("noautologin", Required = false, HelpText = "Disable autologin.")]
+            public bool NoAutoLogin { get; set; }
+
+            [CommandLine.Option("gen-localizable", Required = false, HelpText = "Generate localizable files.")]
+            public bool DoGenerateLocalizables { get; set; }
+
+            [CommandLine.Option("gen-integrity", Required = false, HelpText = "Generate integrity files. Provide a game path.")]
+            public string DoGenerateIntegrity { get; set; }
+
+            [CommandLine.Option("account", Required = false, HelpText = "Account name to use.")]
+            public string AccountName { get; set; }
+
+            [CommandLine.Option("steamticket", Required = false, HelpText = "Steam ticket to use.")]
+            public string SteamTicket { get; set; }
+
+            [CommandLine.Option("clientlang", Required = false, HelpText = "Client language to use.")]
+            public ClientLanguage? ClientLanguage { get; set; }
+
+            // We don't care about these, just need it so that the parser doesn't error
+            [CommandLine.Option("squirrel-updated", Hidden = true)]
+            public string SquirrelUpdated { get; set; }
+
+            [CommandLine.Option("squirrel-install", Hidden = true)]
+            public string SquirrelInstall { get; set; }
+
+            [CommandLine.Option("squirrel-obsolete", Hidden = true)]
+            public string SquirrelObsolete { get; set; }
+
+            [CommandLine.Option("squirrel-uninstall", Hidden = true)]
+            public string SquirrelUninstall { get; set; }
+
+            [CommandLine.Option("squirrel-firstrun", Hidden = true)]
+            public bool SquirrelFirstRun { get; set; }
+        }
+
         public const string REPO_URL = "https://github.com/ottercorp/FFXIVQuickLauncher";
 
         public static ILauncherSettingsV3 Settings;
-        public static ISteam Steam;
+        public static WindowsSteam Steam;
         public static CommonUniqueIdCache UniqueIdCache;
 
 #if !XL_NOAUTOUPDATE
         private UpdateLoadingDialog _updateWindow;
 #endif
 
+        public static CmdLineOptions CommandLine { get; private set; }
+
+        private FileInfo _dalamudRunnerOverride = null;
         private MainWindow _mainWindow;
 
         public static bool GlobalIsDisableAutologin { get; private set; }
@@ -55,136 +105,15 @@ namespace XIVLauncher
 
         public App()
         {
-            // HW rendering commonly causes issues with material design, so we turn it off by default for now
+#if !DEBUG
             try
             {
-                if (!EnvironmentSettings.IsHardwareRendered)
-                    RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+                AppDomain.CurrentDomain.UnhandledException += EarlyInitExceptionHandler;
+                TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
             }
             catch
             {
                 // ignored
-            }
-
-            // TODO: Use a real command line parser
-            foreach (var arg in Environment.GetCommandLineArgs())
-            {
-                if (arg.StartsWith("--roamingPath=", StringComparison.Ordinal))
-                {
-                    Paths.OverrideRoamingPath(arg.Substring(14));
-                }
-                else if (arg.StartsWith("--dalamudRunner=", StringComparison.Ordinal))
-                {
-                    DalamudUpdater.RunnerOverride = new FileInfo(arg.Substring(16));
-                }
-            }
-
-            var release = $"xivlauncher-{AppUtil.GetAssemblyVersion()}-{AppUtil.GetGitHash()}";
-
-            try
-            {
-                Log.Logger = new LoggerConfiguration()
-                             .WriteTo.Async(a =>
-                                 a.File(Path.Combine(Paths.RoamingPath, "output.log")))
-                             .WriteTo.Sink(SerilogEventSink.Instance)
-#if DEBUG
-                             .WriteTo.Debug()
-                             .MinimumLevel.Verbose()
-#else
-                            .MinimumLevel.Information()
-#endif
-                             .CreateLogger();
-
-#if !DEBUG
-                AppDomain.CurrentDomain.UnhandledException += EarlyInitExceptionHandler;
-                TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
-#endif
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Could not set up logging. Please report this error.\n\n" + ex.Message, "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            SerilogEventSink.Instance.LogLine += OnSerilogLogLine;
-
-            try
-            {
-                SetupSettings();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Settings were corrupted, resetting");
-                File.Delete(GetConfigPath("launcher"));
-                SetupSettings();
-            }
-
-#if !XL_LOC_FORCEFALLBACKS
-            try
-            {
-                if (App.Settings.LauncherLanguage == null)
-                {
-                    var currentUiLang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-                    App.Settings.LauncherLanguage = App.Settings.LauncherLanguage.GetLangFromTwoLetterIso(currentUiLang);
-                }
-
-                Log.Information("Trying to set up Loc for language code {0}", App.Settings.LauncherLanguage.GetLocalizationCode());
-
-                if (!App.Settings.LauncherLanguage.IsDefault())
-                {
-                    Loc.Setup(AppUtil.GetFromResources($"XIVLauncher.Resources.Loc.xl.xl_{App.Settings.LauncherLanguage.GetLocalizationCode()}.json"));
-                }
-                else
-                {
-                    Loc.SetupWithFallbacks();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Could not get language information. Setting up fallbacks.");
-                Loc.Setup("{}");
-            }
-#else
-            // Force all fallbacks
-            Loc.Setup("{}");
-#endif
-
-            Log.Information(
-                $"XIVLauncher started as {release}");
-
-            Steam = new WindowsSteam();
-
-#if !XL_NOAUTOUPDATE
-            if (!EnvironmentSettings.IsDisableUpdates)
-            {
-                try
-                {
-                    Log.Information("Starting update check...");
-
-                    _updateWindow = new UpdateLoadingDialog();
-                    _updateWindow.Show();
-
-                    var updateMgr = new Updates();
-                    updateMgr.OnUpdateCheckFinished += OnUpdateCheckFinished;
-
-                    ChangelogWindow changelogWindow = null;
-                    try
-                    {
-                        changelogWindow = new ChangelogWindow(EnvironmentSettings.IsPreRelease);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Could not load changelog window");
-                    }
-
-                    Task.Run(() => updateMgr.Run(EnvironmentSettings.IsPreRelease, changelogWindow));
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(
-                        "XIVLauncher could not contact the update server. Please check your internet connection or try again.\n\n" + ex,
-                        "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Environment.Exit(0);
-                }
             }
 #endif
         }
@@ -204,6 +133,7 @@ namespace XIVLauncher
                        .UseJsonFile(GetConfigPath("launcher"))
                        .UseTypeParser(new DirectoryInfoParser())
                        .UseTypeParser(new AddonListParser())
+                       .UseTypeParser(new CommonJsonParser<PreserveWindowPosition.WindowPlacement>())
                        .Build();
 
             if (string.IsNullOrEmpty(Settings.AcceptLanguage))
@@ -212,6 +142,29 @@ namespace XIVLauncher
             }
 
             UniqueIdCache = new CommonUniqueIdCache(new FileInfo(Path.Combine(Paths.RoamingPath, "uidCache.json")));
+
+            try
+            {
+                if (!string.IsNullOrEmpty(CommandLine.AccountName))
+                {
+                    App.Settings.CurrentAccountId = CommandLine.AccountName;
+                    Log.Verbose("Account override: '{0}'", CommandLine.AccountName);
+                }
+
+                if (!string.IsNullOrEmpty(CommandLine.SteamTicket))
+                {
+                    GlobalSteamTicket = Convert.FromBase64String(CommandLine.SteamTicket);
+                }
+
+                if (CommandLine.ClientLanguage != null)
+                {
+                    App.Settings.Language = CommandLine.ClientLanguage;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not apply settings overrides from command line");
+            }
         }
 
         private void OnUpdateCheckFinished(bool finishUp)
@@ -239,7 +192,12 @@ namespace XIVLauncher
                         new DirectoryInfo(Paths.RoamingPath),
                         UniqueIdCache,
                         Settings.DalamudRolloutBucket);
-                    
+
+                    if (this._dalamudRunnerOverride != null)
+                    {
+                        DalamudUpdater.RunnerOverride = this._dalamudRunnerOverride;
+                    }
+
                     Settings.DalamudRolloutBucket = DalamudUpdater.RolloutBucket;
                     
                     var dalamudWindowThread = new Thread(DalamudOverlayThreadStart);
@@ -268,6 +226,31 @@ namespace XIVLauncher
             DalamudUpdater.Overlay = overlay;
 
             System.Windows.Threading.Dispatcher.Run();
+        }
+
+        private static void GenerateIntegrity(string path)
+        {
+            var result = IntegrityCheck.RunIntegrityCheckAsync(new DirectoryInfo(path), null).GetAwaiter().GetResult();
+            string saveIntegrityPath = Path.Combine(Paths.RoamingPath, $"{result.GameVersion}.json");
+
+            File.WriteAllText(saveIntegrityPath, JsonConvert.SerializeObject(result));
+
+            MessageBox.Show($"Successfully hashed {result.Hashes.Count} files to {path}.", "Hello Franz", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            Environment.Exit(0);
+        }
+
+        private static void GenerateLocalizables()
+        {
+            try
+            {
+                Loc.ExportLocalizable();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+
+            Environment.Exit(0);
         }
 
         private bool _useFullExceptionHandler = false;
@@ -306,90 +289,196 @@ namespace XIVLauncher
 
         private void App_OnStartup(object sender, StartupEventArgs e)
         {
-            var accountName = string.Empty;
-
-            if (e.Args.Length > 0)
+            // HW rendering commonly causes issues with material design, so we turn it off by default for now
+            try
             {
-                foreach (string arg in e.Args)
-                {
-                    if (arg == "--noautologin")
-                    {
-                        GlobalIsDisableAutologin = true;
-                    }
-
-                    if (arg == "--genLocalizable")
-                    {
-                        try
-                        {
-                            Loc.ExportLocalizable();
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.ToString());
-                        }
-
-                        Environment.Exit(0);
-                        return;
-                    }
-
-                    if (arg == "--genIntegrity")
-                    {
-                        var result = IntegrityCheck.RunIntegrityCheckAsync(Settings.GamePath, null).GetAwaiter().GetResult();
-                        string saveIntegrityPath = Path.Combine(Paths.RoamingPath, $"{result.GameVersion}.json");
-#if DEBUG
-                        Log.Information("Saving integrity to " + saveIntegrityPath);
-#endif
-                        File.WriteAllText(saveIntegrityPath, JsonConvert.SerializeObject(result));
-
-                        MessageBox.Show($"Successfully hashed {result.Hashes.Count} files.");
-                        Environment.Exit(0);
-                        return;
-                    }
-
-                    // Check if the accountName parameter is provided, if yes, pass it to MainWindow
-                    if (arg.StartsWith("--account=", StringComparison.Ordinal))
-                    {
-                        accountName = arg.Substring(arg.IndexOf("=", StringComparison.InvariantCulture) + 1);
-                        App.Settings.CurrentAccountId = accountName;
-                    }
-
-                    // Check if the steam ticket parameter is provided, use it later to skip steam integration
-                    if (arg.StartsWith("--steamticket=", StringComparison.Ordinal))
-                    {
-                        string steamTicket = arg.Substring(arg.IndexOf("=", StringComparison.InvariantCulture) + 1);
-                        GlobalSteamTicket = Convert.FromBase64String(steamTicket);
-                    }
-
-                    // Override client launch language by parameter
-                    if (arg.StartsWith("--clientlang=", StringComparison.Ordinal))
-                    {
-                        string langarg = arg.Substring(arg.IndexOf("=", StringComparison.InvariantCulture) + 1);
-                        Enum.TryParse(langarg, out ClientLanguage lang); // defaults to Japanese if the input was invalid.
-                        App.Settings.Language = lang;
-                        Log.Information("Language set as {Language} by launch argument", App.Settings.Language.ToString());
-                    }
-                }
+                if (!EnvironmentSettings.IsHardwareRendered)
+                    RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+            }
+            catch
+            {
+                // ignored
             }
 
-            Log.Verbose("Loading MainWindow for account '{0}'", accountName);
-
-            if (App.Settings.LauncherLanguage == LauncherLanguage.Russian)
+            try
             {
-                var dict = new ResourceDictionary
+                LogInit.Setup(
+                    Path.Combine(Paths.RoamingPath, "output.log"),
+                    Environment.GetCommandLineArgs());
+
+                Log.Information("========================================================");
+                Log.Information("Starting a session(v{Version} - {Hash})", AppUtil.GetAssemblyVersion(), AppUtil.GetGitHash());
+
+                SerilogEventSink.Instance.LogLine += OnSerilogLogLine;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not set up logging. Please report this error.\n\n" + ex.Message, "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            try
+            {
+                var helpWriter = new StringWriter();
+                var parser = new Parser(config =>
                 {
-                    { "PrimaryHueLightBrush", UaBrush },
-                    //{"PrimaryHueLightForegroundBrush", uaBrush},
-                    { "PrimaryHueMidBrush", UaBrush },
-                    //{"PrimaryHueMidForegroundBrush", uaBrush},
-                    { "PrimaryHueDarkBrush", UaBrush },
-                    //{"PrimaryHueDarkForegroundBrush", uaBrush},
-                };
-                this.Resources.MergedDictionaries.Add(dict);
+                    config.HelpWriter = helpWriter;
+                    config.IgnoreUnknownArguments = true;
+                });
+                var result = parser.ParseArguments<CmdLineOptions>(Environment.GetCommandLineArgs());
+
+                if (result.Errors.Any())
+                {
+                    MessageBox.Show(helpWriter.ToString(), "Help");
+                }
+
+                CommandLine = result.Value ?? new CmdLineOptions();
+
+                if (!string.IsNullOrEmpty(CommandLine.RoamingPath))
+                {
+                    Paths.OverrideRoamingPath(CommandLine.RoamingPath);
+                }
+
+                if (!string.IsNullOrEmpty(CommandLine.RunnerOverride))
+                {
+                    this._dalamudRunnerOverride = new FileInfo(CommandLine.RunnerOverride);
+                }
+
+                if (CommandLine.NoAutoLogin)
+                {
+                    GlobalIsDisableAutologin = true;
+                }
+
+                if (!string.IsNullOrEmpty(CommandLine.DoGenerateIntegrity))
+                {
+                    GenerateIntegrity(CommandLine.DoGenerateIntegrity);
+                }
+
+                if (CommandLine.DoGenerateLocalizables)
+                {
+                    GenerateLocalizables();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not parse command line arguments. Please report this error.\n\n" + ex.Message, "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            try
+            {
+                SetupSettings();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Settings were corrupted, resetting");
+                File.Delete(GetConfigPath("launcher"));
+                SetupSettings();
+            }
+
+#if !XL_LOC_FORCEFALLBACKS
+            try
+            {
+                if (App.Settings.LauncherLanguage == null)
+                {
+                    var currentUiLang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+                    App.Settings.LauncherLanguage = App.Settings.LauncherLanguage.GetLangFromTwoLetterIso(currentUiLang);
+                }
+
+                Log.Information("Trying to set up Loc for language code {0}", App.Settings.LauncherLanguage.GetLocalizationCode());
+
+                if (!App.Settings.LauncherLanguage.IsDefault())
+                {
+                    Loc.Setup(AppUtil.GetFromResources($"XIVLauncher.Resources.Loc.xl.xl_{App.Settings.LauncherLanguage.GetLocalizationCode()}.json"));
+                }
+                else
+                {
+                    Loc.SetupWithFallbacks();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not get language information. Setting up fallbacks.");
+                Loc.Setup("{}");
+            }
+#else
+            // Force all fallbacks
+            Loc.Setup("{}");
+#endif
+
+            try
+            {
+                Steam = new WindowsSteam();
+
+                if (Settings.AutoStartSteam.GetValueOrDefault(false))
+                    Steam.KickoffAsyncStartup(Settings.IsFt.GetValueOrDefault(false) ? Constants.STEAM_FT_APP_ID : Constants.STEAM_APP_ID);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not set up Steam");
+            }
+
+#if !XL_NOAUTOUPDATE
+            if (!EnvironmentSettings.IsDisableUpdates)
+            {
+                try
+                {
+                    Log.Information("Starting update check...");
+
+                    _updateWindow = new UpdateLoadingDialog();
+                    _updateWindow.Show();
+
+                    var updateMgr = new Updates();
+                    updateMgr.OnUpdateCheckFinished += OnUpdateCheckFinished;
+
+                    ChangelogWindow changelogWindow = null;
+
+                    try
+                    {
+                        changelogWindow = new ChangelogWindow(EnvironmentSettings.IsPreRelease);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Could not load changelog window");
+                    }
+
+                    Task.Run(() => updateMgr.Run(EnvironmentSettings.IsPreRelease, changelogWindow));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Could not dispatch update check");
+                    MessageBox.Show(
+                        "XIVLauncher could not check for updates. Please check your internet connection or try again.\n\n" + ex,
+                        "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Environment.Exit(0);
+                    return;
+                }
+            }
+#endif
+
+            try
+            {
+                if (App.Settings.LauncherLanguage == LauncherLanguage.Russian)
+                {
+                    var dict = new ResourceDictionary
+                    {
+                        { "PrimaryHueLightBrush", UaBrush },
+                        //{"PrimaryHueLightForegroundBrush", uaBrush},
+                        { "PrimaryHueMidBrush", UaBrush },
+                        //{"PrimaryHueMidForegroundBrush", uaBrush},
+                        { "PrimaryHueDarkBrush", UaBrush },
+                        //{"PrimaryHueDarkForegroundBrush", uaBrush},
+                    };
+                    this.Resources.MergedDictionaries.Add(dict);
+                }
+            }
+            catch
+            {
+                // ignored
             }
 
             if (EnvironmentSettings.IsDisableUpdates)
             {
                 OnUpdateCheckFinished(true);
+                return;
             }
 
 #if XL_NOAUTOUPDATE

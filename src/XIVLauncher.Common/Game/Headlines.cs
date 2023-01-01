@@ -65,7 +65,7 @@ namespace XIVLauncher.Common.Game
 
     public partial class Headlines
     {
-        public static async Task<Headlines> Get(Launcher game, ClientLanguage language)
+        public static async Task<Headlines> Get(Launcher game, ClientLanguage language, bool forceNa = false)
         {
             var headlines = new Headlines();
             headlines.Banner = await GetBanner(game);
