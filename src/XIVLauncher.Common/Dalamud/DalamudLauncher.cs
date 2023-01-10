@@ -10,8 +10,7 @@ using XIVLauncher.Common.PlatformAbstractions;
 namespace XIVLauncher.Common.Dalamud
 {
     public class DalamudLauncher
-    {
-        private readonly DalamudLoadMethod loadMethod;
+    {       private readonly DalamudLoadMethod loadMethod;
         private readonly DirectoryInfo gamePath;
         private readonly DirectoryInfo configDirectory;
         private readonly ClientLanguage language;
@@ -106,7 +105,6 @@ namespace XIVLauncher.Common.Dalamud
                 GameVersion = Repository.Ffxiv.GetVer(gamePath),
                 WorkingDirectory = this.updater.Runner.Directory?.FullName,
                 DelayInitializeMs = this.injectionDelay,
-                TroubleshootingPackData = this.troubleshootingData,
             };
 
             if (this.loadMethod != DalamudLoadMethod.ACLonly)
@@ -127,7 +125,7 @@ namespace XIVLauncher.Common.Dalamud
                     break;
             }
 
-            var process = this.runner.Run(this.updater.Runner, this.fakeLogin, this.noPlugin, this.noThirdPlugin, gameExe, gameArgs, environment, this.loadMethod, startInfo);
+            var process = this.runner.Run(this.updater.Runner, this.fakeLogin, gameExe, gameArgs, environment, this.loadMethod, startInfo);
 
             this.updater.CloseOverlay();
 
