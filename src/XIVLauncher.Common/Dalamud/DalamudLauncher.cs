@@ -125,7 +125,7 @@ namespace XIVLauncher.Common.Dalamud
                     break;
             }
 
-            var process = this.runner.Run(this.updater.Runner, this.fakeLogin, gameExe, gameArgs, environment, this.loadMethod, startInfo);
+            var process = this.runner.Run(this.updater.Runner, this.fakeLogin, this.noPlugin, this.noThirdPlugin, gameExe, gameArgs, environment, this.loadMethod, startInfo);
 
             this.updater.CloseOverlay();
 
