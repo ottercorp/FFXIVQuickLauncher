@@ -64,7 +64,7 @@ public class CompatibilityTools
     private readonly string dxvkAsyncOn;
     private readonly int dxvkFrameLimit;
 
-    public CompatibilityTools(WineSettings wineSettings, Dxvk.DxvkHudType hudType, bool? gamemodeOn, bool? dxvkAsyncOn,int dxvkFrameLimit, DirectoryInfo toolsFolder)
+    public CompatibilityTools(WineSettings wineSettings, Dxvk.DxvkHudType hudType, bool? gamemodeOn, bool? dxvkAsyncOn, int dxvkFrameLimit, DirectoryInfo toolsFolder)
     {
         this.Settings = wineSettings;
         this.hudType = hudType;
@@ -112,10 +112,11 @@ public class CompatibilityTools
         await File.WriteAllBytesAsync(tempFilePath, await client.GetByteArrayAsync(WINE_XIV_RELEASE_URL).ConfigureAwait(false)).ConfigureAwait(false);
 
         PlatformHelpers.Untar(tempFilePath, this.toolDirectory.FullName);
-        
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             var bundledMvkLibPath = Path.Combine(WineLibPath, "libMoltenVK.dylib");
+
             if (File.Exists(bundledMvkLibPath))
             {
                 File.Delete(bundledMvkLibPath);
@@ -182,9 +183,10 @@ public class CompatibilityTools
         psi.RedirectStandardError = writeLog;
         psi.UseShellExecute = false;
         psi.WorkingDirectory = workingDirectory;
-        psi.EnvironmentVariables.Add("LANG", "en_US"); // need this for Dalamud on non-latin locale
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
+            psi.EnvironmentVariables.Add("LANG", "en_US"); // need this for Dalamud on non-latin locale
             var additionalPaths = Array.Empty<string>();
 
             if (Directory.Exists(MoltenVkPath))
@@ -215,6 +217,17 @@ public class CompatibilityTools
         if (!string.IsNullOrEmpty(Settings.DebugVars))
         {
             wineEnviromentVariables.Add("WINEDEBUG", Settings.DebugVars);
+        }
+
+        if (!string.IsNullOrEmpty(Settings.Env))
+        {
+            var envList = Settings.Env.Split(';');
+
+            foreach (var env in envList)
+            {
+                var kvList = env.Split('=');
+                wineEnviromentVariables.Add(kvList[0], kvList[1]);
+            }
         }
 
         wineEnviromentVariables.Add("XL_WINEONLINUX", "true");
