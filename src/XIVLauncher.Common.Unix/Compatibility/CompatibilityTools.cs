@@ -39,14 +39,17 @@ public class CompatibilityTools
     // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
     private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/ubuntu/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
+    private const string SD_WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/ubuntu/wine-xiv-staging-fsync-git-ubuntu-8.1.r2.g86a67397.tar.xz";
+    private const string SD_WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.1.r2.g86a67397";
 #endif
 
     public bool IsToolReady { get; private set; }
 
     public WineSettings Settings { get; private set; }
+    public static bool IsSteamDeckHardware => Directory.Exists("/home/deck");
 
     private string WineBinPath => Settings.StartupType == WineStartupType.Managed
-        ? Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "bin")
+        ? Path.Combine(toolDirectory.FullName, IsSteamDeckHardware ? SD_WINE_XIV_RELEASE_NAME : WINE_XIV_RELEASE_NAME, "bin")
         : Settings.CustomBinPath;
 
     private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK");
@@ -105,7 +108,7 @@ public class CompatibilityTools
         using var client = new HttpClient();
         var tempFilePath = Path.Combine(tempPath.FullName, $"{Guid.NewGuid()}");
 
-        await File.WriteAllBytesAsync(tempFilePath, await client.GetByteArrayAsync(WINE_XIV_RELEASE_URL).ConfigureAwait(false)).ConfigureAwait(false);
+        await File.WriteAllBytesAsync(tempFilePath, await client.GetByteArrayAsync(IsSteamDeckHardware ? SD_WINE_XIV_RELEASE_URL : WINE_XIV_RELEASE_URL).ConfigureAwait(false)).ConfigureAwait(false);
 
         PlatformHelpers.Untar(tempFilePath, this.toolDirectory.FullName);
 
