@@ -22,11 +22,12 @@ public class WineSettings
     public string MoltenVk { get; private set; }
 
     public string DebugVars { get; private set; }
+    public string Env { get; private set; }
     public FileInfo LogFile { get; private set; }
 
     public DirectoryInfo Prefix { get; private set; }
 
-    public WineSettings(WineStartupType? startupType, string customBinPath, string debugVars, FileInfo logFile, DirectoryInfo prefix, bool? esyncOn, bool? fsyncOn, bool? modernMvkOn)
+    public WineSettings(WineStartupType? startupType, string customBinPath, string debugVars, FileInfo logFile, DirectoryInfo prefix, bool? esyncOn, bool? fsyncOn, bool? modernMvkOn, string? env)
     {
         this.StartupType = startupType ?? WineStartupType.Custom;
         this.CustomBinPath = customBinPath;
@@ -34,6 +35,7 @@ public class WineSettings
         this.FsyncOn = (fsyncOn ?? false) ? "1" : "0";
         this.MoltenVk = (modernMvkOn ?? false) ? "modern" : "stable";
         this.DebugVars = debugVars;
+        this.Env = env ?? "";
         this.LogFile = logFile;
         this.Prefix = prefix;
     }
