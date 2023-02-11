@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 
 #if NET6_0_OR_GREATER && !WIN32
 using System.Net.Security;
@@ -23,6 +24,7 @@ using XIVLauncher.Common.PlatformAbstractions;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
+using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Util;
 
 namespace XIVLauncher.Common.Game
@@ -31,6 +33,7 @@ namespace XIVLauncher.Common.Game
     {
         private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
         private string AreaId = "1";
+        private const int autoLoginKeepTime = 30;
 
         public async Task<LoginResult> LoginSdo(string userName, string password, LogEventHandler logEvent = null, bool forceQr = false, bool autoLogin = false, string autoLoginSessionKey = null)
         {
@@ -288,7 +291,7 @@ namespace XIVLauncher.Common.Game
             while (!cancellation.IsCancellationRequested)
             {
                 // /authen/pushMessageLogin.json
-                var result = await GetJsonAsSdoClient("pushMessageLogin.json", autoLogin ? new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}", "autoLoginFlag=1", "autoLoginKeepTime=7" }
+                var result = await GetJsonAsSdoClient("pushMessageLogin.json", autoLogin ? new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}", "autoLoginFlag=1", $"autoLoginKeepTime={autoLoginKeepTime}" }
                                                                                          : new List<string>() { $"pushMsgSessionKey={pushMsgSessionKey}", $"guid={guid}" }, SdoClient.Launcher);
                 if (result.ReturnCode == 0 && result.Data.NextAction == 0)
                 {
@@ -344,7 +347,7 @@ namespace XIVLauncher.Common.Game
         {
             while (!cancellation.IsCancellationRequested)
             {
-                var result = await GetJsonAsSdoClient("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime=7", $"maxsize=97" }, SdoClient.Launcher);
+                var result = await GetJsonAsSdoClient("codeKeyLogin.json", new List<string>() { $"codeKey={codeKey}", $"guid={guid}", $"autoLoginFlag=1", $"autoLoginKeepTime={autoLoginKeepTime}", $"maxsize=97" }, SdoClient.Launcher);
 
                 if (result.ReturnCode == 0 && result.Data.NextAction == 0)
                 {
@@ -417,7 +420,7 @@ namespace XIVLauncher.Common.Game
         {
             Log.Error($"TOKEN:{token}");
             //第三方登录
-            var result = await GetJsonAsSdoClient("thirdPartyLogin", new List<string>() { "companyid=310", "islimited=0", $"thridUserId={thridUserId}", $"token={token}",autoLogin? "autoLoginFlag=1&autoLoginKeepTime=7" : "autoLoginFlag=0&autoLoginKeepTime=0" }, SdoClient.Launcher);
+            var result = await GetJsonAsSdoClient("thirdPartyLogin", new List<string>() { "companyid=310", "islimited=0", $"thridUserId={thridUserId}", $"token={token}",autoLogin? $"autoLoginFlag=1&autoLoginKeepTime={autoLoginKeepTime}" : "autoLoginFlag=0&autoLoginKeepTime=0" }, SdoClient.Launcher);
 
             if (result.ReturnCode != 0 || result.ErrorType != 0)
             {
@@ -454,7 +457,7 @@ namespace XIVLauncher.Common.Game
 
         private async Task<(string tgt, string autoLoginSessionKey)> AccountGroupLogin(string tgt, string sndaId, bool autoLogin = false)
         {
-            var result = await GetJsonAsSdoClient("accountGroupLogin", new List<string>() { "serviceUrl=http%3A%2F%2Fwww.sdo.com", $"tgt={tgt}", $"sndaId={sndaId}", "autoLoginFlag=1", "autoLoginKeepTime=7" }, SdoClient.Launcher);
+            var result = await GetJsonAsSdoClient("accountGroupLogin", new List<string>() { "serviceUrl=http%3A%2F%2Fwww.sdo.com", $"tgt={tgt}", $"sndaId={sndaId}", "autoLoginFlag=1", $"autoLoginKeepTime={autoLoginKeepTime}" }, SdoClient.Launcher);
             Log.Information($"accountGroupLogin:AutoLoginMaxAge:{result.Data.AutoLoginMaxAge}");
             if (result.ReturnCode == 0 && result.Data.NextAction == 0) return (result.Data.Tgt, result.Data.AutoLoginSessionKey);
 
