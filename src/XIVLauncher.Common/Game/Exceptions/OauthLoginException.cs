@@ -13,9 +13,9 @@ public class OauthLoginException : Exception
     public string? OauthErrorMessage { get; private set; }
 
     public OauthLoginException(string document)
-        : base(GetErrorMessage(document) ?? "Unknown error")
+        : base(document ?? "Unknown error")
     {
-        this.OauthErrorMessage = GetErrorMessage(document);
+        this.OauthErrorMessage = document;
     }
 
     private static string? GetErrorMessage(string document)

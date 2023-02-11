@@ -500,7 +500,8 @@ namespace XIVLauncher.Windows.ViewModel
                 else if (ex is OauthLoginException oauthLoginException)
                 {
                     disableAutoLogin = true;
-
+                    LoginMessage = "";
+                    QRDialog.CloseQRWindow(_window);
                     if (string.IsNullOrWhiteSpace(oauthLoginException.OauthErrorMessage))
                     {
                         msgbox.WithText(Loc.Localize("LoginGenericError",
@@ -513,13 +514,13 @@ namespace XIVLauncher.Windows.ViewModel
                                                            .Replace("\r\n", "\n"));
                     }
 
-                    msgbox.WithAppendText("\n\n");
-                    if (otp == string.Empty)
-                        msgbox.WithAppendTextFormatted(Loc.Localize("LoginGenericErrorCheckOtpUse",
-                            "If you're using OTP, then tick on \"{0}\" checkbox and try again."), OtpLoc);
-                    else
-                        msgbox.WithAppendText(Loc.Localize("LoginGenericErrorCheckOtp",
-                            "Double check whether your OTP device's clock is correct.\nIf you have recently logged in, then try logging in again in 30 seconds."));
+                    //msgbox.WithAppendText("\n\n");
+                    //if (otp == string.Empty)
+                    //    msgbox.WithAppendTextFormatted(Loc.Localize("LoginGenericErrorCheckOtpUse",
+                    //        "If you're using OTP, then tick on \"{0}\" checkbox and try again."), OtpLoc);
+                    //else
+                    //    msgbox.WithAppendText(Loc.Localize("LoginGenericErrorCheckOtp",
+                    //        "Double check whether your OTP device's clock is correct.\nIf you have recently logged in, then try logging in again in 30 seconds."));
                 }
                 // If GateStatus is not set (even gate server could not be contacted) or GateStatus is true (gate server says everything's fine but could not contact login servers)
                 else if (ex is HttpRequestException || ex is TaskCanceledException || ex is WebException)

@@ -27,6 +27,7 @@ using Microsoft.Win32.SafeHandles;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Util;
 using System.Security.Cryptography.X509Certificates;
+using CommandLine;
 
 namespace XIVLauncher.Common.Game
 {
@@ -82,17 +83,7 @@ namespace XIVLauncher.Common.Game
 
             if (fastLogin)//快速登录,刷新SessionKey
             {
-                try
-                {
-                    (autoLoginSessionKey, tgt, sndaId) = await UpdateAutoLoginSessionKey(autoLoginSessionKey, guid);
-
-                }
-                catch (OauthLoginException ex)
-                {
-                    logEvent?.Invoke(SdoLoginState.LoginFail, ex.Message);
-                    fastLogin = false;
-                }
-
+                (autoLoginSessionKey, tgt, sndaId) = await UpdateAutoLoginSessionKey(autoLoginSessionKey, guid);
                 if (autoLoginSessionKey == null) fastLogin = false;
                 else (sndaId, tgt) = await FastLogin(tgt, guid);
             }
@@ -225,6 +216,8 @@ namespace XIVLauncher.Common.Game
             var result = await GetJsonAsSdoClient("autoLogin.json", new List<string>() { $"autoLoginSessionKey={autoLoginSessionKey}", $"guid={guid}" }, SdoClient.Launcher);
 
             if (result.ReturnCode != 0 || result.ErrorType != 0) result.Data.AutoLoginSessionKey = null;
+            if (result.ReturnCode == -10386010)
+                throw new OauthLoginException(result.Data.FailReason);
             Log.Information($"LoginSessionKey Updated, {(result.Data.AutoLoginMaxAge / 3600f):F1} hours left");
             return (result.Data.AutoLoginSessionKey, result.Data.Tgt, result.Data.SndaId);
         }
@@ -281,7 +274,12 @@ namespace XIVLauncher.Common.Game
             // ErrorType ReturnCode NextAction FailReason
             // 0         -14001710  0          "请确保已安装叨鱼，并保持联网"
             // 0         -10242296  0          "该账号首次在本设备上登录，不支持一键登录，请使用二维码、动态密码或密码登录"
+            // 0
             // 0         0          0          null
+            // 0         10516808:FailReason: 用户未确认
+            if (result.ReturnCode != -14001710 && result.ReturnCode != 0 & result.ReturnCode!= -10242296) {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
             var pushMsgSerialNum = result.Data.PushMsgSerialNum;
             var pushMsgSessionKey = result.Data.PushMsgSessionKey;
             return (result.ReturnCode, result.Data.FailReason, pushMsgSerialNum, pushMsgSessionKey);
@@ -460,9 +458,12 @@ namespace XIVLauncher.Common.Game
         {
             var result = await GetJsonAsSdoClient("accountGroupLogin", new List<string>() { "serviceUrl=http%3A%2F%2Fwww.sdo.com", $"tgt={tgt}", $"sndaId={sndaId}", "autoLoginFlag=1", $"autoLoginKeepTime={autoLoginKeepTime}" }, SdoClient.Launcher);
             Log.Information($"accountGroupLogin:AutoLoginMaxAge:{result.Data.AutoLoginMaxAge}");
-            if (result.ReturnCode == 0 && result.Data.NextAction == 0) return (result.Data.Tgt, result.Data.AutoLoginSessionKey);
-
-            return (null,null);
+            if (result.ReturnCode == 0 && result.Data.NextAction == 0) {
+                return (result.Data.Tgt, result.Data.AutoLoginSessionKey);
+            }
+            else {
+                throw new OauthLoginException(result.Data.FailReason);
+            }
         }
 
         #endregion
@@ -571,7 +572,7 @@ namespace XIVLauncher.Common.Game
             try
             {
                 var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
-                Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}");
+                Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
                 //Log.Information($"Reply:{reply}");
                 return result;
             }
