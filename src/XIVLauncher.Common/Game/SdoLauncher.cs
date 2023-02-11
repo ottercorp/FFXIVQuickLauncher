@@ -26,6 +26,7 @@ using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Util;
+using System.Security.Cryptography.X509Certificates;
 
 namespace XIVLauncher.Common.Game
 {
@@ -629,40 +630,45 @@ namespace XIVLauncher.Common.Game
         }
         public void EnsureLoginEntry(DirectoryInfo gamePath)
         {
-            // 通过文件版本信息，检测是否存在第三方sdologinentry64.dll以及原版sdologinentry64.dll（被重命名为sdologinentry64.sdo.dll）
             var bootPath = Path.Combine(gamePath.FullName, "sdo", "sdologin");
             var entryDll = Path.Combine(bootPath, "sdologinentry64.dll");
-            var sdoEntryDll = Path.Combine(bootPath, "sdologinentry64.sdo.dll");
             var xlEntryDll = Path.Combine(Paths.ResourcesPath, "sdologinentry64.dll");
-            if (!File.Exists(xlEntryDll))
-            {
+            if (!File.Exists(xlEntryDll)) {
                 xlEntryDll = Path.Combine(Paths.ResourcesPath, "binaries", "sdologinentry64.dll");
             }
-            var entryDllVersion = FileVersionInfo.GetVersionInfo(entryDll);
-            var xlEntryDllVersion = FileVersionInfo.GetVersionInfo(xlEntryDll);
 
-            if (File.Exists(entryDll))
-            {
-                if (entryDllVersion.CompanyName != "ottercorp")
-                {
-                    Log.Information($"复制EntryDll");
-                    File.Copy(entryDll, sdoEntryDll, true);
+            try {
+                if (!Directory.Exists(bootPath)) {
+                    // 没有sdo文件夹的纯净客户端
+                    Directory.CreateDirectory(bootPath);
+                }
+
+                if (!File.Exists(entryDll)) {
+                    Log.Information($"未发现sdologinentry64.dll,将复制${xlEntryDll}");
                     File.Copy(xlEntryDll, entryDll, true);
                 }
-                else
-                {
-                    if (GetFileHash(entryDll) != GetFileHash(xlEntryDll))
-                    {
-                        Log.Information($"xlEntryDll:{entryDll}版本不一致，{entryDllVersion.FileVersion}->{xlEntryDllVersion.FileVersion}");
+                else {
+                    if (FileVersionInfo.GetVersionInfo(entryDll).CompanyName == "ottercorp") {
+                        if (GetFileHash(entryDll) != GetFileHash(xlEntryDll)) {
+                            Log.Information($"xlEntryDll:{entryDll}版本不一致,替换sdologinentry64.dll");
+                            File.Copy(xlEntryDll, entryDll, true);
+                        }
+                        else {
+                            Log.Information($"sdologinentry64.dll校验成功");
+                            return;
+                        }
+                    }
+                    else {
+                        // 备份盛趣的sdologinentry64.dll 为 sdologinentry64.sdo.dll
+                        Log.Information($"检测到sdologinentry64.dll不是ottercorp版本,备份原文件并替换");
+                        File.Copy(entryDll, Path.Combine(bootPath, "sdologinentry64.sdo.dll"), true);
                         File.Copy(xlEntryDll, entryDll, true);
                     }
                 }
             }
-
-            if (File.Exists(sdoEntryDll))
-                return;
-
-            throw new BinaryNotPresentException(sdoEntryDll);
+            catch (Exception ex) {
+                throw new Exception($"未能复制{xlEntryDll}至{entryDll}\n请检查程序是否有{entryDll}的写入权限,或者{gamePath.FullName}目录下的游戏正在运行。\n{ex.Message}");
+            }
         }
 
         public async Task<LoginResult> CheckGameUpdate(SdoArea area, DirectoryInfo gamePath, bool forceBaseVersion)
