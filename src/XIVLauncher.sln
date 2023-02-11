@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XIVLauncher", "XIVLauncher\XIVLauncher.csproj", "{BEB33308-6E15-41F7-ACC8-86BB786E2E56}"
+	ProjectSection(ProjectDependencies) = postProject
+		{99E7FD09-91FB-442D-B58C-D61CE9364CFB} = {99E7FD09-91FB-442D-B58C-D61CE9364CFB}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XIVLauncher.PatchInstaller", "XIVLauncher.PatchInstaller\XIVLauncher.PatchInstaller.csproj", "{395CDFAB-48F8-4EC5-833D-05F5795A157D}"
 EndProject

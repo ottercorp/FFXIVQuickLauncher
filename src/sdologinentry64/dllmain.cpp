@@ -121,7 +121,9 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, PVOID pvReserved)
         // printf_s("cmdline=%ls\n", cmd)
         int numArgs = 0;
         LPWSTR *argv = CommandLineToArgvW(GetCommandLine(), &numArgs);
-        ;
+        printf_s("%s", "####################IMPORTANT!!!!!######################\n");
+        printf_s("%s", "Please blur the DEV.TestSID and XL.SndaId in the following text when you send a screenshot to others.\n");
+        printf_s("%s", "########################################################\n");
         while (numArgs--)
         {
             auto cmd = argv[numArgs];
@@ -136,9 +138,9 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, PVOID pvReserved)
             {
                 if (wcsstr(cmd, L"XL.SndaId="))
                 {
-                    SessionId = new char[wcslen(cmd) + 1];
-                    memset((void *)SessionId, 0, sizeof(char) * (wcslen(cmd) + 1));
-                    WideCharToMultiByte(CP_ACP, 0, cmd + wcslen(L"XL.SndaId="), -1, SessionId, wcslen(cmd), NULL, NULL);
+                    SndaId = new char[wcslen(cmd) + 1];
+                    memset((void *)SndaId, 0, sizeof(char) * (wcslen(cmd) + 1));
+                    WideCharToMultiByte(CP_ACP, 0, cmd + wcslen(L"XL.SndaId="), -1, SndaId, wcslen(cmd), NULL, NULL);
                 }
             }
         }
@@ -146,12 +148,12 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD dwReason, PVOID pvReserved)
         if (SessionId == NULL)
         {
             IsSdo = true;
+            return Load(hModule);
         }
         else
         {
             IsSdo = false;
         }
-        return Load(hModule);
     }
     else if (dwReason == DLL_PROCESS_DETACH)
     {
