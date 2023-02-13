@@ -123,7 +123,7 @@ namespace XIVLauncher.Windows
             }
             catch (Exception ex)
             {
-                _sdoAreas = new SdoArea[1] { new SdoArea { AreaName = "������״̬�쳣", Areaid = "-1" } };
+                _sdoAreas = new SdoArea[1] { new SdoArea { AreaName = "服务器状态异常", Areaid = "-1" } };
                 throw ex;
             }
             finally
