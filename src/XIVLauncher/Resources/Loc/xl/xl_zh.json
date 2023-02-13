@@ -72,7 +72,7 @@
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "GamePathSafeguardError": {
-    "message": "请不要选择「game」或「boot」资料夹，请选择它们的上层资料夹。",
+    "message": "请不要选择「game」文件夹，请选择它们的上层文件夹。",
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "GamePathInvalidConfirm": {
@@ -804,7 +804,7 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "ChooseGamePath": {
-    "message": "请选择游戏所在文件夹。\n该文件夹应该包含「game」和「boot」文件夹。",
+    "message": "请选择游戏所在文件夹。\n该文件夹应该包含「game」文件夹。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "GamePathSafeguardRegionWarning": {
