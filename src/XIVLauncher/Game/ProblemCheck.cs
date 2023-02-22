@@ -290,14 +290,14 @@ namespace XIVLauncher.Game
         {
             // Create a randomly-named file in the game's user data folder and make sure we don't
             // get a permissions error.
-            var myGames = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "my games");
+            var myGames = Path.Combine(App.Settings.GamePath.FullName, "my games");
             if (!Directory.Exists(myGames))
                 return true;
 
-            var targetPath = Directory.GetDirectories(myGames).FirstOrDefault(x => Path.GetDirectoryName(x)?.Length == 34);
-            if (targetPath == null)
-                return true;
-
+            // var targetPath = Directory.GetDirectories(myGames).FirstOrDefault(x => Path.GetDirectoryName(x)?.Length == 34);
+            // if (targetPath == null)
+            //     return true;
+            var targetPath = myGames;
             var tempFile = Path.Combine(targetPath, Guid.NewGuid().ToString());
 
             try
