@@ -147,7 +147,7 @@ namespace XIVLauncher
             {
                 DefaultRequestHeaders =
                 {
-                    UserAgent = { new ProductInfoHeaderValue("XIVLauncher", AppUtil.GetGitHash()) }
+                    UserAgent = { new ProductInfoHeaderValue("XIVLauncherCN", AppUtil.GetGitHash()) }
                 }
             };
             client.DefaultRequestHeaders.AddWithoutValidation("X-XL-Track", prerelease ? TRACK_PRERELEASE : TRACK_RELEASE);
