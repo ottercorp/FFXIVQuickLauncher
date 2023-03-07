@@ -172,7 +172,7 @@ namespace XIVLauncher
                 throw new LeaseAcquisitionException(leaseData.Message!);
 
             var fakeDownloader = new FakeSquirrelFileDownloader(leaseData, prerelease);
-            var manager = new UpdateManager(FAKE_URL_PREFIX, "XIVLauncher", null, fakeDownloader);
+            var manager = new UpdateManager(FAKE_URL_PREFIX, "XIVLauncherCN", null, fakeDownloader);
 
             return new UpdateResult(manager, leaseData);
         }
