@@ -80,7 +80,7 @@
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "GamePathRegionConfirm": {
-    "message": "您选择的文件夹可能是国服或者韩服客户端，而 XIVLauncher 仅支持国际服。\n您确定这是国际服客户端吗？",
+    "message": "您选择的文件夹可能是国服或者韩服客户端\n您确定是这个客户端吗？",
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "NewsLoading": {
@@ -264,7 +264,7 @@
     "description": "DalamudLoadingOverlayViewModel.SetupLoc"
   },
   "ChooseGamePathFTS": {
-    "message": "Please select the folder your game is installed in.\r\nIt should contain the folders \"game\" and \"boot\".\n\nIf you don't have the game installed, you can choose an empty folder and XIVLauncher will install it for you.",
+    "message": "请选择游戏所在文件夹。\n该文件夹应该包含「game」文件夹.\n\n国服暂不支持从零下载,请至少手工下载一个可用客户端.",
     "description": "FirstTimeSetupViewModel.SetupLoc"
   },
   "FirstTimeSteamNotice": {
@@ -380,7 +380,7 @@
     "description": "MainWindowViewModel.InstallerOnFail"
   },
   "LoginBoxUsername": {
-    "message": "Username",
+    "message": "用户名",
     "description": "MainWindowViewModel.SetupLoc"
   },
   "LoginBoxPassword": {
@@ -412,11 +412,11 @@
     "description": "MainWindowViewModel.SetupLoc"
   },
   "LoginBoxNoDalamudLogin": {
-    "message": "Start w/o Dalamud",
+    "message": "启动但不加载Dalamud",
     "description": "MainWindowViewModel.SetupLoc"
   },
   "LoginBoxNoThirdLogin": {
-    "message": "Start w/o Third-Party Plugins",
+    "message": "启动但不加载第三方插件",
     "description": "MainWindowViewModel.SetupLoc"
   },
   "LoginBoxLoginTooltip": {
@@ -576,7 +576,7 @@
     "description": "<StartGameAndAddon>d__29.MoveNext"
   },
   "DalamudEnsurementError": {
-    "message": "Could not download necessary data files to use Dalamud and plugins.\nThis could be a problem with your internet connection, or might be caused by your antivirus application blocking necessary files. The game will start, but you will not be able to use plugins.\n\nPlease check our FAQ for more information.",
+    "message": "无法下载Dalamud和插件所需的文件.\n这可能是由于网络错误或杀毒软件屏蔽. 游戏将正常启动, 但插件将无法使用.\n\n请对照常见问题查找解决方案或在QQ频道提问.",
     "description": "<StartGameAndAddon>d__29.MoveNext"
   },
   "AddonLoadError": {
