@@ -623,7 +623,6 @@ public partial class Launcher
         return length + "/" + hashstring;
     }
 
-    /*
     public async Task<GateStatus> GetGateStatus(ClientLanguage language)
     {
         try
@@ -656,7 +655,6 @@ public partial class Launcher
             throw new Exception("Could not get gate status", exc);
         }
     }
-    */
 
     private static string MakeComputerId()
     {
