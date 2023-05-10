@@ -40,7 +40,7 @@ public partial class Launcher
 
     private const string FALLBACK_FRONTIER_URL_TEMPLATE = "https://launcher.finalfantasyxiv.com/v620/index.html?rc_lang={0}&time={1}";
 
-    public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings, string? frontierUrl =  null)
+    public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings, string? frontierUrl = null)
     {
         this.steam = steam;
         this.uniqueIdCache = uniqueIdCache;
@@ -117,10 +117,10 @@ public partial class Launcher
     public class LoginResult
     {
         public LoginState State { get; set; }
-        public PatchListEntry[] PendingPatches { get; set; }
-        public OauthLoginResult OauthLogin { get; set; }
+        public PatchListEntry[]? PendingPatches { get; set; }
+        public OauthLoginResult? OauthLogin { get; set; }
         public string? UniqueId { get; set; }
-        public SdoArea Area { get; set; }
+        public SdoArea? Area { get; set; }
     }
 
     public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial)
@@ -623,6 +623,7 @@ public partial class Launcher
         return length + "/" + hashstring;
     }
 
+    /*
     public async Task<GateStatus> GetGateStatus(ClientLanguage language)
     {
         try
@@ -655,6 +656,7 @@ public partial class Launcher
             throw new Exception("Could not get gate status", exc);
         }
     }
+    */
 
     private static string MakeComputerId()
     {

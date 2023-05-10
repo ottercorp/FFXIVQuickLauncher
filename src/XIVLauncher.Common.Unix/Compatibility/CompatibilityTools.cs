@@ -52,7 +52,7 @@ public class CompatibilityTools
     private string WineBinPath => Settings.StartupType == WineStartupType.Managed
         ? Path.Combine(toolDirectory.FullName, IsSteamDeckHardware ? SD_WINE_XIV_RELEASE_NAME : WINE_XIV_RELEASE_NAME, "bin")
         : Settings.CustomBinPath;
-    
+
     private string WineLibPath => Settings.StartupType == WineStartupType.Managed
         ? Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "lib")
         : Path.Combine(Settings.CustomBinPath, "..", "lib");
@@ -100,6 +100,7 @@ public class CompatibilityTools
         {
             Log.Information("Compatibility tool does not exist, downloading");
             await DownloadTool(tempPath).ConfigureAwait(false);
+            Log.Information("Download compatibility tool finished.");
         }
 
         EnsurePrefix();
@@ -113,17 +114,30 @@ public class CompatibilityTools
         using var client = new HttpClient();
         var tempFilePath = Path.Combine(tempPath.FullName, $"{Guid.NewGuid()}");
 
-        await File.WriteAllBytesAsync(tempFilePath, await client.GetByteArrayAsync(IsSteamDeckHardware ? SD_WINE_XIV_RELEASE_URL : WINE_XIV_RELEASE_URL).ConfigureAwait(false)).ConfigureAwait(false);
+        var wineUrl = IsSteamDeckHardware ? SD_WINE_XIV_RELEASE_URL : WINE_XIV_RELEASE_URL;
+
+        var fileBytes = await client
+            .GetByteArrayAsync(wineUrl)
+            .ConfigureAwait(false);
+
+        Log.Information("Downloaded wine from {Path}", wineUrl);
+
+        await File.WriteAllBytesAsync(tempFilePath, fileBytes).ConfigureAwait(false);
+
+        Log.Information("Wine saved to {Path}", tempFilePath);
 
         PlatformHelpers.Untar(tempFilePath, this.toolDirectory.FullName);
+
+        Log.Information("Wine unzipped to {Path}", tempFilePath);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             var bundledMvkLibPath = Path.Combine(WineLibPath, "libMoltenVK.dylib");
-
+            Log.Information("Removing {Path}", bundledMvkLibPath);
             if (File.Exists(bundledMvkLibPath))
             {
                 File.Delete(bundledMvkLibPath);
+                Log.Information("Removed {Path}", bundledMvkLibPath);
             }
         }
 
