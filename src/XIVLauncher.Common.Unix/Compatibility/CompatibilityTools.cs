@@ -32,8 +32,8 @@ public class CompatibilityTools
     private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/fedora/wine-xiv-staging-fsync-git-fedora-7.10.r3.g560db77d.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
 #elif WINE_XIV_MACOS
-    // private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-2.0/wine.tar.xz";
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/ff-wine-2.0/wine.tar.xz";
+    // private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-2.4/wine.tar.xz";
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/ff-wine-2.4/wine.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine";
 #else
     // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
@@ -57,7 +57,7 @@ public class CompatibilityTools
         ? Path.Combine(toolDirectory.FullName, WINE_XIV_RELEASE_NAME, "lib")
         : Path.Combine(Settings.CustomBinPath, "..", "lib");
 
-    private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK");
+    // private string MoltenVkPath => Path.Combine(Paths.ResourcesPath, "MoltenVK");
     private string Wine64Path => Path.Combine(WineBinPath, "wine64");
     private string WineServerPath => Path.Combine(WineBinPath, "wineserver");
 
@@ -130,16 +130,16 @@ public class CompatibilityTools
 
         Log.Information("Wine unzipped to {Path}", tempFilePath);
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            var bundledMvkLibPath = Path.Combine(WineLibPath, "libMoltenVK.dylib");
-            Log.Information("Removing {Path}", bundledMvkLibPath);
-            if (File.Exists(bundledMvkLibPath))
-            {
-                File.Delete(bundledMvkLibPath);
-                Log.Information("Removed {Path}", bundledMvkLibPath);
-            }
-        }
+        // if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        // {
+        //     var bundledMvkLibPath = Path.Combine(WineLibPath, "libMoltenVK.dylib");
+        //     Log.Information("Removing {Path}", bundledMvkLibPath);
+        //     if (File.Exists(bundledMvkLibPath))
+        //     {
+        //         File.Delete(bundledMvkLibPath);
+        //         Log.Information("Removed {Path}", bundledMvkLibPath);
+        //     }
+        // }
 
         Log.Information("Compatibility tool successfully extracted to {Path}", this.toolDirectory.FullName);
 
@@ -205,27 +205,27 @@ public class CompatibilityTools
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             psi.EnvironmentVariables.Add("LANG", "en_US"); // need this for Dalamud on non-latin locale
-            var additionalPaths = Array.Empty<string>();
+            // var additionalPaths = Array.Empty<string>();
 
-            if (Directory.Exists(MoltenVkPath))
-            {
-                additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
-            }
+            // if (Directory.Exists(MoltenVkPath))
+            // {
+            //     additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
+            // }
 
-            if (Directory.Exists(WineLibPath))
-            {
-                additionalPaths = additionalPaths.Append(WineLibPath).ToArray();
-            }
+            // if (Directory.Exists(WineLibPath))
+            // {
+            //     additionalPaths = additionalPaths.Append(WineLibPath).ToArray();
+            // }
 
-            var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
-            var libPath = String.Join(":", libPaths);
-            psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
-            psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
+            // var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
+            // var libPath = String.Join(":", libPaths);
+            // psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
+            // psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
 
+            psi.EnvironmentVariables.Add("MVK_ALLOW_METAL_FENCES", "1");
             psi.EnvironmentVariables.Add("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1");
             psi.EnvironmentVariables.Add("MVK_CONFIG_RESUME_LOST_DEVICE", "1");
-            psi.EnvironmentVariables.Add("MVK_ALLOW_METAL_FENCES", "1");
-            psi.EnvironmentVariables.Add("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1");
+            psi.EnvironmentVariables.Add("DOTNET_EnableWriteXorExecute", "0");
         }
 
         var wineEnviromentVariables = new Dictionary<string, string>();
@@ -251,7 +251,9 @@ public class CompatibilityTools
         wineEnviromentVariables.Add("XL_WINEONLINUX", "true");
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
             wineEnviromentVariables.Add("XL_WINEONMAC", "true");
+        }
 
         string ldPreload = Environment.GetEnvironmentVariable("LD_PRELOAD") ?? "";
 
