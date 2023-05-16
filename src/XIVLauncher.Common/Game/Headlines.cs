@@ -74,22 +74,14 @@ namespace XIVLauncher.Common.Game
         }
 
         private static async Task<Banner[]> GetBanner(Launcher game) {
-            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher("https://ff.web.sdo.com/inc/newdata.ashx?url=List?gameCode=ff&category=5203&pageIndex=0&pageSize=6&callback=lundivFun", ClientLanguage.ChineseSimplified, "*/*").ConfigureAwait(false));
-            json = json.Trim();
-            json = json.Substring("lundivFun(".Length);
-            json = json.Substring(0, json.Length - 1);
-            //json = $"{{\"banner\":{json}}}";
+            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher("https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5203&pageIndex=0&pageSize=8", ClientLanguage.ChineseSimplified, "*/*").ConfigureAwait(false));
             var sdoBanner = JsonConvert.DeserializeObject<SdoBanner>(json);
             return sdoBanner.Data;
         }
 
         private static async Task<News[]> GetNews(Launcher game)
         {
-            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher("https://ff.web.sdo.com/inc/newdata.ashx?url=List?gameCode=ff&category=5310,5311,5312,5313,5316&pageIndex=0&pageSize=12&callback=boxscrollFun", ClientLanguage.ChineseSimplified, "*/*").ConfigureAwait(false));
-            json = json.Trim();
-            json = json.Substring("boxscrollFun(".Length);
-            json = json.Substring(0, json.Length - 1);
-            //json = $"{{\"banner\":{json}}}";
+            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher("https://cqnews.web.sdo.com/api/news/newsList?gameCode=ff&CategoryCode=5310,5311,5312,5313,5316&pageIndex=0&pageSize=12", ClientLanguage.ChineseSimplified, "*/*").ConfigureAwait(false));
             var sdoNews = JsonConvert.DeserializeObject<SdoNews>(json);
             return sdoNews.Data;
         }
