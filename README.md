@@ -64,4 +64,11 @@ XIVLauncher 支持在游戏内安装由 __第三方开发者__ 制作的 __插�
 ## 免责声明
 XIVLauncher 并不符合 Square Enix 的服务条款。 我们已经尽力地确保使用 XIVLauncher 对所有人来说都是安全的，且目前还没有玩家因此被封禁，但我们不能否认它存在的可能性。<br>您可以在[此处](https://goatcorp.github.io/faq/xl_troubleshooting#q-are-xivlauncher-dalamud-and-dalamud-plugins-safe-to-use)查到有关的信息。
 
+## 特别鸣谢
+<a href="https://www.jetbrains.com/community/opensource/#support">
+   <img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains" width="200px" height="200px"><br/>
+   <p>JetBrains OSS Sponsorship</p>
+</a>
+
+
 ##### Final Fantasy XIV © 2010-2021 SQUARE ENIX CO., LTD. 保留所有权利。 我们不以任何形式附属于 SQUARE ENIX CO。
