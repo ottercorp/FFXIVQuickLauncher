@@ -30,7 +30,7 @@ namespace XIVLauncher.Common.Game
         private const int autoLoginKeepTime = 30;
 
         private static string userName = String.Empty;
-        private static string password;
+        private static string password = String.Empty;
         private static LogEventHandler logEvent = null;
         private static bool forceQR = false;
         private static bool autoLogin = false;
@@ -460,7 +460,9 @@ namespace XIVLauncher.Common.Game
 
             if (result.ReturnCode != 0 || result.ErrorType != 0)
             {
-                throw new OauthLoginException(result.Data.FailReason);
+                //throw new OauthLoginException(result.Data.FailReason);
+                logEvent?.Invoke(SdoLoginState.LoginFail, result.Data.FailReason);
+                password = string.Empty;
             }
 
             Log.Information($"staticLogin.json:{result.Data.SndaId}:{result.Data.Tgt}");
