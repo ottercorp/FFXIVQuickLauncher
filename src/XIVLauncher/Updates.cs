@@ -70,6 +70,8 @@ namespace XIVLauncher
 
             public string? Message { get; set; }
 
+            public string? CutOffBootver { get; set; }
+
             public string FrontierUrl { get; set; }
 
             public LeaseFeatureFlags Flags { get; set; }
