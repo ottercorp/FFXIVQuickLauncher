@@ -8,7 +8,7 @@
     "description": "AppUtil.TryYellOnGameFilesBeingOpen"
   },
   "updatefailureerror": {
-    "message": "XIVLauncher failed to check for updates. This may be caused by internet connectivity issues. Wait a few minutes and try again.\nDisable your VPN, if you have one. You may also have to exclude XIVLauncher from your antivirus.\nIf this continues to fail after several minutes, please check out the FAQ.",
+    "message": "XIVLauncher 无法检查更新。这可能是网络连接不稳定导致的。您可以等待几分钟后重试。\n如果您正在使用 VPN，请禁用后重试。您可能还需要将 XIVLauncher 加入到杀毒软件的白名单中。\n如果此错误持续发生，请查看常见问题页面。",
     "description": "<Run>d__19.MoveNext"
   },
   "RunOfficialLauncherNotPresentError": {
@@ -92,7 +92,7 @@
     "description": "MainWindow.<SetupHeadlines>b__12_3"
   },
   "MaintenanceQueueBootPatch": {
-    "message": "检测到启动器更新。\n这通常意味着游戏也有更新。\n\n即将为您登录。",
+    "message": "检测到官方启动器更新。\n这通常意味着游戏也有更新。\n\n即将为您登录。",
     "description": "<OnMaintenanceQueueTimerEvent>d__21.MoveNext"
   },
   "SettingsGamePatchPathError": {
@@ -124,7 +124,7 @@
     "description": "SettingsControl.DeletePlugin_OnClick"
   },
   "SteamFtToggleAutoStartWarning": {
-    "message": "To apply this setting, XIVLauncher needs to restart.\nPlease reopen XIVLauncher.",
+    "message": "请重新启动 XIVLauncher 以应用更改。",
     "description": "SettingsControl.IsFreeTrialCheckbox_OnClick"
   },
   "IntegrityCheckImpossible": {
@@ -160,7 +160,7 @@
     "description": "AccountSwitcherViewModel.SetupLoc"
   },
   "AdvancedSettings": {
-    "message": "XIVLauncher Advanced Settings",
+    "message": "高级设置",
     "description": "AdvancedSettingsViewModel..ctor"
   },
   "OK": {
@@ -184,7 +184,7 @@
     "description": "AdvancedSettingsViewModel..ctor"
   },
   "ForceNorthAmerica": {
-    "message": "Always download North American news, headlines and banners",
+    "message": "始终抓取北美新闻、标题和横幅。",
     "description": "AdvancedSettingsViewModel..ctor"
   },
   "UpdateNotice": {
@@ -268,7 +268,7 @@
     "description": "FirstTimeSetupViewModel.SetupLoc"
   },
   "FirstTimeSteamNotice": {
-    "message": "Please check this box if you are usually launching the game using Steam, or if you have an account with a Steam license.",
+    "message": "如果您希望使用 Steam 启动游戏，请选中此项。",
     "description": "FirstTimeSetupViewModel.SetupLoc"
   },
   "FirstTimeSteamCheckBox": {
@@ -456,19 +456,19 @@
     "description": "MainWindowViewModel.<Login>b__21_0"
   },
   "GameRepairProcessExitRequired1": {
-    "message": "Close the following application to repair the game.",
+    "message": "关闭以下应用程序以修复游戏。",
     "description": "<>c.<RepairGame>b__25_1"
   },
   "GameRepairProcessExitRequiredPlural": {
-    "message": "Close the following applications to repair the game.",
+    "message": "关闭以下应用程序以修复游戏。",
     "description": "<>c.<RepairGame>b__25_1"
   },
   "GameUpdateExitRequired1": {
-    "message": "Close the following application to patch the game.",
+    "message": "关闭以下应用程序以更新游戏。",
     "description": "<>c.<TryHandlePatchAsync>b__34_2"
   },
   "GameUpdateExitRequiredPlural": {
-    "message": "Close the following applications to patch the game.",
+    "message": "关闭以下应用程序以更新游戏。",
     "description": "<>c.<TryHandlePatchAsync>b__34_2"
   },
   "AutoLoginIntro": {
@@ -488,7 +488,7 @@
     "description": "<CheckGateStatus>d__22.MoveNext"
   },
   "GateClosed": {
-    "message": "FFXIV 正在进行维护。请稍后再试或查看官方网站以取得更多信息。",
+    "message": "游戏正在进行维护。请稍后再试或查看官方网站以取得更多信息。",
     "description": "<CheckGateStatus>d__22.MoveNext"
   },
   "CheckBootVersionError": {
@@ -498,6 +498,10 @@
   "BootPatchFailure": {
     "message": "无法更新启动器",
     "description": "<HandleBootCheck>d__33.MoveNext"
+  },
+  "KillswitchText": {
+    "message": "XIVLauncher 目前无法启动游戏，因为登录流程在近期的更新中发生了变化。\n我们需要根据这些变化进行调整，并验证我们的调整是否安全，然后才能重新启用启动器。请稍后再试。\n\n我们对此表示歉意。\n\n你可以使用下面的「官方启动器」按钮来启动官方启动器。\n",
+    "description": "<Login>d__21.MoveNext"
   },
   "EmptyUsernameError": {
     "message": "请输入您的账号。",
@@ -512,7 +516,7 @@
     "description": "<Login>d__21.MoveNext"
   },
   "UidCacheInstallError": {
-    "message": "您在更新设置中启用了 UID 缓存。\n我们无法在此情况下为您重新安装游戏。\n\n如果您希望重新安装游戏，请先禁用 UID 缓存。",
+    "message": "您在更新设置中启用了 UID 缓存。\n我们无法在此情况下为您重新安装游戏。\n\n如果您希望重新安装游戏，请先将其禁用。",
     "description": "<Login>d__21.MoveNext"
   },
   "GameRepairSuccess0": {
@@ -576,7 +580,7 @@
     "description": "<StartGameAndAddon>d__29.MoveNext"
   },
   "DalamudEnsurementError": {
-    "message": "无法下载Dalamud和插件所需的文件.\n这可能是由于网络错误或杀毒软件屏蔽. 游戏将正常启动, 但插件将无法使用.\n\n请对照常见问题查找解决方案或在QQ频道提问.",
+    "message": "无法下载使用 Dalamud 和插件所需的数据文件。\n这可能是您的网络连接问题，或是杀毒软件屏蔽必要文件造成的。\n游戏将照常启动，但您将无法使用插件。\n\n请检查我们的常见问题以获取更多信息。",
     "description": "<StartGameAndAddon>d__29.MoveNext"
   },
   "AddonLoadError": {
@@ -620,7 +624,7 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginSteamIssue": {
-    "message": "Could not authenticate with Steam. Please make sure that Steam is running and that you are logged in with the account tied to your SE ID.\nIf you play using the Free Trial, please check the \"Using Free Trial account\" checkbox in the \"Game Settings\" tab of the XIVLauncher settings.\n\nContext: {0}",
+    "message": "无法通过 Steam 进行验证。 请确保 Steam 正在运行，并且使用与你 SE ID 绑定的 Steam 账户登录。\n如果您正在使用免费试用版，请在 XIVLauncher 设置的\"游戏设置\"选项卡中勾选\"使用试用账户\"。\n\n相关资讯：{0}",
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginSteamWrongAccount": {
@@ -656,11 +660,11 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginNoServiceMessage": {
-    "message": "该账户无法游玩 FINAL FANTASY XIV。\n请检查账户信息。",
+    "message": "该账户无法游玩 FINAL FANTASY XIV，请确保你有一个有效的订阅并已续费。\n\n如果您的游戏在 Steam 上购买，请确保您在登入时勾选了「使用 Steam 账户」。\n如果您启用了自动登入，请在启动时按住 Shift 键以访问设置。",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LoginAcceptTermsMessage": {
-    "message": "请在官方启动器中接受 FINAL FANTASY XIV 的使用条款。",
+    "message": "请在官方启动器中接受使用条款。",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "EverythingIsFuckedMessage": {
@@ -816,15 +820,15 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "OtpServerTooltip": {
-    "message": "This will allow you to send your OTP code to XIVLauncher directly from your phone.\nClick \"Learn more\" to see how to set this up.",
+    "message": "这将允许您直接在手机上发送动态密码 (OTP) 到 XIVLauncher。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "LearnMore": {
-    "message": "Learn More",
+    "message": "了解更多",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "OtpLearnMoreTooltipLoc": {
-    "message": "Open a guide in your web browser.",
+    "message": "在浏览器中打开指南。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "AdditionalArguments": {
@@ -856,11 +860,11 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "AutoStartSteam": {
-    "message": "Start Steam when starting XIVLauncher",
+    "message": "启动 XIVLauncher 时启动 Steam",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "AutoStartSteamTooltip": {
-    "message": "Whenever you open XIVLauncher, it will check if Steam is running and start it if it isn't.\nYou will automatically show as \"Playing\" on Steam.",
+    "message": "当您启动 XIVLauncher 时，将会自动检测 Steam 运行状态并确保其正在运行。\n这允许您在 Steam 上展示游玩信息。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "SettingsGameSettings": {
@@ -1052,15 +1056,15 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "IsFreeTrial": {
-    "message": "Using free trial account",
+    "message": "使用试用账户",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "OpenAdvancedSettings": {
-    "message": "Open Advanced Settings",
+    "message": "高级设置",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "OpenAdvancedSettingsTip": {
-    "message": "Opens some settings for advanced users. Please only use these if you know what you're doing.",
+    "message": "这些设置仅适用于高级用户。除非您清楚知道自己在做什么，否则请不要修改。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "DisabledPlugin": {
@@ -1080,7 +1084,7 @@
     "description": "UpdateLoadingDialogViewModel.SetupLoc"
   },
   "AdminCheck": {
-    "message": "XIVLauncher 或 FFXIV 已被设置为使用管理员身份运行。\n这可能会引起各类问题，包括无法注入游戏内组件或快捷键无响应等。\n\n是否自动修复此问题？",
+    "message": "XIVLauncher 或游戏已被设置为使用管理员身份运行。\n这可能会引起各类问题，包括无法注入游戏内组件或快捷键无响应等。\n\n是否自动修复此问题？",
     "description": "ProblemCheck.RunCheck"
   },
   "AdminCheckNag": {
@@ -1092,7 +1096,7 @@
     "description": "ProblemCheck.RunCheck"
   },
   "MyGamesWriteAccessNag": {
-    "message": "您没有 FFXIV 的 My Games 文件夹的写入权限。\n这会导致屏幕截图与角色数据无法保存。\n\n这可能是由杀毒程序或错误权限配置造成的。请检查您的 My Games 文件夹权限。",
+    "message": "您没有游戏的 My Games 文件夹的写入权限。\n这会导致屏幕截图与角色数据无法保存。\n\n这可能是由杀毒程序或错误权限配置造成的。请检查您的 My Games 文件夹权限。",
     "description": "ProblemCheck.RunCheck"
   },
   "GShadeSymlinks": {
