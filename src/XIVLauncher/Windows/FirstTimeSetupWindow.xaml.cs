@@ -43,8 +43,15 @@ namespace XIVLauncher.Windows
 #if !XL_NOAUTOUPDATE
             }
 #endif
-            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);//获取桌面文件夹路径
-            CreateShortcut(desktop, "XIVLauncherCN", Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "XIVLauncherCN.exe"));
+        try {
+                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);//获取桌面文件夹路径
+                CreateShortcut(desktop, "XIVLauncherCN", Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "XIVLauncherCN.exe"));
+            }
+            catch {
+                CustomMessageBox.Show(
+                    $"创建快捷方式失败，如需要请手动创建快捷方式到桌面。",
+                    "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: this);                
+            }
         }
 
         public static void CreateShortcut(string directory, string shortcutName, string targetPath,
