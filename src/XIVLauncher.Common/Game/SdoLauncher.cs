@@ -402,20 +402,19 @@ namespace XIVLauncher.Common.Game
                     sndaId = result.Data.SndaId;
                     tgt = result.Data.Tgt;
                     userName = result.Data.InputUserId;
+                    return;
                 }
-                else
+
+                logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, result.Data.FailReason);
+
+                if (result.ReturnCode == -10515805)
                 {
-                    logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, result.Data.FailReason);
-
-                    if (result.ReturnCode == -10515805)
-                    {
-                        logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "等待用户扫码...");
-                        await Task.Delay(1000).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    throw new OauthLoginException(result.Data.FailReason);
+                    logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "等待用户扫码...");
+                    await Task.Delay(1000).ConfigureAwait(false);
+                    continue;
                 }
+
+                throw new OauthLoginException(result.Data.FailReason);
             }
 
             logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "登陆超时或被取消");
