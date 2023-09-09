@@ -490,21 +490,16 @@ namespace XIVLauncher.Common.Dalamud
             {
                 Log.Verbose("[DUPDATE] Hashes file does not exist, redownloading...");
 
-<<<<<<< HEAD
-                using var client = new HttpClient();
-                runtimeHashes = await client.GetStringAsync($"https://aonyx.ffxiv.wang/Dalamud/Release/Runtime/Hashes/{version}").ConfigureAwait(false);
-=======
                 try
                 {
                     using var client = new HttpClient();
-                    runtimeHashes = await client.GetStringAsync($"https://kamori.goats.dev/Dalamud/Release/Runtime/Hashes/{version}").ConfigureAwait(false);
+                    runtimeHashes = await client.GetStringAsync($"https://aonyx.ffxiv.wang/Dalamud/Release/Runtime/Hashes/{version}").ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "[DUPDATE] Could not download hashes for runtime v{Version}", version);
                     return false;
                 }
->>>>>>> master
 
                 File.WriteAllText(hashesFile.FullName, runtimeHashes);
             }

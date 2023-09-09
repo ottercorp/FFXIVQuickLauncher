@@ -75,8 +75,8 @@ namespace XIVLauncher.Common.Dalamud
             {
                 NoCache = true,
             };
-            client.DefaultRequestHeaders.Add("User-Agent", "Wget/1.21.1 (linux-gnu)");
-            client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate");
+            metaClient.DefaultRequestHeaders.Add("User-Agent", "Wget/1.21.1 (linux-gnu)");
+            metaClient.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate");
 
             using var sha1 = SHA1.Create();
 
@@ -89,82 +89,83 @@ namespace XIVLauncher.Common.Dalamud
             var assetsDir = new DirectoryInfo(Path.Combine(baseDir.FullName, info.Version.ToString()));
             var devDir = new DirectoryInfo(Path.Combine(baseDir.FullName, "dev"));
 
-            // If we don't need a refresh, let's check if all hashes are good
-            if (!isRefreshNeeded)
-            {
-                foreach (var entry in info.Assets)
-                {
-                    var filePath = Path.Combine(assetsDir.FullName, entry.FileName);
+            var assetFileDownloadList = new List<AssetInfo.Asset>();
 
-                    if (!File.Exists(filePath))
-                    {
-                        Log.Error("[DASSET] {0} not found locally", entry.FileName);
-                        isRefreshNeeded = true;
-                        break;
+            foreach (var entry in info.Assets) {
+                var filePath = Path.Combine(assetsDir.FullName, entry.FileName);
+
+                if (!File.Exists(filePath)) {
+                    Log.Error("[DASSET] {0} not found locally", entry.FileName);
+                    assetFileDownloadList.Add(entry);
+                    //break;
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(entry.Hash))
+                    continue;
+
+                try {
+                    using var file = File.OpenRead(filePath);
+                    var fileHash = sha1.ComputeHash(file);
+                    var stringHash = BitConverter.ToString(fileHash).Replace("-", "");
+
+                    if (stringHash != entry.Hash) {
+                        Log.Error("[DASSET] {0} has {1}, remote {2}, need refresh", entry.FileName, stringHash, entry.Hash);
+                        assetFileDownloadList.Add(entry);
+                        //break;
                     }
-
-                    if (string.IsNullOrEmpty(entry.Hash))
-                        continue;
-
-                    try
-                    {
-                        using var file = File.OpenRead(filePath);
-                        var fileHash = sha1.ComputeHash(file);
-                        var stringHash = BitConverter.ToString(fileHash).Replace("-", "");
-
-                        if (stringHash != entry.Hash)
-                        {
-                            Log.Error("[DASSET] {0} has {1}, remote {2}, need refresh", entry.FileName, stringHash, entry.Hash);
-                            isRefreshNeeded = true;
-                            //break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "[DASSET] Could not read asset");
-                        isRefreshNeeded = true;
-                        break;
-                    }
+                }
+                catch (Exception ex) {
+                    Log.Error(ex, "[DASSET] Could not read asset");
+                    assetFileDownloadList.Add(entry);
+                    continue;
                 }
             }
 
-            if (isRefreshNeeded)
+            foreach (var entry in assetFileDownloadList)
             {
-                DeleteAndRecreateDirectory(assetsDir);
+                var oldFilePath = Path.Combine(devDir.FullName, entry.FileName);
+                var newFilePath = Path.Combine(assetsDir.FullName, entry.FileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(newFilePath)!);
 
-                // Wait for it to be gone
-                Thread.Sleep(1000);
-
-                var packageUrl = info.PackageUrl;
-
-                var tempPath = Path.GetTempFileName();
-
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
-
-                await updater.DownloadFile(packageUrl, tempPath, TimeSpan.FromMinutes(4));
-
-                using (var packageStream = File.OpenRead(tempPath))
-                using (var packageArc = new ZipArchive(packageStream, ZipArchiveMode.Read))
-                {
-                    packageArc.ExtractToDirectory(assetsDir.FullName);
+                try {
+                    if (File.Exists(oldFilePath)) {
+                        using var file = File.OpenRead(oldFilePath);
+                        var fileHash = sha1.ComputeHash(file);
+                        var stringHash = BitConverter.ToString(fileHash).Replace("-", "");
+                        if (stringHash == entry.Hash) {
+                            Log.Verbose("[DASSET] Get asset from old file: {0}", entry.FileName);
+                            File.Copy(oldFilePath,newFilePath,true);
+                            isRefreshNeeded = true;
+                            continue;
+                        }                   
+                    }
+                }
+                catch (Exception ex) {
+                    Log.Error(ex, "[DASSET] Could not copy from old asset: {0}",entry.FileName);
                 }
 
-                try
-                {
+                try {
+                    Log.Information("[DASSET] Downloading {0} to {1}...", entry.Url, entry.FileName);
+                    await updater.DownloadFile(entry.Url, newFilePath, TimeSpan.FromMinutes(4));
+                    isRefreshNeeded = true;
+                }
+                catch (Exception ex) {
+                    Log.Error(ex, "[DASSET] Could not download old asset: {0}",entry.FileName);
+                }
+
+            }
+
+            if (isRefreshNeeded) {
+                try {
                     DeleteAndRecreateDirectory(devDir);
                     CopyFilesRecursively(assetsDir, devDir);
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     Log.Error(ex, "[DASSET] Could not copy to dev dir");
                 }
-
-                File.Delete(tempPath);
-            }
-
-            if (isRefreshNeeded)
                 SetLocalAssetVer(baseDir, info.Version);
+            }
 
             Log.Verbose("[DASSET] Assets OK at {0}", assetsDir.FullName);
 
@@ -200,7 +201,7 @@ namespace XIVLauncher.Common.Dalamud
                 Log.Error(ex, "[DASSET] Could not read asset.ver");
             }
 
-            var remoteVer = JsonSerializer.Deserialize<AssetInfo>(client.DownloadString(ASSET_STORE_URL),new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var remoteVer = JsonSerializer.Deserialize<AssetInfo>(await client.GetStringAsync(ASSET_STORE_URL),new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             Log.Verbose("[DASSET] Ver check - local:{0} remote:{1}", localVer, remoteVer.Version);
 
