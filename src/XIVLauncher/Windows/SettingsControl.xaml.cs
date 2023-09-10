@@ -41,7 +41,7 @@ namespace XIVLauncher.Windows
         {
             InitializeComponent();
 
-            DiscordButton.Click += SupportLinks.OpenDiscord;
+            QqButton.Click += SupportLinks.OpenQQChannel;
             FaqButton.Click += SupportLinks.OpenFaq;
             DataContext = new SettingsControlViewModel();
 

@@ -267,12 +267,20 @@
                             <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
                                        Foreground="{DynamicResource MaterialDesignBody}" Text="{Binding LicenseLoc}" TextDecorations="Underline" MouseUp="LicenseText_OnMouseUp" Cursor="Hand"/>
 
-                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
+                            <!--<Button Style="{DynamicResource MaterialDesignFlatButton}"
                                     HorizontalAlignment="Left"
                                     x:Name="DiscordButton" Margin="0,10,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Discord" />
                                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding JoinDiscordLoc}"/>
+                                </StackPanel>
+                            </Button>-->
+                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
+                                    HorizontalAlignment="Left"
+                                    x:Name="QqButton" Margin="0,10,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Qqchat" />
+                                    <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="加入QQ频道"/>
                                 </StackPanel>
                             </Button>
                             <Button Style="{DynamicResource MaterialDesignFlatButton}"

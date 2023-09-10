@@ -53,7 +53,7 @@ namespace XIVLauncher.Windows
             _prerelease = prerelease;
             InitializeComponent();
 
-            DiscordButton.Click += SupportLinks.OpenDiscord;
+            QqButton.Click += SupportLinks.OpenQQChannel;
 
             var vm = new ChangeLogWindowViewModel();
             DataContext = vm;
