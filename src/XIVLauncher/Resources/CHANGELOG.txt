@@ -1,6 +1,4 @@
-﻿* The "Updating assets" step of starting the game will now show the actual download progress
-* Fixes an issue wherein the launcher may not have started correctly under very specific circumstances
-* Fixes an issue wherein the game may not have started correctly under very specific circumstances
-* Fixes an issue wherein some error messages may have been unclear
-* Updated the localization files
-    => Thanks to our dedicated localization team!
+﻿* 同步上游更新
+* 增量式更新Assets
+* 更新Mac/Linux相关内容
+* 优化第一次启动时的流程
