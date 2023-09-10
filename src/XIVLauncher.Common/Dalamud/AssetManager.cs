@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using XIVLauncher.Common.Util;
+using System.Net;
 
 namespace XIVLauncher.Common.Dalamud
 {
@@ -66,9 +67,13 @@ namespace XIVLauncher.Common.Dalamud
 
         public static async Task<(DirectoryInfo AssetDir, int Version)> EnsureAssets(DalamudUpdater updater, DirectoryInfo baseDir)
         {
-            using var metaClient = new HttpClient
+            using var metaClient = new HttpClient(new HttpClientHandler
             {
-                Timeout = TimeSpan.FromMinutes(30),
+                // Don't Remove!!!
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            })
+            {
+                Timeout = TimeSpan.FromMinutes(4),
             };
 
             metaClient.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue
