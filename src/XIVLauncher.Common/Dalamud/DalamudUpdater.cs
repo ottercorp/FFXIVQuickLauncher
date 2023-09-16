@@ -11,6 +11,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Serilog;
+using SharpCompress.Archives;
+using SharpCompress.Readers;
 using XIVLauncher.Common.PlatformAbstractions;
 using XIVLauncher.Common.Util;
 
@@ -434,9 +436,17 @@ namespace XIVLauncher.Common.Dalamud
                 File.Delete(downloadPath);
 
             await this.DownloadFile(version.DownloadUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
-            // downloadPath = @"D:\Code\ottercorp\FFXIVQuickLauncher\src\Roaming\addon\Hooks\6.3.0.13.7z";
-            PlatformHelpers.Un7za(downloadPath, addonPath.FullName);
             // ZipFile.ExtractToDirectory(downloadPath, addonPath.FullName);
+            Log.Information("[DUPDATE] Extracting 7z dalamud fastly.");
+            using (var archive = ArchiveFactory.Open(downloadPath)) {
+                var reader = archive.ExtractAllEntries();
+
+                while (reader.MoveToNextEntry()) {
+                    if (!reader.Entry.IsDirectory)
+                        reader.WriteEntryToDirectory(addonPath.FullName, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
+                }
+            }
+            Log.Information("[DUPDATE] Extracting finished.");
 
             File.Delete(downloadPath);
 

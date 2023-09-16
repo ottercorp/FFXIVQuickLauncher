@@ -52,11 +52,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\7za.exe" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Remove="Resources\7za.exe" />
     <Resource Remove="Resources\aria2c-xl.exe" />
     <Resource Remove="Resources\CHANGELOG.txt" />
     <Resource Remove="Resources\COPYING.aria2" />
@@ -64,9 +59,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resources\7za.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Resources\aria2c-xl.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

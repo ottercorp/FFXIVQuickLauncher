@@ -1102,7 +1102,7 @@ namespace XIVLauncher.Windows.ViewModel
                 new DirectoryInfo(Paths.RoamingPath),
                 App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
                 (int)App.Settings.DalamudInjectionDelayMs,
-                false,
+                false, 
                 noPlugins,
                 noThird,
                 Troubleshooting.GetTroubleshootingJson());
