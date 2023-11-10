@@ -32,6 +32,7 @@ public static class Dxvk
         var system32 = Path.Combine(prefix.FullName, "drive_c", "windows", "system32");
         var files = Directory.GetFiles(dxvkPath);
 
+        Log.Information("Extracting DXVK files");
         foreach (string fileName in files)
         {
             File.Copy(fileName, Path.Combine(system32, Path.GetFileName(fileName)), true);
@@ -39,6 +40,7 @@ public static class Dxvk
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
+            Log.Information("Copying dxvk cache for Mac OSX");
             File.Copy(
                 Path.Combine(Paths.ResourcesPath, "ffxiv_dx11.dxvk-cache-base"),
                 Path.Combine(prefix.FullName, "drive_c", "ffxiv_dx11.dxvk-cache"),
