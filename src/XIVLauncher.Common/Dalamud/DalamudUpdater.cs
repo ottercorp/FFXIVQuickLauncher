@@ -1,4 +1,4 @@
- using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -7,12 +7,9 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Serilog;
-using SharpCompress.Archives;
-using SharpCompress.Readers;
 using XIVLauncher.Common.PlatformAbstractions;
 using XIVLauncher.Common.Util;
 
@@ -128,7 +125,7 @@ namespace XIVLauncher.Common.Dalamud
                     {
                         Log.Error(ex, "[DUPDATE] Update failed, try {TryCnt}/{MaxTries}...", tries, MAX_TRIES);
                         this.EnsurementException = ex;
-                        this.forceProxy = true;
+                        this.forceProxy = false;
                     }
                 }
 
@@ -436,17 +433,13 @@ namespace XIVLauncher.Common.Dalamud
                 File.Delete(downloadPath);
 
             await this.DownloadFile(version.DownloadUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
-            // ZipFile.ExtractToDirectory(downloadPath, addonPath.FullName);
-            Log.Information("[DUPDATE] Extracting 7z dalamud fastly.");
-            using (var archive = ArchiveFactory.Open(downloadPath)) {
-                var reader = archive.ExtractAllEntries();
-
-                while (reader.MoveToNextEntry()) {
-                    if (!reader.Entry.IsDirectory)
-                        reader.WriteEntryToDirectory(addonPath.FullName, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
-                }
+            if (version.DownloadUrl.EndsWith(".7z"))
+            {
+                PlatformHelpers.Un7za(downloadPath, addonPath.FullName);
+            } else
+            {
+                ZipFile.ExtractToDirectory(downloadPath, addonPath.FullName);
             }
-            Log.Information("[DUPDATE] Extracting finished.");
 
             File.Delete(downloadPath);
 

@@ -100,43 +100,21 @@ public static class PlatformHelpers
 
     public static void Un7za(string path, string output)
     {
-        var sevenzaPath = Path.Combine(Paths.ResourcesPath, "7za.exe");
+        Log.Information("[DUPDATE] Extracting 7z dalamud fastly.");
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        using (var archive = ArchiveFactory.Open(path))
         {
-            Log.Information("[DUPDATE] Extracting 7z dalamud slowly.");
+            var reader = archive.ExtractAllEntries();
 
-            using (var archive = ArchiveFactory.Open(path))
+            while (reader.MoveToNextEntry())
             {
-                var reader = archive.ExtractAllEntries();
-
-                while (reader.MoveToNextEntry())
-                {
-                    if (!reader.Entry.IsDirectory)
-                        reader.WriteEntryToDirectory(output, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
-                }
+                if (!reader.Entry.IsDirectory)
+                    reader.WriteEntryToDirectory(output, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
             }
-
-            Log.Information("[DUPDATE] Extracting finished.");
-            return;
         }
 
-        var psi = new ProcessStartInfo(sevenzaPath)
-        {
-            Arguments = $"x -y \"{path}\" -o\"{output}\"",
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        var tarProcess = Process.Start(psi);
-        var outputLines = tarProcess.StandardOutput.ReadToEnd();
-        if (tarProcess == null)
-            throw new BadImageFormatException("Could not start 7za.");
-
-        tarProcess.WaitForExit();
-        if (tarProcess.ExitCode != 0)
-            throw new FormatException($"Could not un7z.\n{outputLines}");
+        Log.Information("[DUPDATE] Extracting finished.");
+        return;
     }
 
     private static readonly IPEndPoint DefaultLoopbackEndpoint = new(IPAddress.Loopback, port: 0);
