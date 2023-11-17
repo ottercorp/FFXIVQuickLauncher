@@ -64,7 +64,7 @@ namespace XIVLauncher.Common.Game
             {
                 PendingPatches = pendingPatches,
                 OauthLogin = oauthLoginResult,
-                State = loginState
+                State = loginState,
             };
         }
 
@@ -367,8 +367,12 @@ namespace XIVLauncher.Common.Game
             var request = GetSdoHttpRequestMessage(HttpMethod.Get, "getCodeKey.json", new List<string>() { $"maxsize=97", $"authenSource=1" }, SdoClient.Launcher);
             var response = await this.client.SendAsync(request);
             var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
-            var codeKey = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0];
-            codeKey = codeKey.Split('=')[1];
+            var codeKey = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY="))?.Split(';')[0];
+            codeKey = codeKey?.Split('=')[1];
+            if (string.IsNullOrEmpty(codeKey))
+            {
+                throw new OauthLoginException("QRCode下载失败");
+            }
             var bytes = await response.Content.ReadAsByteArrayAsync();
 
             if (File.Exists(qrPath)) File.Delete(qrPath);
