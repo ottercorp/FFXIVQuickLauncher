@@ -42,6 +42,10 @@
         </Content>
     </ItemGroup>
 
+    <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+        <DefineConstants>$(DefineConstants);OSX;WINE_XIV_MACOS</DefineConstants>
+    </PropertyGroup>
+
     <ItemGroup>
         <!-- Custom steamworks, based on the chippy branch of Facepunch.Steamworks -->
         <PackageReference Include="goaaats.Steamworks" Version="2.3.4" />

@@ -21,7 +21,7 @@
         <DefineConstants>$(DefineConstants);WIN32</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="'$(IsOSX)'=='true'">
-        <DefineConstants>$(DefineConstants);OSX</DefineConstants>
+        <DefineConstants>$(DefineConstants);OSX;WINE_XIV_MACOS</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition="'$(IsLinux)'=='true'">
         <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
