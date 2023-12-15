@@ -368,7 +368,7 @@
     "description": "IntegrityCheckProgressWindowViewModel.SetupLoc"
   },
   "PatchManDlFailure": {
-    "message": "XIVLauncher could not verify the downloaded game files. Please restart and try again.\n\nThis usually indicates a problem with your internet connection.\nIf this error persists, try using a VPN set to Japan.\n\nContext: {0}\n{1}",
+    "message": "XIVLauncher could not verify the downloaded game files. Please restart and try again.\n\nThis usually indicates a problem with your internet connection.\n\nContext: {0}\n{1}",
     "description": "MainWindowViewModel.PatcherOnFail"
   },
   "PatchInstallerInstallFailed": {
