@@ -8,7 +8,7 @@
     "description": "AppUtil.TryYellOnGameFilesBeingOpen"
   },
   "UninstallQuestion": {
-    "message": "对不起看到你离开！\n你想要删除你所有已保存的设置、插件和密码吗？",
+    "message": "很遗憾看到您离开！\n您想要删除您所有已保存的设置、插件和密码吗？",
     "description": "<>c__DisplayClass20_1.<Run>b__2"
   },
   "updatefailureerror": {
@@ -48,7 +48,7 @@
     "description": "Builder.NewFromUnexpectedException"
   },
   "UnexpectedErrorActionable": {
-    "message": "请报告此错误。",
+    "message": "请反馈此错误。",
     "description": "Builder.NewFromUnexpectedException"
   },
   "DalamudUpdateDalamud": {
@@ -56,15 +56,15 @@
     "description": "<>c__DisplayClass2_0.<SetStep>b__0"
   },
   "DalamudUpdateAssets": {
-    "message": "正在更新资源文件...",
+    "message": "正在更新资源文件…",
     "description": "<>c__DisplayClass2_0.<SetStep>b__0"
   },
   "DalamudUpdateRuntime": {
-    "message": "正在更新依赖库...",
+    "message": "正在更新依赖库…",
     "description": "<>c__DisplayClass2_0.<SetStep>b__0"
   },
   "DalamudNowStarting": {
-    "message": "正在启动...",
+    "message": "正在启动…",
     "description": "<>c__DisplayClass2_0.<SetStep>b__0"
   },
   "DalamudUnavailable": {
@@ -76,7 +76,7 @@
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "GamePathSafeguardError": {
-    "message": "请不要选择「game」文件夹，请选择它们的上层文件夹。",
+    "message": "请不要选择「game」文件夹，请选择它的上层文件夹。",
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "GamePathInvalidConfirm": {
@@ -88,7 +88,7 @@
     "description": "FirstTimeSetup.NextButton_Click"
   },
   "NewsLoading": {
-    "message": "加载中...",
+    "message": "加载中…",
     "description": "MainWindow..ctor"
   },
   "NewsDlFailed": {
@@ -112,11 +112,11 @@
     "description": "SettingsControl.RunIntegrityCheck_OnClick"
   },
   "DalamudIncompatible": {
-    "message": "Dalamud 尚未支持您的游戏版本。\n这可能由于游戏更新导致，请耐心等待。您可以在 Discord 上获取到最新的消息。",
+    "message": "Dalamud 尚未支持您的游戏版本。\n这可能由于游戏更新导致，请耐心等待。您可以在 QQ 频道上获取到最新的消息。",
     "description": "SettingsControl.EnableHooksCheckBox_OnChecked"
   },
   "DalamudCompatCheckFailed": {
-    "message": "无法从服务器获取当前 Dalamud 兼容的游戏版本。这可能是因为您的 .NET 框架版本过旧。\n您可以在 Discord 获取更多有关信息。",
+    "message": "无法从服务器获取当前 Dalamud 兼容的游戏版本。这可能是因为您的 .NET 框架版本过旧。\n您可以在 QQ 频道获取更多有关信息。",
     "description": "SettingsControl.EnableHooksCheckBox_OnChecked"
   },
   "SteamFtToggleAutoStartWarning": {
@@ -192,11 +192,11 @@
     "description": "ChangeLogWindowViewModel.SetupLoc"
   },
   "ChangelogLoadingError": {
-    "message": "无法加载更新日志。请检查 GitHub 或 Discord ！",
+    "message": "无法加载更新日志。请检查 GitHub 或 QQ 频道！",
     "description": "ChangeLogWindowViewModel.SetupLoc"
   },
   "JoinDiscord": {
-    "message": "加入 Discord 服务器",
+    "message": "加入 QQ 频道服务器",
     "description": "ChangeLogWindowViewModel.SetupLoc"
   },
   "SendEmail": {
@@ -216,7 +216,7 @@
     "description": "ChatChannelSetupViewModel.SetupLoc"
   },
   "ChatChannelSetupDescription": {
-    "message": "如果您希望 XIVLauncher 发送至指定的伺服器频道或私信某位用户，请输入它们的 ID。",
+    "message": "如果您希望 XIVLauncher 发送至指定的服务器频道或私信某位用户，请输入它们的 ID。",
     "description": "ChatChannelSetupViewModel.SetupLoc"
   },
   "HowToHint": {
@@ -256,7 +256,7 @@
     "description": "CustomMessageBoxViewModel.SetupLoc"
   },
   "DalamudUpdate": {
-    "message": "正在更新 Dalamud 框架...",
+    "message": "正在更新 Dalamud 框架…",
     "description": "DalamudLoadingOverlayViewModel.SetupLoc"
   },
   "ChooseGamePathFTS": {
@@ -304,7 +304,7 @@
     "description": "FirstTimeSetupViewModel.SetupLoc"
   },
   "NowDownloadingMeta": {
-    "message": "正在下载元文件...",
+    "message": "正在下载元文件…",
     "description": "GameRepairProgressWindowViewModel.SetupLoc"
   },
   "NowVerifying": {
@@ -364,11 +364,11 @@
     "description": "GenericAddonSetupWindowViewModel.SetupLoc"
   },
   "IntegrityCheckRunning": {
-    "message": "正在检查游戏完整性...",
+    "message": "正在检查游戏完整性…",
     "description": "IntegrityCheckProgressWindowViewModel.SetupLoc"
   },
   "PatchManDlFailure": {
-    "message": "XIVLauncher 无法验证已下载的游戏文件。请重新启动并再试一次。\n\n这通常代表您的互联网连接发生问题。\n如果此错误仍然存在，请尝试使用日本 VPN。\n\n相关资讯：{0}\n{1}",
+    "message": "XIVLauncher 无法验证已下载的游戏文件。请重新启动并再试一次。\n\n这通常代表您的互联网连接发生问题。\n如果此错误仍然存在，请尝试使用VPN。\n\n相关资讯：{0}\n{1}",
     "description": "MainWindowViewModel.PatcherOnFail"
   },
   "PatchInstallerInstallFailed": {
@@ -424,7 +424,7 @@
       "description": "MainWindowViewModel.SetupLoc"
   },
   "LoginBoxWaitingForMaint": {
-    "message": "正在等待维护结束...",
+    "message": "正在等待维护结束…",
     "description": "MainWindowViewModel.SetupLoc"
   },
   "CancelWithShortcut": {
@@ -480,11 +480,11 @@
     "description": "<>c__DisplayClass19_0.<GetLoginFunc>b__0"
   },
   "GameRepairDisclaimer": {
-    "message": "XIVLauncher 现在将会尝试寻找损坏的游戏文件并进行修复。\n如果您有使用任何 TexTools 模组，这将取代所有模组并将游戏恢复到初始状态。\n\n你还要继续吗？",
+    "message": "XIVLauncher 现在将会尝试寻找损坏的游戏文件并进行修复。\n如果您有使用任何 TexTools 模组，这将取代所有模组并将游戏恢复到初始状态。\n\n您还要继续吗？",
     "description": "<>c__DisplayClass19_0.<GetLoginFunc>b__0"
   },
   "GateUnreachable": {
-    "message": "无法连接至登录服务器。这通常代表游戏正在进行维护，或者你的网络状态并不稳定。\n\n请稍后重试。",
+    "message": "无法连接至登录服务器。这通常代表游戏正在进行维护，或者您的网络状态并不稳定。\n\n请稍后重试。",
     "description": "<CheckGateStatus>d__22.MoveNext"
   },
   "GateClosed": {
@@ -500,7 +500,7 @@
     "description": "<HandleBootCheck>d__33.MoveNext"
   },
   "KillswitchText": {
-    "message": "XIVLauncher 目前无法启动游戏，因为登录流程在近期的更新中发生了变化。\n我们需要根据这些变化进行调整，并验证我们的调整是否安全，然后才能重新启用启动器。请稍后再试。\n\n我们对此表示歉意。\n\n你可以使用下面的「官方启动器」按钮来启动官方启动器。\n",
+    "message": "XIVLauncher 目前无法启动游戏，因为登录流程在近期的更新中发生了变化。\n我们需要根据这些变化进行调整，并验证我们的调整是否安全，然后才能重新启用启动器。请稍后再试。\n\n我们对此表示歉意。\n\n您可以使用下面的「官方启动器」按钮来启动官方启动器。\n",
     "description": "<Login>d__21.MoveNext"
   },
   "EmptyUsernameError": {
@@ -520,7 +520,7 @@
     "description": "<Login>d__21.MoveNext"
   },
   "GameRepairSuccess0": {
-    "message": "所有游戏文件似乎都是有效的。",
+    "message": "所有游戏文件似乎都是完整的。",
     "description": "<RepairGame>d__25.MoveNext"
   },
   "GameRepairSuccess1": {
@@ -572,7 +572,7 @@
     "description": "<StartGameAndAddon>d__29.MoveNext"
   },
   "DalamudArchError": {
-    "message": "Dalamud 无法在你的计算机架构上运行。请确保您正在使用 64 位元的 Windows。\n如果您在 ARM 架构上使用 Windows ，请确保 XIVLauncher 启用了 x64 模拟器。",
+    "message": "Dalamud 无法在您的计算机架构上运行。请确保您正在使用 64 位的 Windows。\n如果您在 ARM 架构上使用 Windows ，请确保 XIVLauncher 启用了 x64 模拟器。",
     "description": "<StartGameAndAddon>d__29.MoveNext"
   },
   "DalamudEnsurementError": {
@@ -588,7 +588,7 @@
     "description": "<TryHandlePatchAsync>d__34.MoveNext"
   },
   "PatchManNoInstaller": {
-    "message": "更新程序无法正常启动。\n{0}\n\n如果您刚才拒绝了权限请求，请重试并授权。\n如果该问题仍然持续，请在 Discord 上联系我们。",
+    "message": "更新程序无法正常启动。\n{0}\n\n如果您刚才拒绝了权限请求，请重试并授权。\n如果该问题仍然持续，请在 QQ 频道上联系我们。",
     "description": "<TryHandlePatchAsync>d__34.MoveNext"
   },
   "FreeSpaceError": {
@@ -612,7 +612,7 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginIoErrorActionable": {
-    "message": "这可能表示 XIVLauncher 中设置的游戏路径不是预设的，例如在断开连接的硬盘或网络存储。请在 XIVLauncher 设置中检查游戏路径。",
+    "message": "这可能表示 XIVLauncher 中设置的游戏路径无效，例如在断开连接的硬盘或网络存储。请在 XIVLauncher 设置中检查游戏路径。",
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginInvalidVersionFiles": {
@@ -620,11 +620,11 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginSteamNullTicket": {
-    "message": "Steam 未对您进行身份验证。这可能是 Steam 的暂时性问题，您可能需要在几分钟后重试。\n\n如果问题持续，请确保 Steam 正在运行，并且使用与你 SE ID 绑定的 Steam 账户登录。\n\n如果您正在使用免费试用版，请在 XIVLauncher 设置的\"游戏设置\"选项卡中勾选\"使用试用账户\"。\n相关信息：",
+    "message": "Steam 未对您进行身份验证。这可能是 Steam 的暂时性问题，您可能需要在几分钟后重试。\n\n如果问题持续，请确保 Steam 正在运行，并且使用与您 SE ID 绑定的 Steam 账户登录。\n\n如果您正在使用免费试用版，请在 XIVLauncher 设置的\"游戏设置\"选项卡中勾选\"使用试用账户\"。\n相关信息：",
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginSteamIssue": {
-    "message": "无法通过 Steam 进行验证。 请确保 Steam 正在运行，并且使用与你 SE ID 绑定的 Steam 账户登录。\n如果您正在使用免费试用版，请在 XIVLauncher 设置的\"游戏设置\"选项卡中勾选\"使用试用账户\"。\n\n相关资讯：{0}",
+    "message": "无法通过 Steam 进行验证。 请确保 Steam 正在运行，并且使用与您 SE ID 绑定的 Steam 账户登录。\n如果您正在使用免费试用版，请在 XIVLauncher 设置的\"游戏设置\"选项卡中勾选\"使用试用账户\"。\n\n相关资讯：{0}",
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginSteamWrongAccount": {
@@ -632,7 +632,7 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginSteamLinkNeeded": {
-    "message": "在使用此帐户开始游戏前，你需要使用官方启动器将其绑定到您的 Steam 帐户。\n请绑定您的帐户，然后再试一次。您可以通过点击「官方启动器」按钮来执行此操作。",
+    "message": "在使用此帐户开始游戏前，您需要使用官方启动器将其绑定到您的 Steam 帐户。\n请绑定您的帐户，然后再试一次。您可以通过点击「官方启动器」按钮来执行此操作。",
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginGenericError": {
@@ -660,7 +660,7 @@
     "description": "<TryLoginToGame>d__23.MoveNext"
   },
   "LoginNoServiceMessage": {
-    "message": "该账户无法游玩 FINAL FANTASY XIV，请确保你有一个有效的订阅并已续费。\n\n如果您的游戏在 Steam 上购买，请确保您在登入时勾选了「使用 Steam 账户」。\n如果您启用了自动登入，请在启动时按住 Shift 键以访问设置。",
+    "message": "该账户无法游玩 FINAL FANTASY XIV，请确保您有一个有效的订阅并已续费。\n\n如果您的游戏在 Steam 上购买，请确保您在登入时勾选了「使用 Steam 账户」。\n如果您启用了自动登入，请在启动时按住 Shift 键以访问设置。",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LoginAcceptTermsMessage": {
@@ -668,7 +668,7 @@
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "EverythingIsFuckedMessage": {
-    "message": "部分游戏文件已损坏或被第三方篡改，无法进行更新和启动。\n请重新安装游戏以修复此问题。\n\n如果该错误仍然持续，请通过 Discord 联系我们。",
+    "message": "部分游戏文件已损坏或被第三方篡改，无法进行更新和启动。\n请重新安装游戏以修复此问题。\n\n如果该错误仍然持续，请通过 QQ 频道联系我们。",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LoginRepairResponseIsNotNeedsPatchGame": {
@@ -680,11 +680,11 @@
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LoginNoStartOk": {
-    "message": "执行了更新检查并安装了任何待处理的更新。",
+    "message": "更新检查已完成，所有待安装的更新均已安装。",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LaunchGameNonZeroExitCode": {
-    "message": "看起来游戏因致命错误而退出。你要重新启动游戏吗？\n\n退出代码：0x{0:X8}",
+    "message": "游戏似乎因致命错误而退出。您要重新启动游戏吗？\n\n退出代码：0x{0:X8}",
     "description": "<TryProcessLoginResult>d__24.MoveNext"
   },
   "LaunchGameRelaunch": {
@@ -756,15 +756,15 @@
     "description": "OtpInputDialogViewModel.SetupLoc"
   },
   "PatchPreparing": {
-    "message": "正在准备更新...",
+    "message": "正在准备更新…",
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchGeneralStatus": {
-    "message": "正在更新第 {0} 个补丁...",
+    "message": "正在更新第 {0} 个补丁…",
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchChecking": {
-    "message": "正在检查更新...",
+    "message": "正在检查更新…",
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchDone": {
@@ -772,15 +772,15 @@
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchInstalling": {
-    "message": "正在安装更新...",
+    "message": "正在安装更新…",
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchInstallingFormatted": {
-    "message": "正在安装第 #{0} 个更新...",
+    "message": "正在安装第 #{0} 个更新…",
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchInstallingIdle": {
-    "message": "正在等待下载...",
+    "message": "正在等待下载…",
     "description": "PatchDownloadDialogViewModel.SetupLoc"
   },
   "PatchEta": {
@@ -820,7 +820,7 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "GamePathSafeguardRegionWarning": {
-    "message": "XIVLauncher 并不支持国服或韩服版本。请确保你选择的路径属于国际服版本。",
+    "message": "XIVLauncher 并不支持国服或韩服版本。请确保您选择的路径属于国际服版本。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "OtpServerCheckBox": {
@@ -896,7 +896,7 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "LauncherLanguageHelpCtaLoc": {
-    "message": "发现了翻译错误？您可以帮助翻译启动器！只需点击这里！",
+    "message": "发现了翻译错误？欢迎帮助翻译启动器！点击这里！",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "LauncherLanguageNotice": {
@@ -1048,7 +1048,7 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "Credits": {
-    "message": "作者：goat\n特别鸣谢：Mino、sky、LeonBlade、Wintermute、Zyian、Roy、Meli、\nAida Enna、Aireil、kizer 及 the angry paissa artist。\n\n如果您有任何问题或建议，请加入 Discord 伺服器或在 GitHub 上建立一个「Issue」。",
+    "message": "作者：goat\n特别鸣谢：Mino、sky、LeonBlade、Wintermute、Zyian、Roy、Meli、\nAida Enna、Aireil、kizer 及 the angry paissa artist。\n\n如果您有任何问题或建议，请加入 QQ 频道或在 GitHub 上建立一个「Issue」。",
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "License": {
@@ -1080,7 +1080,7 @@
     "description": "SettingsControlViewModel.SetupLoc"
   },
   "UpdateCheckMsg": {
-    "message": "正在检查更新...",
+    "message": "正在检查更新…",
     "description": "UpdateLoadingDialogViewModel.SetupLoc"
   },
   "AutoLoginHint": {
@@ -1108,7 +1108,7 @@
     "description": "ProblemCheck.RunCheck"
   },
   "GShadeSymlinks": {
-    "message": "GShade 软链接已经损坏。\n\n游戏无法启动。你希望 XIVLauncher 解决此问题吗？你将需要重新安装 GShade 。",
+    "message": "GShade 软链接已经损坏。\n\n游戏无法启动。您希望 XIVLauncher 解决此问题吗？您将需要重新安装 GShade 。",
     "description": "ProblemCheck.RunCheck"
   },
   "GShadeError": {
@@ -1116,7 +1116,7 @@
     "description": "ProblemCheck.RunCheck"
   },
   "GShadeWrongMode": {
-    "message": "你的 GShade 安装模式对 XIVLauncher 的兼容性不佳。你希望 XIVLauncher 进行修复吗？\n\n这并不会涉及你的预设或是设定，只会提高 GShade 和 XIVLauncher 的兼容性。",
+    "message": "您的 GShade 安装模式对 XIVLauncher 的兼容性不佳。您希望 XIVLauncher 进行修复吗？\n\n这并不会涉及您的预设或是设定，只会提高 GShade 和 XIVLauncher 的兼容性。",
     "description": "ProblemCheck.RunCheck"
   }
 }
