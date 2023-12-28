@@ -105,16 +105,16 @@ namespace XIVLauncher.Common.Game
                 //尝试密码登录
                 if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password) && !fastLogin)
                 {
-                    //TODO:Wegay login
-                    //long number;
+                    //Wegay login
+                    ulong number;
 
-                    //if (long.TryParse(userName, out number) && number is >20000000000 or < 9999999999)
-                    //{
-                    //    (sndaId, tgt, autoLoginSessionKey) = await ThirdPartyLogin(userName, password, autoLogin);
-                    //}
-                    //else
+                    if (ulong.TryParse(userName, out number) && number > 200_0000_0000)
+                    {
+                        await ThirdPartyLogin(userName, password, autoLogin);
+                    }
 
-                    await StaticLogin();
+                    //SQ Login
+                    if (string.IsNullOrEmpty(tgt)) await StaticLogin();
                 }
 
                 //尝试手机叨鱼相关方式登录
