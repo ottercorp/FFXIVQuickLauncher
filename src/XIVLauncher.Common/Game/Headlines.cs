@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
@@ -22,6 +22,9 @@ namespace XIVLauncher.Common.Game
 
         [JsonProperty("pinned")]
         public News[] Pinned { get; set; }
+
+        [JsonProperty("banner")]
+        public Banner[] Banner { get; set; }
     }
 
     public class Banner
@@ -95,37 +98,37 @@ namespace XIVLauncher.Common.Game
             return sdoNews.Data;
         }
 
-        public static async Task<IReadOnlyList<Banner>> GetBanners(Launcher game, ClientLanguage language, bool forceNa = false)
-        {
-            var unixTimestamp = ApiHelpers.GetUnixMillis();
-            var langCode = language.GetLangCode(forceNa);
-            var url = $"https://frontier.ffxiv.com/v2/topics/{langCode}/banner.json?lang={langCode}&media=pcapp&_={unixTimestamp}";
+        //public static async Task<IReadOnlyList<Banner>> GetBanners(Launcher game, ClientLanguage language, bool forceNa = false)
+        //{
+        //    var unixTimestamp = ApiHelpers.GetUnixMillis();
+        //    var langCode = language.GetLangCode(forceNa);
+        //    var url = $"https://frontier.ffxiv.com/v2/topics/{langCode}/banner.json?lang={langCode}&media=pcapp&_={unixTimestamp}";
 
-            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
+        //    var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
 
-            return JsonConvert.DeserializeObject<BannerRoot>(json, Converter.SETTINGS).Banner;
-        }
+        //    return JsonConvert.DeserializeObject<BannerRoot>(json, Converter.SETTINGS).Banner;
+        //}
 
-        public static async Task<IReadOnlyCollection<Banner>> GetMessage(Launcher game, ClientLanguage language, bool forceNa = false)
-        {
-            var unixTimestamp = ApiHelpers.GetUnixMillis();
-            var langCode = language.GetLangCode(forceNa);
-            var url = $"https://frontier.ffxiv.com/v2/notice/{langCode}/message.json?_={unixTimestamp}";
+        //public static async Task<IReadOnlyCollection<Banner>> GetMessage(Launcher game, ClientLanguage language, bool forceNa = false)
+        //{
+        //    var unixTimestamp = ApiHelpers.GetUnixMillis();
+        //    var langCode = language.GetLangCode(forceNa);
+        //    var url = $"https://frontier.ffxiv.com/v2/notice/{langCode}/message.json?_={unixTimestamp}";
 
-            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
+        //    var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
 
-            return JsonConvert.DeserializeObject<BannerRoot>(json, Converter.SETTINGS).Banner;
-        }
+        //    return JsonConvert.DeserializeObject<BannerRoot>(json, Converter.SETTINGS).Banner;
+        //}
 
-        public static async Task<IReadOnlyCollection<Banner>> GetWorlds(Launcher game, ClientLanguage language)
-        {
-            var unixTimestamp = ApiHelpers.GetUnixMillis();
-            var url = $"https://frontier.ffxiv.com/v2/world/status.json?_={unixTimestamp}";
+        //public static async Task<IReadOnlyCollection<Banner>> GetWorlds(Launcher game, ClientLanguage language)
+        //{
+        //    var unixTimestamp = ApiHelpers.GetUnixMillis();
+        //    var url = $"https://frontier.ffxiv.com/v2/world/status.json?_={unixTimestamp}";
 
-            var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
+        //    var json = Encoding.UTF8.GetString(await game.DownloadAsLauncher(url, language, "application/json, text/plain, */*").ConfigureAwait(false));
 
-            return JsonConvert.DeserializeObject<BannerRoot>(json, Converter.SETTINGS).Banner;
-        }
+        //    return JsonConvert.DeserializeObject<BannerRoot>(json, Converter.SETTINGS).Banner;
+        //}
     }
 
     internal static class Converter

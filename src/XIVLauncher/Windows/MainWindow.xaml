@@ -1,4 +1,4 @@
-﻿<Window
+<Window
     x:Class="XIVLauncher.Windows.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -174,7 +174,7 @@
                                     <StackPanel Orientation="Vertical"
                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                                         <materialDesign:PackIcon Kind="Earth" Height="Auto"
-                                                                 Width="Auto" Foreground="{Binding WorldStatusIconColor}"/>
+                                                                 Width="Auto" />
                                     </StackPanel>
                                 </Button>
 
@@ -409,6 +409,7 @@
                                                                 </ItemsPanelTemplate>
                                                             </Menu.ItemsPanel>
                                                             <MenuItem Header="{Binding LoginRepairLoc}"
+                                                                      IsEnabled="False"
                                                                       Command="{Binding Path=LoginRepairCommand}" />
                                                             <Separator/>
                                                             <MenuItem Header="{Binding LoginNoDalamudLoc}"
@@ -420,8 +421,11 @@
                                                             <Separator/>
                                                             <MenuItem Header="{Binding LoginNoStartLoc}"
                                                                       Command="{Binding Path=LoginNoStartCommand}" />
-                                                            
-                                                            
+                                                            <MenuItem Header="扫码登陆"
+                                                                      Command="{Binding Path=LoginForceQRCommand}" />
+                                                            <MenuItem Header="显示/隐藏密码框"
+                                                                      Click="ShowPassword_OnClick" />
+
                                                         </Menu>
                                                     </materialDesign:PopupBox.PopupContent>
                                                 </materialDesign:PopupBox>

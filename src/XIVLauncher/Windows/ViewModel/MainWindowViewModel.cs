@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -98,19 +98,19 @@ namespace XIVLauncher.Windows.ViewModel
             // Grey out world status icon while deferred check is running
             WorldStatusIconColor = new SolidColorBrush(Color.FromRgb(38, 38, 38));
 
-            this.loginStatusTask = Launcher.GetLoginStatus();
-            this.loginStatusTask.ContinueWith((resultTask) =>
-            {
-                try
-                {
-                    var brushToSet = resultTask.Result.Status ? worldStatusBrushOk : null;
-                    WorldStatusIconColor = brushToSet ?? new SolidColorBrush(Color.FromRgb(242, 24, 24));
-                }
-                catch
-                {
-                    // ignored
-                }
-            });
+            //this.loginStatusTask = Launcher.GetLoginStatus();
+            //this.loginStatusTask.ContinueWith((resultTask) =>
+            //{
+            //    try
+            //    {
+            //        var brushToSet = resultTask.Result.Status ? worldStatusBrushOk : null;
+            //        WorldStatusIconColor = brushToSet ?? new SolidColorBrush(Color.FromRgb(242, 24, 24));
+            //    }
+            //    catch
+            //    {
+            //        // ignored
+            //    }
+            //});
         }
 
         private Action<object> GetLoginFunc(AfterLoginAction action)
@@ -1676,7 +1676,7 @@ namespace XIVLauncher.Windows.ViewModel
             LoginLoc = Loc.Localize("LoginBoxLogin", "Log in");
             LoginNoStartLoc = Loc.Localize("LoginBoxNoStartLogin", "Update without starting");
             LoginRepairLoc = Loc.Localize("LoginBoxRepairLogin", "Repair game files");
-            LoginTooltipLoc = Loc.Localize("LoginBoxLoginTooltip", "如需扫码登录\n请右键登录按钮进行选择");
+            LoginTooltipLoc = Loc.Localize("LoginBoxLoginTooltip", "Log in with the provided credentials");
             LoginNoDalamudLoc = Loc.Localize("LoginBoxNoDalamudLogin", "Start w/o Dalamud");
             LoginNoPluginsLoc = Loc.Localize("LoginBoxNoPluginLogin", "Start w/o any Plugins");
             LoginNoThirdLoc = Loc.Localize("LoginBoxNoThirdLogin", "Start w/o Custom Repo Plugins");

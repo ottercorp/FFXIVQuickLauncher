@@ -112,45 +112,53 @@ namespace XIVLauncher.Common.Dalamud
             foreach (var entry in assetFileDownloadList)
             {
                 var oldFilePath = Path.Combine(devDir.FullName, entry.FileName);
-                var newFilePath = Path.Combine(assetsDir.FullName, entry.FileName);
+                var newFilePath = Path.Combine(currentDir.FullName, entry.FileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(newFilePath)!);
 
-                try {
-                    if (File.Exists(oldFilePath)) {
+                try
+                {
+                    if (File.Exists(oldFilePath))
+                    {
                         using var file = File.OpenRead(oldFilePath);
                         var fileHash = sha1.ComputeHash(file);
                         var stringHash = BitConverter.ToString(fileHash).Replace("-", "");
-                        if (stringHash == entry.Hash) {
+
+                        if (stringHash == entry.Hash)
+                        {
                             Log.Verbose("[DASSET] Get asset from old file: {0}", entry.FileName);
                             File.Copy(oldFilePath,newFilePath,true);
                             isRefreshNeeded = true;
                             continue;
-                        }                   
+                        }
                     }
                 }
                 catch (Exception ex) {
                     Log.Error(ex, "[DASSET] Could not copy from old asset: {0}",entry.FileName);
                 }
 
-                try {
+                try
+                {
                     Log.Information("[DASSET] Downloading {0} to {1}...", entry.Url, entry.FileName);
                     await updater.DownloadFile(entry.Url, newFilePath, TimeSpan.FromMinutes(4));
                     isRefreshNeeded = true;
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Log.Error(ex, "[DASSET] Could not download old asset: {0}",entry.FileName);
                 }
-
             }
 
             if (isRefreshNeeded) {
-                try {
-                    DeleteAndRecreateDirectory(devDir);
-                    CopyFilesRecursively(assetsDir, devDir);
+                try
+                {
+                    PlatformHelpers.DeleteAndRecreateDirectory(devDir);
+                    PlatformHelpers.CopyFilesRecursively(currentDir, devDir);
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Log.Error(ex, "[DASSET] Could not copy to dev dir");
                 }
+
                 SetLocalAssetVer(baseDir, info.Version);
             }
 

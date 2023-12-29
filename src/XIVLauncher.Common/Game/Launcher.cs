@@ -643,22 +643,22 @@ public partial class Launcher
         }
     }
 
-    public async Task<GateStatus> GetLoginStatus()
-    {
-        return true;
-        try
-        {
-            var reply = Encoding.UTF8.GetString(
-                await DownloadAsLauncher(
-                    $"https://frontier.ffxiv.com/worldStatus/login_status.json?_={ApiHelpers.GetUnixMillis()}", ClientLanguage.English).ConfigureAwait(true));
+    //public async Task<GateStatus> GetLoginStatus()
+    //{
+    //    return true;
+    //    try
+    //    {
+    //        var reply = Encoding.UTF8.GetString(
+    //            await DownloadAsLauncher(
+    //                $"https://frontier.ffxiv.com/worldStatus/login_status.json?_={ApiHelpers.GetUnixMillis()}", ClientLanguage.English).ConfigureAwait(true));
 
-            return JsonConvert.DeserializeObject<GateStatus>(reply);
-        }
-        catch (Exception exc)
-        {
-            throw new Exception("Could not get login status", exc);
-        }
-    }
+    //        return JsonConvert.DeserializeObject<GateStatus>(reply);
+    //    }
+    //    catch (Exception exc)
+    //    {
+    //        throw new Exception("Could not get login status", exc);
+    //    }
+    //}
 
     private static string MakeComputerId()
     {
