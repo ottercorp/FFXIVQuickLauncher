@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -645,7 +645,7 @@ namespace XIVLauncher.Common.Game
         private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<string> para, SdoClient app = SdoClient.Launcher, string tgt = null)
         {
             var request = GetSdoHttpRequestMessage(HttpMethod.Get, endPoint, para, app);
-
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11;
             var response = await this.client.SendAsync(request);
             var reply = await response.Content.ReadAsStringAsync();
             var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
