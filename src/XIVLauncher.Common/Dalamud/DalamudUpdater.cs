@@ -24,7 +24,7 @@ namespace XIVLauncher.Common.Dalamud
         private readonly DirectoryInfo configDirectory;
         private readonly IUniqueIdCache? cache;
 
-        private readonly TimeSpan defaultTimeout = TimeSpan.FromMinutes(15);
+        private readonly TimeSpan defaultTimeout = TimeSpan.FromMinutes(1);
 
         private bool forceProxy = false;
         private static string onlineHash = string.Empty;
