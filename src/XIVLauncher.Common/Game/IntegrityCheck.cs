@@ -11,7 +11,7 @@ namespace XIVLauncher.Common.Game
 {
     public static class IntegrityCheck
     {
-        private const string INTEGRITY_CHECK_BASE_URL = "https://file.ffxiv.wang/XLFiles/integrity/";
+        private const string INTEGRITY_CHECK_BASE_URL = "https://aonyx.ffxiv.wang/Proxy/XLAssets/";
 
         public class IntegrityCheckResult
         {
