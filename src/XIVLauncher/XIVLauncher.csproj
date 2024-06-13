@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <Product>XIVLauncherCN</Product>
     <AssemblyTitle>XIVLauncher</AssemblyTitle>
     <Description>Custom launcher for the most critically acclaimed MMO.</Description>
-    <VersionPrefix>6.3.12</VersionPrefix>
+    <VersionPrefix>6.3.14-beta1</VersionPrefix>
   </PropertyGroup>
 
   <PropertyGroup>
