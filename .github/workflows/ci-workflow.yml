@@ -67,6 +67,9 @@ jobs:
           {
           }
           rm ".\Releases\$($full_file.name)"
+      - name: List Release
+        run: |
+          ls .\src\Releases\
       - name: Create Release
         uses: softprops/action-gh-release@v2
         env:
