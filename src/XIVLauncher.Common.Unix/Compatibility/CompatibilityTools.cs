@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -32,8 +33,8 @@ public class CompatibilityTools
     private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/fedora/wine-xiv-staging-fsync-git-fedora-7.10.r3.g560db77d.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
 #elif WINE_XIV_MACOS
-    // private const string WINE_XIV_RELEASE_URL = "https://github.com/marzent/winecx/releases/download/ff-wine-2.4.2/wine.tar.xz";
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/ff-wine-2.4.2/wine.tar.xz";
+    // Wine from https://softwareupdate.xivmac.com/sites/default/files/update_data/XIV%20on%20Mac4.14.1.tar.xz;
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/xom-4.14.1/wine.tar.gz";
     private const string WINE_XIV_RELEASE_NAME = "wine";
 #else
     // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
@@ -202,37 +203,24 @@ public class CompatibilityTools
         psi.UseShellExecute = false;
         psi.WorkingDirectory = workingDirectory;
 
+        var wineEnviromentVariables = new Dictionary<string, string>();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            psi.EnvironmentVariables.Add("LANG", "en_US"); // need this for Dalamud on non-latin locale
-            // var additionalPaths = Array.Empty<string>();
-
-            // if (Directory.Exists(MoltenVkPath))
-            // {
-            //     additionalPaths = additionalPaths.Append(MoltenVkPath).ToArray();
-            // }
-
-            // if (Directory.Exists(WineLibPath))
-            // {
-            //     additionalPaths = additionalPaths.Append(WineLibPath).ToArray();
-            // }
-
-            // var libPaths = additionalPaths.Concat(new[] { "/opt/local/lib", "/usr/local/lib", "/usr/lib", "/usr/libexec", "/usr/lib/system", "/opt/X11/lib" });
-            // var libPath = String.Join(":", libPaths);
-            // psi.EnvironmentVariables.Add("DYLD_FALLBACK_LIBRARY_PATH", libPath);
-            // psi.EnvironmentVariables.Add("DYLD_VERSIONED_LIBRARY_PATH", libPath);
-
-            psi.EnvironmentVariables.Add("MVK_ALLOW_METAL_FENCES", "1");
-            psi.EnvironmentVariables.Add("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1");
-            psi.EnvironmentVariables.Add("MVK_CONFIG_RESUME_LOST_DEVICE", "1");
-            psi.EnvironmentVariables.Add("DOTNET_EnableWriteXorExecute", "0");
+            wineEnviromentVariables.Add("LANG", "en_US"); // need this for Dalamud on non-latin locale
+            wineEnviromentVariables.Add("MVK_ALLOW_METAL_FENCES", "1");
+            wineEnviromentVariables.Add("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1");
+            wineEnviromentVariables.Add("MVK_CONFIG_RESUME_LOST_DEVICE", "1");
+            wineEnviromentVariables.Add("DOTNET_EnableWriteXorExecute", "0");
         }
 
-        var wineEnviromentVariables = new Dictionary<string, string>();
         wineEnviromentVariables.Add("WINEPREFIX", Settings.Prefix.FullName);
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             wineEnviromentVariables.Add("WINEDLLOVERRIDES", $"msquic=,mscoree=n,b;d3d9,d3d11,d3d10core,dxgi={(wineD3D ? "b" : "n")}");
+        }
+        else
+        {
+            wineEnviromentVariables.Add("WINEDLLOVERRIDES", $"msquic=,mscoree=n,b;d3d11={(wineD3D ? "b" : "n")};dxgi=n,b");
         }
 
         if (!string.IsNullOrEmpty(Settings.DebugVars))
@@ -268,9 +256,9 @@ public class CompatibilityTools
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        if (this.gamemodeOn == true && !ldPreload.Contains("libgamemodeauto.so.0"))
+        if (this.gamemodeOn && !ldPreload.Contains("libgamemodeauto.so.0"))
         {
-            ldPreload = ldPreload.Equals("") ? "libgamemodeauto.so.0" : ldPreload + ":libgamemodeauto.so.0";
+            ldPreload = ldPreload == "" ? "libgamemodeauto.so.0" : ldPreload + ":libgamemodeauto.so.0";
         }
 
         wineEnviromentVariables.Add("DXVK_HUD", dxvkHud);
@@ -290,6 +278,15 @@ public class CompatibilityTools
 
         MergeDictionaries(psi.EnvironmentVariables, wineEnviromentVariables);
         MergeDictionaries(psi.EnvironmentVariables, environment);
+        
+#if DEBUG
+        Log.Debug($"Running in prefix: {psi.FileName} {psi.Arguments}");
+        Log.Debug("with wineEnviromentVariables:");
+        foreach (string k in psi.EnvironmentVariables.Keys)
+        {
+            Log.Debug(k + "=" + psi.EnvironmentVariables[k]);
+        }
+#endif
 
 #if FLATPAK_NOTRIGHTNOW
         psi.FileName = "flatpak-spawn";
@@ -360,7 +357,15 @@ public class CompatibilityTools
         if (output.Contains("syntax error\n"))
             return 0;
         var matchingLines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries).Skip(1).Where(
-            l => int.Parse(l.Substring(1, 8), System.Globalization.NumberStyles.HexNumber) == winePid);
+            l =>
+            {
+                if (int.TryParse(l.Substring(1, 8), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int pid))
+                {
+                    return pid == winePid;
+                }
+
+                return false;
+            });
         var unixPids = matchingLines.Select(l => int.Parse(l.Substring(10, 8), System.Globalization.NumberStyles.HexNumber)).ToArray();
         return unixPids.FirstOrDefault();
     }

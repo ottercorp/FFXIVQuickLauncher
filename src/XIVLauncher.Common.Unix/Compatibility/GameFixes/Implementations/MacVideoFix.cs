@@ -15,7 +15,7 @@ public class MacVideoFix : GameFix
     private static async Task<string> GetLatestMacZipUrl()
     {
         const string SPARKLE_FEED_URL = "https://mac-dl.ffxiv.com/cw/finalfantasy-mac.xml";
-        const string FALLBACK_URL = "https://mac-dl.ffxiv.com/cw/finalfantasyxiv-1.1.2.zip";
+        const string FALLBACK_URL = "https://mac-dl.ffxiv.com/cw/finalfantasyxiv-1.1.5.zip";
 
         try
         {
@@ -38,7 +38,7 @@ public class MacVideoFix : GameFix
     {
     }
 
-    public override string LoadingTitle => "Preparing FMV cutscenes...";
+    public override string LoadingTitle => "正在准备 FMV 过场动画...";
 
     public override void Apply()
     {
