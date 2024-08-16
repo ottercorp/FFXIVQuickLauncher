@@ -27,7 +27,8 @@ public class UnixDalamudCompatibilityCheck : IDalamudCompatibilityCheck
                 throw new IDalamudCompatibilityCheck.ArchitectureNotSupportedException("Dalamud is not supported on ARM32.");
 
             case Architecture.Arm64:
-                throw new IDalamudCompatibilityCheck.ArchitectureNotSupportedException("x64 emulation was not detected. Please make sure to run XIVLauncher with x64 emulation.");
+                //throw new IDalamudCompatibilityCheck.ArchitectureNotSupportedException("x64 emulation was not detected. Please make sure to run XIVLauncher with x64 emulation.");
+                break;
         }
     }
 }

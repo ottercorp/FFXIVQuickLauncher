@@ -79,8 +79,6 @@ public class UnixDalamudRunner : IDalamudRunner
         if (output == null)
             throw new DalamudRunnerException("An internal Dalamud error has occured");
 
-        Console.WriteLine(output);
-
         new Thread(() =>
         {
             while (!dalamudProcess.StandardOutput.EndOfStream)
@@ -90,7 +88,6 @@ public class UnixDalamudRunner : IDalamudRunner
                 if (tempOutput != null)
                 {
                     Console.WriteLine(tempOutput);
-
                     if (tempOutput.Contains("pid"))
                     {
                         output = tempOutput;
@@ -105,9 +102,11 @@ public class UnixDalamudRunner : IDalamudRunner
         {
             Thread.Sleep(1000);
             totalWaitSeconds += 1;
-            if (totalWaitSeconds > 15)
+            if (totalWaitSeconds > 30)
                 break;
         }
+
+        Log.Information(output);
 
         try
         {
@@ -116,12 +115,13 @@ public class UnixDalamudRunner : IDalamudRunner
 
             if (unixPid == 0)
             {
-                Log.Error("Could not retrive Unix process ID, this feature currently requires a patched wine version");
+                Log.Error("Could not retrieve Unix process ID, this feature currently requires a patched wine version");
                 return null;
             }
 
             var gameProcess = Process.GetProcessById(unixPid);
-            Log.Verbose($"Got game process handle {gameProcess.Handle} with Unix pid {gameProcess.Id} and Wine pid {dalamudConsoleOutput.Pid}");
+            Log.Verbose(
+                $"Got game process handle {gameProcess.Handle} with Unix pid {gameProcess.Id} and Wine pid {dalamudConsoleOutput.Pid}");
             return gameProcess;
         }
         catch (JsonReaderException ex)
