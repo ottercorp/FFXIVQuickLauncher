@@ -285,7 +285,7 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 CustomMessageBox.Show(
                     Loc.Localize("UidCacheInstallError",
-                        "You enabled the UID cache in the patcher settings.\nThis setting does not allow you to reinstall the game.\n\nIf you want to reinstall the game, please take care to disable it first."),
+                                 "You enabled the UID cache in the patcher settings.\nThis setting does not allow you to reinstall the game.\n\nIf you want to reinstall the game, please take care to disable it first."),
                     "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
 
                 return;
@@ -327,6 +327,7 @@ namespace XIVLauncher.Windows.ViewModel
                 // 所以还是打好补丁再登陆吧
                 action = AfterLoginAction.UpdateOnly;
             }
+
             if (action != AfterLoginAction.UpdateOnly)
             {
                 if (loginResult.State == Launcher.LoginState.Ok)
@@ -344,6 +345,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                     AccountManager.Save();
                 }
+            }
 
             loginResult.Area = Area;
             Log.Verbose("[LR] {State} {NumPatches} {Playable}",
@@ -1133,20 +1135,6 @@ namespace XIVLauncher.Windows.ViewModel
             var sdoPatchMissingFailureLoc = Loc.Localize("SdoPatchMissing",
                 "游戏补丁列表的早期补丁被删除，导致无法通过补丁安装游戏，请手动安装游戏客户端并设置包含 game 文件夹的游戏路径。\nContext: {0}\n{1}");
 
-            switch (reason)
-            {
-                case PatchManager.FailReason.DownloadProblem:
-                    var errorMsg = (versionId == "2014.03.24.0001.000") ? sdoPatchMissingFailureLoc : dlFailureLoc;
-                    CustomMessageBox.Show(string.Format(errorMsg, "Problem", versionId), "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
-                    break;
-
-                case PatchManager.FailReason.HashCheck:
-                    CustomMessageBox.Show(string.Format(dlFailureLoc, "IsHashCheckPass", versionId), "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(reason), reason, null);
-            }
 
             Environment.Exit(0);
         }
@@ -1361,7 +1349,7 @@ namespace XIVLauncher.Windows.ViewModel
                         Password = password,
                         SavePassword = true,
                         UseOtp = IsOtp,
-                        UseSteamServiceAccount = IsSteam，
+                        UseSteamServiceAccount = IsSteam,
                         AreaID = Area.Areaid
                     };
 

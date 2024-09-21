@@ -61,8 +61,6 @@ namespace XIVLauncher.Windows
             this.DataContext = new MainWindowViewModel(this);
             _launcher = Model.Launcher;
 
-            Closed += Model.OnWindowClosed;
-            Closing += Model.OnWindowClosing;
             Model.LoginCardTransitionerIndex = 1;
 
             Model.Activate += () => this.Dispatcher.Invoke(() =>

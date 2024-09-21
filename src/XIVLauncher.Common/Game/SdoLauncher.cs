@@ -625,7 +625,7 @@ namespace XIVLauncher.Common.Game
             var request = new HttpRequestMessage(method, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             //Log.Information($"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("Cache-Control", "no-cache");
-            request.Headers.AddWithoutValidation("User-Agent", _userAgent);
+            request.Headers.AddWithoutValidation("User-Agent", userAgent);
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
 
             if (CASCID != null && SECURE_CASCID != null)
@@ -680,14 +680,12 @@ namespace XIVLauncher.Common.Game
         }
 
         public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
-                                      string additionalArguments, DirectoryInfo gamePath, bool isDx11, bool encryptArguments, DpiAwareness dpiAwareness)
+                                      string additionalArguments, DirectoryInfo gamePath, bool encryptArguments, DpiAwareness dpiAwareness)
         {
             Log.Information(
                 $"XivGame::LaunchGame(args:{additionalArguments})");
             EnsureLoginEntry(gamePath);
             var exePath = Path.Combine(gamePath.FullName, "game", "ffxiv_dx11.exe");
-            if (!isDx11)
-                exePath = Path.Combine(gamePath.FullName, "game", "ffxiv.exe");
 
             var environment = new Dictionary<string, string>();
 
