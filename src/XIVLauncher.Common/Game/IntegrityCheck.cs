@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -76,7 +76,7 @@ namespace XIVLauncher.Common.Game
             return (failed ? CompareResult.Invalid : CompareResult.Valid, report, remoteIntegrity);
         }
 
-        private static IntegrityCheckResult DownloadIntegrityCheckForVersion(string gameVersion)
+        public static IntegrityCheckResult DownloadIntegrityCheckForVersion(string gameVersion)
         {
             using (var client = new WebClient())
             {

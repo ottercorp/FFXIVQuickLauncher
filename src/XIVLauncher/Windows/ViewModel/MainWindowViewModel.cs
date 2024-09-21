@@ -218,7 +218,7 @@ namespace XIVLauncher.Windows.ViewModel
                                                             "\n\nWe apologize for these circumstances.\n\nYou can use the \"Official Launcher\" button below to start the official launcher." +
                                                             "\n");
 
-            if (!string.IsNullOrEmpty(Updates.UpdateLease?.CutOffBootver))
+            if (!string.IsNullOrEmpty(Updates.UpdateLease?.CutOffBootver) && !EnvironmentSettings.IsNoKillswitch)
             {
                 var bootver = SeVersion.Parse(Repository.Boot.GetVer(App.Settings.GamePath));
                 var cutoff = SeVersion.Parse(Updates.UpdateLease.CutOffBootver);
@@ -233,6 +233,16 @@ namespace XIVLauncher.Windows.ViewModel
             }
 
             if (string.IsNullOrEmpty(username) && action != AfterLoginAction.ForceQR)
+            // if (!isOtp && !App.Settings.HasComplainedAboutNoOtp.GetValueOrDefault(false))
+            // {
+            //     var otpComplainText = Loc.Localize("OtpComplaint", "Your account does not have One-Time Passwords enabled. This is a security risk and we strongly recommend enabling them."
+            //                                                        + "\n\nYou can enable One-Time Passwords in the account settings on the game's website. We won't show you this message again.");
+
+            //     CustomMessageBox.Show(otpComplainText, "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Warning, parentWindow: _window);
+            //     App.Settings.HasComplainedAboutNoOtp = true;
+            // }
+
+            // if (string.IsNullOrEmpty(username))
             {
                 CustomMessageBox.Show(
                     Loc.Localize("EmptyUsernameError", "Please enter an username."),
@@ -292,7 +302,7 @@ namespace XIVLauncher.Windows.ViewModel
                     if (AccountManager.CurrentAccount != null && result != null && AccountManager.CurrentAccount.LastSuccessfulOtp == result)
                     {
                         otpDialog.IgnoreCurrentResult(Loc.Localize("DuplicateOtpAfterSuccess",
-                            "This OTP has been already used.\nIt may take up to 30 seconds for a new one."));
+                                                                   "This OTP has been already used.\nIt may take up to 30 seconds for a new one."));
                     }
                 }, _window);
             }
@@ -335,13 +345,11 @@ namespace XIVLauncher.Windows.ViewModel
                     AccountManager.Save();
                 }
 
-                if (otp != null)
-                    AccountManager.UpdateLastSuccessfulOtp(AccountManager.CurrentAccount, otp);
-
-                Log.Verbose(
-                    $"[LR] {loginResult.State} {loginResult.PendingPatches != null} {loginResult.OauthLogin?.Playable}");
-            }
             loginResult.Area = Area;
+            Log.Verbose("[LR] {State} {NumPatches} {Playable}",
+                        loginResult.State,
+                        loginResult.PendingPatches.Length,
+                        loginResult.OauthLogin?.Playable);
 
             if (await TryProcessLoginResult(loginResult, isSteam, action).ConfigureAwait(false))
             {
@@ -505,6 +513,13 @@ namespace XIVLauncher.Windows.ViewModel
 
                 bool disableAutoLogin = false;
 
+                var steamMaintenanceInfo = string.Empty;
+                if (DateTime.UtcNow.DayOfWeek == DayOfWeek.Tuesday && DateTime.UtcNow.Hour >= 15 && DateTime.UtcNow.Hour < 24)
+                {
+                    steamMaintenanceInfo = Loc.Localize("SteamMaintenanceInfo",
+                        "It's also possible that the Steam servers may be undergoing maintenance at the moment. Maintenance is scheduled every Tuesday and may take up to 20 minutes.\n\nPlease try again later.");
+                }
+
                 if (ex is IOException)
                 {
                     msgbox
@@ -521,8 +536,13 @@ namespace XIVLauncher.Windows.ViewModel
                 }
                 else if (ex is SteamTicketNullException)
                 {
-                    msgbox.WithText(Loc.Localize("LoginSteamNullTicket",
-                        "Steam did not authenticate you. This is likely a temporary issue with Steam and you may just have to try again in a few minutes.\n\nIf the issue persists, please make sure that Steam is running and that you are logged in with the account tied to your SE ID.\nIf you play using the Free Trial, please check the \"Using Free Trial account\" checkbox in the \"Game Settings\" tab of the XIVLauncher settings."));
+                    var steamTicketWarning = Loc.Localize("LoginSteamNullTicket",
+                                                          "Steam did not authenticate you. This is likely a temporary issue with Steam and you may just have to try again in a few minutes.\n\nIf the issue persists, please make sure that Steam is running and that you are logged in with the account tied to your SE ID.\nIf you play using the Free Trial, please check the \"Using Free Trial account\" checkbox in the \"Game Settings\" tab of the XIVLauncher settings.");
+
+                    if (!string.IsNullOrEmpty(steamMaintenanceInfo))
+                        steamTicketWarning += "\n\n" + steamMaintenanceInfo;
+
+                    msgbox.WithText(steamTicketWarning);
                 }
                 else if (ex is SteamException)
                 {
@@ -629,23 +649,6 @@ namespace XIVLauncher.Windows.ViewModel
                 return false;
             }
 
-            if (loginResult.State == Launcher.LoginState.NeedRetry)
-            {
-                // Do nothing
-                return false;
-            }
-            /*
-             * The server requested us to patch Boot, even though in order to get to this code, we just checked for boot patches.
-             *
-             * This means that something or someone modified boot binaries without our involvement.
-             * We have no way to go back to a "known" good state other than to do a full reinstall.
-             *
-             * This has happened multiple times with users that have viruses that infect other EXEs and change their hashes, causing the update
-             * server to reject our boot hashes.
-             *
-             * In the future we may be able to just delete /boot and run boot patches again, but this doesn't happen often enough to warrant the
-             * complexity and if boot is fucked game probably is too.
-             */
             if (loginResult.State == Launcher.LoginState.NeedsPatchBoot)
             {
                 CustomMessageBox.Show(
@@ -741,7 +744,7 @@ namespace XIVLauncher.Windows.ViewModel
                     using var process = await StartGameAndAddon(
                         loginResult,
                         isSteam,
-                        action == AfterLoginAction.StartWithoutDalamud,
+                        action == AfterLoginAction.StartWithoutDalamud || Updates.HaveFeatureFlag(Updates.LeaseFeatureFlags.GlobalDisableDalamud),
                         action == AfterLoginAction.StartWithoutThird,
                         action == AfterLoginAction.StartWithoutPlugins).ConfigureAwait(false);
 
@@ -971,8 +974,8 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (mutex.WaitOne(0, false))
             {
-                Debug.Assert(loginResult.PendingPatches != null, "loginResult.PendingPatches != null ASSERTION FAILED");
-                Debug.Assert(loginResult.PendingPatches.Length != 0, "loginResult.PendingPatches.Length != 0 ASSERTION FAILED");
+                Debug.Assert(loginResult.PendingPatches != null, "loginResult.PendingPatches != null");
+                Debug.Assert(loginResult.PendingPatches.Length != 0, "loginResult.PendingPatches.Length != 0");
 
                 Log.Information("STARTING REPAIR");
 
@@ -985,7 +988,7 @@ namespace XIVLauncher.Windows.ViewModel
                     }))
                     return false;
 
-                using var verify = new PatchVerifier(CommonSettings.Instance, loginResult, 20, loginResult.OauthLogin.MaxExpansion);
+                using var verify = new PatchVerifier(CommonSettings.Instance, loginResult, TimeSpan.FromMilliseconds(100), loginResult.OauthLogin.MaxExpansion);
 
                 Hide();
                 IsEnabled = false;
@@ -1061,6 +1064,21 @@ namespace XIVLauncher.Windows.ViewModel
                                     .WithParentWindow(_window)
                                     .Show() == MessageBoxResult.OK;
                             }
+                            // Seemingly no better way to detect this, probably brittle if this is localized
+                            else if (verify.LastException != null && verify.LastException.ToString().Contains("Data error"))
+                            {
+                                doVerify = new CustomMessageBox.Builder()
+                                           .WithText(Loc.Localize("GameRepairError_DataError", "Your hard drive reported an error while checking game files. XIVLauncher cannot repair this installation, as the error may indicate a physical issue with your hard drive.\nPlease check your drive's health, or try to update its firmware.\nReinstalling the game in a new location may solve this issue temporarily."))
+                                           .WithExitOnClose(CustomMessageBox.ExitOnCloseModes.DontExitOnClose)
+                                           .WithImage(MessageBoxImage.Error)
+                                           .WithShowHelpLinks(true)
+                                           .WithShowDiscordLink(true)
+                                           .WithShowNewGitHubIssue(false)
+                                           .WithButtons(MessageBoxButton.OKCancel)
+                                           .WithOkButtonText(Loc.Localize("GameRepairSuccess_TryAgain", "_Try again"))
+                                           .WithParentWindow(_window)
+                                           .Show() == MessageBoxResult.OK;
+                            }
                             else
                             {
                                 doVerify = CustomMessageBox.Builder
@@ -1095,15 +1113,19 @@ namespace XIVLauncher.Windows.ViewModel
 
         private Task<bool> InstallGamePatch(Launcher.LoginResult loginResult)
         {
-            Debug.Assert(loginResult.State == Launcher.LoginState.NeedsPatchGame,
-                "loginResult.State == Launcher.LoginState.NeedsPatchGame ASSERTION FAILED");
+            if (loginResult.State != Launcher.LoginState.NeedsPatchGame)
+                throw new ArgumentException(@"loginResult.State != Launcher.LoginState.NeedsPatchGame", nameof(loginResult));
 
-            Debug.Assert(loginResult.PendingPatches != null, "loginResult.PendingPatches != null ASSERTION FAILED");
+            if (loginResult.PendingPatches == null)
+                throw new ArgumentException(@"loginResult.PendingPatches == null", nameof(loginResult));
+
+            if (loginResult.PendingPatches.Length == 0)
+                throw new ArgumentException(@"loginResult.PendingPatches.Length == 0", nameof(loginResult));
 
             return TryHandlePatchAsync(Repository.Ffxiv, loginResult.PendingPatches, loginResult.UniqueId);
         }
 
-        private void PatcherOnFail(PatchManager.FailReason reason, string versionId)
+        private void PatcherOnFail(PatchListEntry patch, string context)
         {
             var dlFailureLoc = Loc.Localize("PatchManDlFailure",
                 "XIVLauncher could not verify the downloaded game files. Please restart and try again.\n\nThis usually indicates a problem with your internet connection.\n\nContext: {0}\n{1}");
@@ -1148,7 +1170,7 @@ namespace XIVLauncher.Windows.ViewModel
             Environment.Exit(0);
         }
 
-        public async Task<Process?> StartGameAndAddon(Launcher.LoginResult loginResult, bool isSteam, bool forceNoDalamud, bool noThird, bool noPlugins)
+        public async Task<Process> StartGameAndAddon(Launcher.LoginResult loginResult, bool isSteam, bool forceNoDalamud, bool noThird, bool noPlugins)
         {
             var dalamudLauncher = new DalamudLauncher(new WindowsDalamudRunner(), App.DalamudUpdater, App.Settings.InGameAddonLoadMethod.GetValueOrDefault(DalamudLoadMethod.DllInject),
                 App.Settings.GamePath,
@@ -1188,7 +1210,7 @@ namespace XIVLauncher.Windows.ViewModel
                     "XIVLauncher", MessageBoxButton.OK, MessageBoxImage.Exclamation, parentWindow: _window);
             }
 
-            if (App.Settings.InGameAddonEnabled && !forceNoDalamud && App.Settings.IsDx11)
+            if (App.Settings.InGameAddonEnabled && !forceNoDalamud)
             {
                 try
                 {
@@ -1221,17 +1243,6 @@ namespace XIVLauncher.Windows.ViewModel
             var gameRunner = new WindowsGameRunner(dalamudLauncher, dalamudOk, App.DalamudUpdater.Runtime);
 
             // We won't do any sanity checks here anymore, since that should be handled in StartLogin
-            //var launched = this.Launcher.LaunchGame(gameRunner,
-            //    loginResult.UniqueId,
-            //    loginResult.OauthLogin.Region,
-            //    loginResult.OauthLogin.MaxExpansion,
-            //    isSteam,
-            //    App.Settings.AdditionalLaunchArgs,
-            //    App.Settings.GamePath,
-            //    App.Settings.IsDx11,
-            //    App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
-            //    App.Settings.EncryptArguments.GetValueOrDefault(false),
-            //    App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
             var launched = this.Launcher.LaunchGameSdo(gameRunner,
                     loginResult.OauthLogin.SessionId,
                     loginResult.OauthLogin.SndaId,
@@ -1241,9 +1252,18 @@ namespace XIVLauncher.Windows.ViewModel
                     Area.AreaConfigUpload,
                     App.Settings.AdditionalLaunchArgs,
                     App.Settings.GamePath,
-                    App.Settings.IsDx11,
                     App.Settings.EncryptArguments.GetValueOrDefault(false),
                     App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
+            // var launched = this.Launcher.LaunchGame(gameRunner,
+            //     loginResult.UniqueId,
+            //     loginResult.OauthLogin.Region,
+            //     loginResult.OauthLogin.MaxExpansion,
+            //     isSteam,
+            //     App.Settings.AdditionalLaunchArgs,
+            //     App.Settings.GamePath,
+            //     App.Settings.Language.GetValueOrDefault(ClientLanguage.English),
+            //     App.Settings.EncryptArguments.GetValueOrDefault(false),
+            //     App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
 
             Troubleshooting.LogTroubleshooting();
 
@@ -1326,19 +1346,41 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (AccountManager.CurrentAccount == null ||
                 AccountManager.CurrentAccount.Id != $"{username}-{IsOtp}-{IsSteam}")
+            try
             {
-                var accountToSave = new XivAccount(username)
+                if (AccountManager.CurrentAccount != null && AccountManager.CurrentAccount.UserName.Equals(username, StringComparison.Ordinal) &&
+                    AccountManager.CurrentAccount.Password != password &&
+                    AccountManager.CurrentAccount.SavePassword)
+                    AccountManager.UpdatePassword(AccountManager.CurrentAccount, password);
+
+                if (AccountManager.CurrentAccount == null ||
+                    AccountManager.CurrentAccount.Id != $"{username}-{IsOtp}-{IsSteam}")
                 {
-                    Password = password,
-                    SavePassword = true,
-                    UseOtp = IsOtp,
-                    UseSteamServiceAccount = IsSteam,
-                    AreaID = Area.Areaid
-                };
+                    var accountToSave = new XivAccount(username)
+                    {
+                        Password = password,
+                        SavePassword = true,
+                        UseOtp = IsOtp,
+                        UseSteamServiceAccount = IsSteam，
+                        AreaID = Area.Areaid
+                    };
 
-                AccountManager.AddAccount(accountToSave);
+                    AccountManager.AddAccount(accountToSave);
 
-                AccountManager.CurrentAccount = accountToSave;
+                    AccountManager.CurrentAccount = accountToSave;
+                }
+            }
+            catch (Win32Exception ex)
+            {
+                CustomMessageBox.Builder
+                                .NewFrom(Loc.Localize("PersistAccountError",
+                                                      "XIVLauncher could not save your account information. This is likely caused by having too many saved accounts in the Windows Credential Manager.\nPlease try removing some of them."))
+                                .WithAppendDescription(ex.ToString())
+                                .WithShowHelpLinks()
+                                .WithImage(MessageBoxImage.Warning)
+                                .WithButtons(MessageBoxButton.OK)
+                                .WithParentWindow(_window)
+                                .Show();
             }
         }
 
@@ -1370,6 +1412,11 @@ namespace XIVLauncher.Windows.ViewModel
 
                 //return await TryHandlePatchAsync(Repository.Boot, bootPatches, null).ConfigureAwait(false);
                 return true;
+                // Debug.Assert(bootPatches != null);
+                // if (bootPatches.Length == 0)
+                //     return true;
+
+                // return await TryHandlePatchAsync(Repository.Boot, bootPatches, null).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

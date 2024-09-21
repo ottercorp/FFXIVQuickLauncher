@@ -7,6 +7,10 @@ jobs:
     name: Build Release on Windows
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-2022
+    permissions:
+      id-token: write
+      contents: write # Must be 'write' to create a release
+      attestations: write
     steps:
       #      - uses: nadock/verified_commits_check@f9b330e987c2e7121dfc0230e65cb5751ee5fac9
       - uses: actions/checkout@v1
@@ -30,6 +34,17 @@ jobs:
         run: |
           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\"
            .\MSBuild.exe $Env:GITHUB_WORKSPACE\src\XIVLauncher.sln /t:Build /p:Configuration=Release
+      - name: Generate Hashes File
+        run: .\scripts\CreateHashList.ps1 .\src\bin
+      - name: Attest Artifacts
+        if: ${{ github.repository_owner == 'goatcorp' && github.event_name == 'push' }}
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            src/bin/XIVLauncher.exe
+            src/bin/XIVLauncher.*.dll
+            src/bin/XIVLauncher.*.exe
+            src/bin/hashes.json
       - name: Build Squirrel Release
         id: build-squirrel
         run: |
@@ -67,11 +82,16 @@ jobs:
           {
           }
           rm ".\Releases\$($full_file.name)"
-      - name: List Release
-        run: |
-          ls .\src\Releases\
+      - name: Attest Setup
+        if: ${{ github.repository_owner == 'ottercorp' && github.event_name == 'push' }}
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            src/Releases/*.exe
+            src/Releases/*.nupkg
+            src/Releases/RELEASES
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -89,6 +109,10 @@ jobs:
     name: Build on Windows
     runs-on: windows-2022
     if: "!startsWith(github.ref, 'refs/tags/')"
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
     steps:
       - uses: actions/checkout@v1
       - name: Initialize Submodules
@@ -112,6 +136,17 @@ jobs:
         run: |
           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\"
            .\MSBuild.exe $Env:GITHUB_WORKSPACE\src\XIVLauncher.sln /t:Build /p:Configuration=ReleaseNoUpdate
+      - name: Generate Hashes File
+        run: .\scripts\CreateHashList.ps1 .\src\bin
+      - name: Attest Artifacts
+        if: ${{ github.repository_owner == 'goatcorp' && github.event_name == 'push' }}
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            src/bin/XIVLauncher.exe
+            src/bin/XIVLauncher.*.dll
+            src/bin/XIVLauncher.*.exe
+            src/bin/hashes.json
       - name: Upload artifact
         uses: actions/upload-artifact@master
         with:

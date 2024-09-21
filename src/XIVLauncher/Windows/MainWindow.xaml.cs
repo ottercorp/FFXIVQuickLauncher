@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CheapLoc;
 using Serilog;
@@ -174,10 +173,10 @@ namespace XIVLauncher.Windows
 
                 _bannerDotList[0].Active = true;
 
-                Dispatcher.BeginInvoke(new Action(() =>
+                _ = this.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    BannerImage.Source = _bannerBitmaps[0];
-                    BannerDot.ItemsSource = _bannerDotList;
+                    this.BannerImage.Source = this._bannerBitmaps[0];
+                    this.BannerDot.ItemsSource = this._bannerDotList;
                 }));
 
                 _bannerChangeTimer = new Timer { Interval = 5000 };
@@ -203,12 +202,12 @@ namespace XIVLauncher.Windows
                 _bannerChangeTimer.AutoReset = true;
                 _bannerChangeTimer.Start();
 
-                Dispatcher.BeginInvoke(new Action(() => { NewsListView.ItemsSource = _headlines.News; }));
+                _ = Dispatcher.BeginInvoke(new Action(() => { NewsListView.ItemsSource = _headlines.News; }));
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Could not get news");
-                Dispatcher.BeginInvoke(new Action(() =>
+                _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
                     NewsListView.ItemsSource = new List<News> { new News { Title = Loc.Localize("NewsDlFailed", "Could not download news data."), Tag = "DlError" } };
                 }));
@@ -489,9 +488,10 @@ namespace XIVLauncher.Windows
                 // ignored
             }
 
-            if (gateStatus || bootPatches != null)
+            var hasBootPatch = bootPatches.Length > 0;
+            if (gateStatus || hasBootPatch)
             {
-                if (bootPatches != null)
+                if (hasBootPatch)
                 {
                     CustomMessageBox.Show(Loc.Localize("MaintenanceQueueBootPatch",
                         "A patch for the official launcher was detected.\nThis usually means that there is a patch for the game as well.\n\nYou will now be logged in."), "XIVLauncherCN", parentWindow: this);

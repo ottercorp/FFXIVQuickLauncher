@@ -18,7 +18,7 @@ namespace XIVLauncher.Support
         /// <summary>
         /// Gets the most recent exception to occur.
         /// </summary>
-        public static Exception? LastException { get; private set; }
+        public static Exception LastException { get; private set; }
 
         /// <summary>
         /// Log the last exception in a parseable format to serilog.
@@ -89,11 +89,12 @@ namespace XIVLauncher.Support
             var ex3VerBck = Repository.Ex3.GetVer(gamePath, true);
             var ex4Ver = Repository.Ex4.GetVer(gamePath);
             var ex4VerBck = Repository.Ex4.GetVer(gamePath, true);
+            var ex5Ver = Repository.Ex5.GetVer(gamePath);
+            var ex5VerBck = Repository.Ex5.GetVer(gamePath, true);
 
             var payload = new TroubleshootingPayload
             {
                 When = DateTime.Now,
-                IsDx11 = App.Settings.IsDx11,
                 IsAutoLogin = App.Settings.AutologinEnabled,
                 IsUidCache = App.Settings.UniqueIdCacheEnabled,
                 DalamudEnabled = App.Settings.InGameAddonEnabled,
@@ -111,9 +112,10 @@ namespace XIVLauncher.Support
                 ObservedEx2Version = ex2Ver,
                 ObservedEx3Version = ex3Ver,
                 ObservedEx4Version = ex4Ver,
+                ObservedEx5Version = ex5Ver,
 
                 BckMatch = ffxivVer == ffxivVerBck && ex1Ver == ex1VerBck && ex2Ver == ex2VerBck &&
-                           ex3Ver == ex3VerBck && ex4Ver == ex4VerBck,
+                           ex3Ver == ex3VerBck && ex4Ver == ex4VerBck && ex5Ver == ex5VerBck,
 
                 IndexIntegrity = integrity
             };
@@ -150,8 +152,6 @@ namespace XIVLauncher.Support
         {
             public DateTime When { get; set; }
 
-            public bool IsDx11 { get; set; }
-
             public bool IsAutoLogin { get; set; }
 
             public bool IsUidCache { get; set; }
@@ -182,6 +182,7 @@ namespace XIVLauncher.Support
             public string ObservedEx2Version { get; set; }
             public string ObservedEx3Version { get; set; }
             public string ObservedEx4Version { get; set; }
+            public string ObservedEx5Version { get; set; }
 
             public bool BckMatch { get; set; }
 
