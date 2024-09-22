@@ -37,7 +37,7 @@ jobs:
       - name: Generate Hashes File
         run: .\scripts\CreateHashList.ps1 .\src\bin
       - name: Attest Artifacts
-        if: ${{ github.repository_owner == 'goatcorp' && github.event_name == 'push' }}
+        if: ${{ github.repository_owner == 'ottercorp' && github.event_name == 'push' }}
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: |
@@ -139,7 +139,7 @@ jobs:
       - name: Generate Hashes File
         run: .\scripts\CreateHashList.ps1 .\src\bin
       - name: Attest Artifacts
-        if: ${{ github.repository_owner == 'goatcorp' && github.event_name == 'push' }}
+        if: ${{ github.repository_owner == 'ottercorp' && github.event_name == 'push' }}
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: |
