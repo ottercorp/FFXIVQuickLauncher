@@ -74,9 +74,9 @@ public partial class Launcher
         {
             UseCookies = false,
         };
+#endif
 
         this.client = new HttpClient(handler);
-#endif
     }
 
     public Launcher(byte[] overriddenSteamTicket, IUniqueIdCache uniqueIdCache, ISettings settings, string frontierUrl)
