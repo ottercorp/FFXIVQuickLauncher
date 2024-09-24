@@ -350,7 +350,7 @@ namespace XIVLauncher.Windows.ViewModel
             loginResult.Area = Area;
             Log.Verbose("[LR] {State} {NumPatches} {Playable}",
                         loginResult.State,
-                        loginResult.PendingPatches.Length,
+                        loginResult.PendingPatches?.Length,
                         loginResult.OauthLogin?.Playable);
 
             if (await TryProcessLoginResult(loginResult, isSteam, action).ConfigureAwait(false))
