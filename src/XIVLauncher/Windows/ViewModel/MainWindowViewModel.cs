@@ -727,6 +727,16 @@ namespace XIVLauncher.Windows.ViewModel
                 return false;
             }
 
+            if (loginResult.State == Launcher.LoginState.NeedRetry)
+            {
+                Log.Error("loginResult.State == NeedRetry");
+                CustomMessageBox.Show(
+                    Loc.Localize("LoginNeedRetry",
+                                 "登录失败,建议尝试重新扫码登录."), "XIVLauncher",
+                    MessageBoxButton.OK, MessageBoxImage.Information, showHelpLinks: false, showDiscordLink: false, parentWindow: _window);
+                return false;
+            }
+
             if (CustomMessageBox.AssertOrShowError(loginResult.State == Launcher.LoginState.Ok, "TryProcessLoginResult: loginResult.State should have been Launcher.LoginState.Ok", parentWindow: _window))
                 return false;
 
