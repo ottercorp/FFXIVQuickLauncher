@@ -50,7 +50,7 @@ public class RpcCommand
 
             while (true)
             {
-                if ((Process.GetProcesses().All(x => x.ProcessName != "XIVLauncher") && !installer.HasQueuedInstalls) || installer.IsDone)
+                if ((Process.GetProcesses().All(x => x.ProcessName != "XIVLauncherCN") && !installer.HasQueuedInstalls) || installer.IsDone)
                 {
                     Environment.Exit(0);
                     return Task.FromResult(0); // does not run
