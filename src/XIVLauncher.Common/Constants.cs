@@ -12,7 +12,7 @@ namespace XIVLauncher.Common
 
         public static string PatcherUserAgent => GetPatcherUserAgent(PlatformHelpers.GetPlatform());
 
-        public const int MaxExpansion = 4;
+        public const int MaxExpansion = 5;
 
         private static string GetPatcherUserAgent(Platform platform)
         {
