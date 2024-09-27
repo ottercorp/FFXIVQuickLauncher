@@ -188,7 +188,7 @@ namespace XIVLauncher.Common.Game.Patch
             foreach (var patch in result.PendingPatches)
             {
                 var repoName = patch.GetRepoName();
-                if (!repoName.StartsWith("ex"))
+                if (repoName == "ffxiv")
                     repoName = "ex0";
 
                 _patchSources.Add($"{repoName}:{Path.GetFileName(patch.GetFilePath())}", new PatchSource()

@@ -106,14 +106,10 @@ public class IndexUpdateCommand
         gamePatchList = lr.PendingPatches;
         File.WriteAllText(gamePatchListFile.FullName, JsonConvert.SerializeObject(gamePatchList, Formatting.Indented));
 
-        var indexSources = gamePatchList.GroupBy(x =>
+        var indexSources = gamePatchList.GroupBy(x => x.GetRepoName() switch
         {
-            string repoName = x.GetRepoName();
-            return repoName switch
-            {
-                _ when !repoName.StartsWith("ex") => 0,
-                _ => int.Parse(repoName.Substring(2))
-            };
+            "ffxiv" => 0,
+            var y => int.Parse(y.Substring(2)),
         }).ToDictionary(x => x.Key, x => x.ToArray());
         //indexSources[-1] = bootPatchList;
 
