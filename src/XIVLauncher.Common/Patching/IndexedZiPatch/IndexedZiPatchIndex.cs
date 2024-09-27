@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using XIVLauncher.Common.Patching.ZiPatch;
@@ -94,7 +95,8 @@ public class IndexedZiPatchIndex
     public IndexedZiPatchTargetFile this[string name] => this.targetFiles[IndexOf(name)];
     public int IndexOf(string name) => this.targetFiles.FindIndex(x => x.RelativePath == NormalizePath(name));
     public int Length => this.targetFiles.Count;
-    public string VersionName => this.sourceFiles.Last().Substring(1, this.sourceFiles.Last().Length - 7);
+    private Regex versionNameRegex = new Regex(@"[A-Z](?<version>[0-9.]+)[a-z]*\.patch");
+    public string VersionName => versionNameRegex.Match(this.sourceFiles.Last()).Groups["version"].Value;
     public string VersionFileBase => ExpacVersion == ExpacVersionBoot ? "ffxivboot" : ExpacVersion == ExpacVersionBaseGame ? "ffxivgame" : $"sqpack/ex{ExpacVersion}/ex{ExpacVersion}";
     public string VersionFileVer => VersionFileBase + ".ver";
     public string VersionFileBck => VersionFileBase + ".bck";
