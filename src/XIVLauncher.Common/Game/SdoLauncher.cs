@@ -804,7 +804,7 @@ namespace XIVLauncher.Common.Game
             Log.Verbose("Game Patching is needed... List:\n{PatchList}", text);
 
             var pendingPatches = PatchListParser.Parse(text);
-            return new LoginResult { PendingPatches = pendingPatches, State = LoginState.NeedsPatchGame, OauthLogin = null };
+            return new LoginResult { PendingPatches = pendingPatches, State = LoginState.NeedsPatchGame ,OauthLogin = new OauthLoginResult()};
         }
     }
 }

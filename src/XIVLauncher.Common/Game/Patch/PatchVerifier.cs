@@ -38,6 +38,9 @@ namespace XIVLauncher.Common.Game.Patch
             // DXVK can deal with corrupted cache files by itself, so let it do the job by itself.
             new Regex(@"^ffxiv_dx11\.dxvk-cache$", RegexOptions.IgnoreCase),
 
+            //  Savadata.
+            new Regex(@"^My Games/.*$", RegexOptions.IgnoreCase),
+
             // Repair recycle bin folder.
             new Regex(@"^repair_recycler/.*$", RegexOptions.IgnoreCase),
         };
@@ -185,7 +188,7 @@ namespace XIVLauncher.Common.Game.Patch
             foreach (var patch in result.PendingPatches)
             {
                 var repoName = patch.GetRepoName();
-                if (repoName == "ffxiv")
+                if (!repoName.StartsWith("ex"))
                     repoName = "ex0";
 
                 _patchSources.Add($"{repoName}:{Path.GetFileName(patch.GetFilePath())}", new PatchSource()

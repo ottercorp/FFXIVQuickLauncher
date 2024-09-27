@@ -317,7 +317,7 @@ namespace XIVLauncher.Windows.ViewModel
             var loginResult = await TryLoginToGame(username, password, otp, isSteam, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
-            if (loginResult.State == Launcher.LoginState.NeedsPatchGame)
+            if (loginResult.State == Launcher.LoginState.NeedsPatchGame && action != AfterLoginAction.Repair)
             {
                 // 如果需要打补丁且登陆异常，登陆异常状态会覆盖掉NeedsPatchGame，除非和国际服一样，登陆成功才能获取到补丁信息
                 // 所以直接改成打完补丁再登陆一遍算了
@@ -480,7 +480,7 @@ namespace XIVLauncher.Windows.ViewModel
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
                 //else
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-                var checkResult = await Launcher.CheckGameUpdate(Area, gamePath, false);
+                var checkResult = await Launcher.CheckGameUpdate(Area, gamePath, action == AfterLoginAction.Repair);
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
                 if (username == null) username = string.Empty;
@@ -1000,7 +1000,7 @@ namespace XIVLauncher.Windows.ViewModel
                     }))
                     return false;
 
-                using var verify = new PatchVerifier(CommonSettings.Instance, loginResult, TimeSpan.FromMilliseconds(100), loginResult.OauthLogin.MaxExpansion);
+                using var verify = new PatchVerifier(CommonSettings.Instance, loginResult, TimeSpan.FromMilliseconds(100), Constants.MaxExpansion);
 
                 Hide();
                 IsEnabled = false;
