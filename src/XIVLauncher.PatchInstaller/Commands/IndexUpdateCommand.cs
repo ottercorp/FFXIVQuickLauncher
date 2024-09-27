@@ -33,9 +33,9 @@ public class IndexUpdateCommand
         () => null,
         "Root directory of patch file hierarchy. Defaults to a directory under the temp directory of the current user.");
 
-    private static readonly Option<string?> UserNameOption = new("-u", () => null, "User ID.");
-    private static readonly Option<string?> PasswordOption = new("-p", () => null, "User password.");
-    private static readonly Option<string?> OtpOption = new("-o", () => null, "User OTP.");
+    //private static readonly Option<string?> UserNameOption = new("-u", () => null, "User ID.");
+    //private static readonly Option<string?> PasswordOption = new("-p", () => null, "User password.");
+    //private static readonly Option<string?> OtpOption = new("-o", () => null, "User OTP.");
 
     private static readonly Option<bool> NoVerifyOldPatchHashOption = new("--no-verify-old-patch-hash", () => false, "Skip patch hash validation for old patch files.");
     private static readonly Option<bool> NoVerifyNewPatchHashOption = new("--no-verify-new-patch-hash", () => false, "Skip patch hash validation for newly downloaded patch files.");
@@ -43,9 +43,9 @@ public class IndexUpdateCommand
     static IndexUpdateCommand()
     {
         Command.AddOption(PatchRootPathOption);
-        Command.AddOption(UserNameOption);
-        Command.AddOption(PasswordOption);
-        Command.AddOption(OtpOption);
+        //Command.AddOption(UserNameOption);
+        //Command.AddOption(PasswordOption);
+        //Command.AddOption(OtpOption);
         Command.AddOption(NoVerifyOldPatchHashOption);
         Command.AddOption(NoVerifyNewPatchHashOption);
         Command.SetHandler(x => new IndexUpdateCommand(x.ParseResult).Handle(x.GetCancellationToken()));
@@ -69,55 +69,58 @@ public class IndexUpdateCommand
         this.settings = new(
             new(parseResult.GetValueForOption(PatchRootPathOption)
                 ?? Path.Combine(Path.GetTempPath(), "XIVLauncher.PatchInstaller")));
-        this.username = parseResult.GetValueForOption(UserNameOption);
-        this.password = parseResult.GetValueForOption(PasswordOption);
-        this.otp = parseResult.GetValueForOption(OtpOption);
+        //this.username = parseResult.GetValueForOption(UserNameOption);
+        //this.password = parseResult.GetValueForOption(PasswordOption);
+        //this.otp = parseResult.GetValueForOption(OtpOption);
         this.noVerifyOldPatchHash = parseResult.GetValueForOption(NoVerifyOldPatchHashOption);
         this.noVerifyNewPatchHash = parseResult.GetValueForOption(NoVerifyNewPatchHashOption);
     }
 
     private async Task<int> Handle(CancellationToken cancellationToken)
     {
+        if (!this.settings.GamePath.Exists)
+            this.settings.GamePath.Create();
+        if (!this.settings.PatchPath.Exists)
+            this.settings.PatchPath.Create();
         var la = new Launcher((ISteam?)null, new CommonUniqueIdCache(null), this.settings, "https://launcher.finalfantasyxiv.com/v650/index.html?rc_lang={0}&time={1}");
 
-        var bootPatchListFile = new FileInfo(Path.Combine(this.settings.GamePath.FullName, "bootlist.json"));
+        //var bootPatchListFile = new FileInfo(Path.Combine(this.settings.GamePath.FullName, "bootlist.json"));
 
-        if (!TryReadPatchListEntries(bootPatchListFile, out var bootPatchList) || bootPatchListFile.LastWriteTime < DateTime.Now - TimeSpan.FromHours(1))
-        {
-            Log.Information("Downloading boot patch information.");
-            bootPatchList = await la.CheckBootVersion(this.settings.PatchPath, true);
-            File.WriteAllText(bootPatchListFile.FullName, JsonConvert.SerializeObject(bootPatchList, Formatting.Indented));
-        }
+        //if (!TryReadPatchListEntries(bootPatchListFile, out var bootPatchList) || bootPatchListFile.LastWriteTime < DateTime.Now - TimeSpan.FromHours(1))
+        //{
+        //    Log.Information("Downloading boot patch information.");
+        //    bootPatchList = await la.CheckBootVersion(this.settings.PatchPath, true);
+        //    File.WriteAllText(bootPatchListFile.FullName, JsonConvert.SerializeObject(bootPatchList, Formatting.Indented));
+        //}
 
-        await ApplyBootPatch(bootPatchList, cancellationToken);
+        //await ApplyBootPatch(bootPatchList, cancellationToken);
 
         var gamePatchListFile = new FileInfo(Path.Combine(this.settings.GamePath.FullName, "gamelist.json"));
         PatchListEntry[] gamePatchList;
 
-        if (this.username is not null && this.password is not null)
-        {
-            Log.Information("Logging in and fetching game patch information.");
-            var lr = await la.Login(this.username, this.password, this.otp ?? "", false, false, this.settings.GamePath, true, false);
-            gamePatchList = lr.PendingPatches;
-            File.WriteAllText(gamePatchListFile.FullName, JsonConvert.SerializeObject(gamePatchList, Formatting.Indented));
-        }
-        else if (!TryReadPatchListEntries(gamePatchListFile, out gamePatchList))
-        {
-            Log.Error("No previous game patch file list found. You need to log in.");
-            return -1;
-        }
+        // 随机挑选一个服务器，别被抠抠搜搜的盛趣发现了 :(
+        var areas = await SdoArea.Get();
+        var area = areas[new Random().Next(areas.Length)];
 
-        var indexSources = gamePatchList.GroupBy(x => x.GetRepoName() switch
+        var lr = await la.CheckGameUpdate(area, this.settings.GamePath, false);
+        gamePatchList = lr.PendingPatches;
+        File.WriteAllText(gamePatchListFile.FullName, JsonConvert.SerializeObject(gamePatchList, Formatting.Indented));
+
+        var indexSources = gamePatchList.GroupBy(x =>
         {
-            "ffxiv" => 0,
-            var y => int.Parse(y.Substring(2)),
+            string repoName = x.GetRepoName();
+            return repoName switch
+            {
+                _ when !repoName.StartsWith("ex") => 0,
+                _ => int.Parse(repoName.Substring(2))
+            };
         }).ToDictionary(x => x.Key, x => x.ToArray());
-        indexSources[-1] = bootPatchList;
+        //indexSources[-1] = bootPatchList;
 
         var fileCompletions = gamePatchList.ToDictionary(x => x, _ => new TaskCompletionSource<PatchListEntry>());
 
-        foreach (var patch in bootPatchList)
-            (fileCompletions[patch] = new()).SetResult(patch);
+        //foreach (var patch in bootPatchList)
+        //    (fileCompletions[patch] = new()).SetResult(patch);
 
         await Task.WhenAll(
             Task.Run(async () => await this.DownloadAndVerifyPatchFiles(fileCompletions, gamePatchList, cancellationToken), cancellationToken),
@@ -185,7 +188,8 @@ public class IndexUpdateCommand
             var patch = gamePatchList[i];
             var uri = new Uri(patch.Url);
             var localPath = new FileInfo(Path.Combine(this.settings.GamePath.FullName, EnsureRelativePath(uri.LocalPath)));
-
+            if (!localPath.Directory.Exists)
+                localPath.Directory.Create();
             if (patch.HashType != "sha1")
                 throw new NotSupportedException($"HashType \"{patch.HashType}\" is not supported for: {uri}");
 

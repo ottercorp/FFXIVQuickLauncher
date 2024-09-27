@@ -406,7 +406,7 @@ public partial class Launcher
     public async Task<PatchListEntry[]> CheckBootVersion(DirectoryInfo gamePath, bool forceBaseVersion = false)
     {
         //CN
-        return null;
+        return Array.Empty<PatchListEntry>();
 
 
         var bootVersion = forceBaseVersion ? Constants.BASE_GAME_VERSION : Repository.Boot.GetVer(gamePath);

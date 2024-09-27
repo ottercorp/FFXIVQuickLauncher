@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "XIVLauncher.PatchInstaller": {
+      "commandName": "Project",
+      "commandLineArgs": "index-update"
+    }
+  }
+}
