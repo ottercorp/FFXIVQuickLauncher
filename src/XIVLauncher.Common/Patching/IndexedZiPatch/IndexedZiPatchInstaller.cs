@@ -1,4 +1,4 @@
-﻿using Serilog;
+using Serilog;
 using System;
 using System.Collections.Generic;
 
@@ -535,8 +535,9 @@ public class IndexedZiPatchInstaller : IDisposable
 
             using HttpRequestMessage req = new(HttpMethod.Get, SourceUrl);
             req.Headers.Range = new() { Unit = "bytes" };
-            foreach (var (rangeFrom, rangeToExclusive) in offsets.Take(400))
+            foreach (var (rangeFrom, rangeToExclusive) in offsets.Take(32))
                 req.Headers.Range.Ranges.Add(new(rangeFrom, rangeToExclusive + 1));
+            // 经测试，超过32有时会报错，盛趣的CDN太垃圾了
             // "1000000000-1000000000,": 22 bytes; 22x400=8800 bytes in HTTP header should be fine?
 
             if (this.sid != null)
