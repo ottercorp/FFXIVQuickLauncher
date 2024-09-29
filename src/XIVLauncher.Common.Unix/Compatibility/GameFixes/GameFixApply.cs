@@ -1,4 +1,5 @@
 using System.IO;
+using XIVLauncher.Common.Unix.Compatibility.GameFixes.Implementations;
 
 namespace XIVLauncher.Common.Unix.Compatibility.GameFixes;
 
@@ -12,7 +13,10 @@ public class GameFixApply
 
     public GameFixApply(DirectoryInfo gameDirectory, DirectoryInfo configDirectory, DirectoryInfo winePrefixDirectory, DirectoryInfo tempDirectory)
     {
-        this.fixes = new GameFix[] { };
+        this.fixes = new GameFix[]
+        {
+            new CutsceneMovieOpeningFix(gameDirectory, configDirectory, winePrefixDirectory, tempDirectory),
+        };
     }
 
     public void Run()
