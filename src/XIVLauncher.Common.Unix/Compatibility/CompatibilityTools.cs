@@ -21,29 +21,30 @@ public class CompatibilityTools
 {
     private DirectoryInfo toolDirectory;
     private DirectoryInfo dxvkDirectory;
+    private DirectoryInfo dxmtDirectory;
 
     private StreamWriter logWriter;
 
 #if WINE_XIV_ARCH_LINUX
-    // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-arch-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/arch/wine-xiv-staging-fsync-git-arch-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
+    // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/8.5.r4.g4211bac7/wine-xiv-staging-fsync-git-arch-8.5.r4.g4211bac7.tar.xz";
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/arch/wine-xiv-staging-fsync-git-arch-8.5.r4.g4211bac7.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.5.r4.g4211bac7";
 #elif WINE_XIV_FEDORA_LINUX
-    // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-fedora-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/fedora/wine-xiv-staging-fsync-git-fedora-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
+    // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/8.5.r4.g4211bac7/wine-xiv-staging-fsync-git-fedora-8.5.r4.g4211bac7.tar.xz";
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/fedora/wine-xiv-staging-fsync-git-fedora-8.5.r4.g4211bac7.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.5.r4.g4211bac7";
 #elif WINE_XIV_MACOS
-    // Wine from https://softwareupdate.xivmac.com/sites/default/files/update_data/XIV%20on%20Mac4.14.1.tar.xz;
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/xom-4.14.1/wine.tar.gz";
+    // Wine from https://softwareupdate.xivmac.com/sites/default/files/update_data/XIV%20on%20Mac4.17.2.tar.xz;
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/xom-4.17.2/wine.tar.gz";
     private const string WINE_XIV_RELEASE_NAME = "wine";
 #else
-    // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/7.10.r3.g560db77d/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/ubuntu/wine-xiv-staging-fsync-git-ubuntu-7.10.r3.g560db77d.tar.xz";
-    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-7.10.r3.g560db77d";
+    // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/8.5.r4.g4211bac7/wine-xiv-staging-fsync-git-ubuntu-8.5.r4.g4211bac7.tar.xz";
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/ubuntu/wine-xiv-staging-fsync-git-ubuntu-8.5.r4.g4211bac7.tar.xz";
+    private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.5.r4.g4211bac7";
 #endif
 
-    private const string SD_WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/ubuntu/wine-xiv-staging-fsync-git-ubuntu-8.1.r2.g86a67397.tar.xz";
-    private const string SD_WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.1.r2.g86a67397";
+    private const string SD_WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/ubuntu/wine-xiv-staging-fsync-git-ubuntu-8.5.r4.g4211bac7.tar.xz";
+    private const string SD_WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.5.r4.g4211bac7";
 
     public bool IsToolReady { get; private set; }
 
@@ -68,17 +69,36 @@ public class CompatibilityTools
     private readonly bool gamemodeOn;
     private readonly string dxvkAsyncOn;
     private readonly int dxvkFrameLimit;
+    private readonly bool dxmtEnabled;
+    private readonly bool metalFxEnabled;
+    private readonly int metalFxFactor;
 
-    public CompatibilityTools(WineSettings wineSettings, Dxvk.DxvkHudType hudType, bool? gamemodeOn, bool? dxvkAsyncOn, int dxvkFrameLimit, DirectoryInfo toolsFolder)
+    public CompatibilityTools(
+        WineSettings wineSettings,
+        Dxvk.DxvkHudType hudType,
+        bool? gamemodeOn,
+        bool? dxvkAsyncOn,
+        int dxvkFrameLimit,
+        DirectoryInfo toolsFolder,
+        bool? dxmtEnabled,
+        bool? metalFxEnabled,
+        int? metalFxFactor)
     {
         this.Settings = wineSettings;
         this.hudType = hudType;
         this.gamemodeOn = gamemodeOn ?? false;
         this.dxvkAsyncOn = (dxvkAsyncOn ?? false) ? "1" : "0";
         this.dxvkFrameLimit = dxvkFrameLimit;
+        this.dxmtEnabled = dxmtEnabled ?? false;
+        this.metalFxEnabled = metalFxEnabled ?? false;
+        this.metalFxFactor = metalFxFactor ?? 2;
 
         this.toolDirectory = new DirectoryInfo(Path.Combine(toolsFolder.FullName, "beta"));
         this.dxvkDirectory = new DirectoryInfo(Path.Combine(toolsFolder.FullName, "dxvk"));
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            this.dxmtDirectory = new DirectoryInfo(Path.Combine(toolsFolder.FullName, "dxmt"));
+        }
 
         this.logWriter = new StreamWriter(wineSettings.LogFile.FullName);
 
@@ -89,6 +109,12 @@ public class CompatibilityTools
 
             if (!this.dxvkDirectory.Exists)
                 this.dxvkDirectory.Create();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                if (!this.dxmtDirectory!.Exists)
+                    this.dxmtDirectory.Create();
+            }
         }
 
         if (!wineSettings.Prefix.Exists)
@@ -105,7 +131,22 @@ public class CompatibilityTools
         }
 
         EnsurePrefix();
-        await Dxvk.InstallDxvk(Settings.Prefix, dxvkDirectory).ConfigureAwait(false);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            if (this.dxmtEnabled)
+            {
+                await Dxmt.InstallDxmt(Settings.Prefix, dxmtDirectory).ConfigureAwait(false);
+            }
+            else
+            {
+                await Dxmt.UninstallDxmt(Settings.Prefix, dxmtDirectory).ConfigureAwait(false);
+                await Dxvk.InstallDxvk(Settings.Prefix, dxvkDirectory).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            await Dxvk.InstallDxvk(Settings.Prefix, dxvkDirectory).ConfigureAwait(false);
+        }
 
         IsToolReady = true;
     }
@@ -211,6 +252,9 @@ public class CompatibilityTools
             wineEnviromentVariables.Add("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1");
             wineEnviromentVariables.Add("MVK_CONFIG_RESUME_LOST_DEVICE", "1");
             wineEnviromentVariables.Add("DOTNET_EnableWriteXorExecute", "0");
+            // DXMT
+            wineEnviromentVariables.Add("DXMT_CONFIG", $"d3d11.metalSpatialUpscaleFactor={this.metalFxFactor};d3d11.preferredMaxFrameRate={this.dxvkFrameLimit};");
+            wineEnviromentVariables.Add("DXMT_METALFX_SPATIAL_SWAPCHAIN", this.metalFxEnabled ? "1" : "0");
         }
 
         wineEnviromentVariables.Add("WINEPREFIX", Settings.Prefix.FullName);
