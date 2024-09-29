@@ -311,7 +311,14 @@ public class CompatibilityTools
         wineEnviromentVariables.Add("DXVK_LOG_PATH", "C:\\");
         wineEnviromentVariables.Add("DXVK_CONFIG_FILE", "C:\\ffxiv_dx11.conf");
         wineEnviromentVariables.Add("WINEESYNC", Settings.EsyncOn);
-        wineEnviromentVariables.Add("WINEFSYNC", Settings.FsyncOn);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            wineEnviromentVariables.Add("WINEMSYNC", Settings.MsyncOn);
+        }
+        else
+        {
+            wineEnviromentVariables.Add("WINEFSYNC", Settings.FsyncOn);
+        }
 
         if (dxvkFrameLimit != 0)
         {
