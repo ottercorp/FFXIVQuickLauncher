@@ -34,8 +34,8 @@ public class CompatibilityTools
     private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/fedora/wine-xiv-staging-fsync-git-fedora-8.5.r4.g4211bac7.tar.xz";
     private const string WINE_XIV_RELEASE_NAME = "wine-xiv-staging-fsync-git-8.5.r4.g4211bac7";
 #elif WINE_XIV_MACOS
-    // Wine from https://softwareupdate.xivmac.com/sites/default/files/update_data/XIV%20on%20Mac4.17.2.tar.xz;
-    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/xom-4.17.2/wine.tar.gz";
+    // Wine from https://softwareupdate.xivmac.com/sites/default/files/update_data/XIV%20on%20Mac4.17.1.tar.xz;
+    private const string WINE_XIV_RELEASE_URL = "https://s3.ffxiv.wang/xlcore/deps/wine/osx/xom-4.17.1/wine.tar.gz";
     private const string WINE_XIV_RELEASE_NAME = "wine";
 #else
     // private const string WINE_XIV_RELEASE_URL = "https://github.com/goatcorp/wine-xiv-git/releases/download/8.5.r4.g4211bac7/wine-xiv-staging-fsync-git-ubuntu-8.5.r4.g4211bac7.tar.xz";

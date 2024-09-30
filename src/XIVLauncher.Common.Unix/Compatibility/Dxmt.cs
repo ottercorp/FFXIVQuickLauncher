@@ -9,7 +9,7 @@ namespace XIVLauncher.Common.Unix.Compatibility;
 
 public static class Dxmt
 {
-    private const string DXMT_DOWNLOAD = "https://s3.ffxiv.wang/xlcore/deps/dxmt/xom-4.17.2/dxmt.tar.gz";
+    private const string DXMT_DOWNLOAD = "https://s3.ffxiv.wang/xlcore/deps/dxmt/xom-4.17.1/dxmt.tar.gz";
     private const string DXMT_NAME = "dxmt";
 
     public static async Task InstallDxmt(DirectoryInfo prefix, DirectoryInfo installDirectory)
