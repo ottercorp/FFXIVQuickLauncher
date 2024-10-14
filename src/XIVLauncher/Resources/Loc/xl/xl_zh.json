@@ -260,7 +260,7 @@
     "description": "DalamudLoadingOverlayViewModel.SetupLoc"
   },
   "ChooseGamePathFTS": {
-    "message": "请选择游戏所在文件夹。\n该文件夹应该包含「game」文件夹.\n\n国服暂不支持从零下载,请至少手工下载一个可用客户端.",
+    "message": "请选择游戏文件夹。\n它应该包含「game」和「boot」文件夹。\n\n如果您还没有安装游戏，您可以选择一个空文件夹，XIVLauncherCN 将为您安装。",
     "description": "FirstTimeSetupViewModel.SetupLoc"
   },
   "FirstTimeSteamNotice": {
