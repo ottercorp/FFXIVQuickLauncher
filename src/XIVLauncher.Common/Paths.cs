@@ -11,6 +11,8 @@ namespace XIVLauncher.Common
         {
             RoamingPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "XIVLauncherCN");
 
+            if (!Directory.Exists(RoamingPath)) Directory.CreateDirectory(RoamingPath);
+
             if (FirstRun)
             {
                 FirstRun = false;
