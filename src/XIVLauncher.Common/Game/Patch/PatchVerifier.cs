@@ -72,7 +72,7 @@ namespace XIVLauncher.Common.Game.Patch
         public long Speed { get; private set; }
         public Exception LastException { get; private set; }
 
-        private const string BASE_URL = "https://raw.githubusercontent.com/ottercorp/patchinfo/main/";
+        private const string BASE_URL = "https://s3.ffxiv.wang/xlassets/patchinfo/";
 
         public enum VerifyState
         {
