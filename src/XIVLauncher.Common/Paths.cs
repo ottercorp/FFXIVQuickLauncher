@@ -57,7 +57,7 @@ namespace XIVLauncher.Common
             foreach (var file in Directory.GetFiles(sourcePath))
             {
                 var dest = Path.Combine(destPath, Path.GetFileName(file));
-                File.Copy(file, dest, false);
+                File.Copy(file, dest, true);
                 File.Delete(file);
             }
 
