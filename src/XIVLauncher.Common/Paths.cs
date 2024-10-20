@@ -10,20 +10,9 @@ namespace XIVLauncher.Common
         static Paths()
         {
             RoamingPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "XIVLauncherCN");
-
-            if (!Directory.Exists(RoamingPath)) Directory.CreateDirectory(RoamingPath);
-
-            if (FirstRun)
-            {
-                FirstRun = false;
-#if WIN32
-                DeleteLink();
-#endif
-                CheckPath();
-            }
         }
 
-        private static void DeleteLink()
+        public static void DeleteLink()
         {
             DeleteSymbolicLink(RoamingPath);
 

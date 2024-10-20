@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -293,6 +293,10 @@ namespace XIVLauncher
             {
                 if (!EnvironmentSettings.IsHardwareRendered)
                     RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+
+                if (!Directory.Exists(Paths.RoamingPath)) Directory.CreateDirectory(Paths.RoamingPath);
+                Paths.DeleteLink();
+                Paths.CheckPath();
             }
             catch
             {
