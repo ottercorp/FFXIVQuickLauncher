@@ -637,6 +637,7 @@ namespace XIVLauncher.Windows
             try
             {
                 PreserveWindowPosition.SaveWindowPosition(this);
+                this.Model.OnWindowClosing(sender, e);
             }
             catch (Exception ex)
             {

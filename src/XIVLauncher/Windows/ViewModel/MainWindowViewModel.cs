@@ -1328,6 +1328,8 @@ namespace XIVLauncher.Windows.ViewModel
         {
             if (IsLoggingIn)
                 args.Cancel = true;
+            else
+                OnWindowClosed(sender, args);
         }
 
         private void PersistAccount(string username, string password)
