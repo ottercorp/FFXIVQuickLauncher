@@ -47,7 +47,7 @@ namespace XIVLauncher.Common
             {
                 var dest = Path.Combine(destPath, Path.GetFileName(file));
                 File.Copy(file, dest, true);
-                File.Delete(file);
+                //File.Delete(file);
             }
 
             foreach (var directory in Directory.GetDirectories(sourcePath))
@@ -61,7 +61,7 @@ namespace XIVLauncher.Common
                 var destDir = Path.Combine(destPath, Path.GetFileName(directory));
                 if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
                 Copy(directory, destDir);
-                Directory.Delete(directory, true);
+                //Directory.Delete(directory, true);
             }
         }
 
