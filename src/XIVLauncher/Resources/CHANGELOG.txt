@@ -1,3 +1,6 @@
 * 移动Roaming目录到AppData
 * 支持修复游戏客户端 (右键登录按钮-修复游戏文件)
 * 更新了一些显示文本
+* 修复了部分情况下XIVLauncher.exe残留问题
+
+* 已知问题:AppData路径存在中文时,dalamudUI.ini无法保存
