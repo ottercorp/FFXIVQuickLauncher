@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Addon;
@@ -48,6 +48,7 @@ namespace XIVLauncher.Settings
         PreserveWindowPosition.WindowPlacement? MainWindowPlacement { get; set; }
         int? SelectedServer { get; set; }
         bool FastLogin { get; set; }
+        bool EnableInjector { get; set; }
 
         #endregion
     }

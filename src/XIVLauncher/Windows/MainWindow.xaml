@@ -298,6 +298,17 @@
                                                 ToolTip="缓存登录信息,类PC叨鱼快速登录"
                                                 IsChecked="{Binding IsFastLogin}" />
                                             <CheckBox
+                                                Visibility="Visible"
+                                                DockPanel.Dock="Top"
+                                                Content="切换到自动注入模式"
+                                                HorizontalAlignment="Left"
+                                                Margin="0,5,0,0"
+                                                VerticalAlignment="Top"
+                                                x:Name="EnableInjectorCheckBox"
+                                                Click="EnableInjectorCheckBox_OnClick"
+                                                ToolTip="启用自动注入模式(仅建议WeGame用户使用)"
+                                                IsChecked="{Binding EnableInjector}" />
+                                            <CheckBox
                                                 Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
                                                 Content="{Binding AutoLoginLoc}"
@@ -337,6 +348,7 @@
                                                         VerticalAlignment="Bottom"
                                                         Width="160" Margin="0,0,0,0" DockPanel.Dock="Bottom">
                                                 <Button
+                                                    x:Name="LoginButton"
                                                     Content="{Binding LoginLoc}"
                                                     Command="{Binding Path=StartLoginCommand}"
                                                     Margin="0,0,0,0" Width="84"
@@ -365,6 +377,7 @@
 
                                                 </Button>
                                                 <materialDesign:PopupBox PopupMode="Click"
+                                                                         x:Name="LaunchOptions"
                                                                          PlacementMode="BottomAndAlignCentres"
                                                                          StaysOpen="False"
                                                                          HorizontalAlignment="Left"

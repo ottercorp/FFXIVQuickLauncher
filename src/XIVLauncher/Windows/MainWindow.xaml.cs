@@ -18,7 +18,7 @@ using XIVLauncher.Common;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Common.Game.Patch.Acquisition;
-using XIVLauncher.Common.Util;
+using XIVLauncher.Common.Windows;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
 using XIVLauncher.Xaml;
@@ -44,6 +44,8 @@ namespace XIVLauncher.Windows
             public bool Active { get; set; }
             public int Index { get; set; }
         }
+
+        private List<int> oldPidList = new();
 
         private ObservableCollection<BannerDotInfo> _bannerDotList;
 
@@ -215,6 +217,103 @@ namespace XIVLauncher.Windows
             }
         }
 
+        private void SetupInjector()
+        {
+            try
+            {
+                var startInfo = new DalamudStartInfo
+                {
+                    ConfigurationPath = DalamudSettings.GetConfigPath(new DirectoryInfo(Paths.RoamingPath)),
+                    LoggingPath = Paths.RoamingPath,
+                    PluginDirectory = Path.Combine(Paths.RoamingPath, "installedPlugins"),
+                    Language = ClientLanguage.ChineseSimplified,
+                    DelayInitializeMs = (int)App.Settings.DalamudInjectionDelayMs,
+                    GameVersion = Repository.Ffxiv.GetVer(App.Settings.GamePath),
+                    TroubleshootingPackData = Troubleshooting.GetTroubleshootingJson()
+                };
+
+                Task.Run(() =>
+                {
+                    var first = true;
+
+                    while (true)
+                    {
+                        Thread.Sleep(1000);
+
+                        if (!App.Settings.EnableInjector) continue;
+                        if (App.DalamudUpdater is null) continue;
+
+                        if (App.DalamudUpdater.State != DalamudUpdater.DownloadState.Done)
+                        {
+                            App.DalamudUpdater.ShowOverlay();
+                            continue;
+                        }
+
+                        App.DalamudUpdater.CloseOverlay();
+                        var workingDirectory = App.DalamudUpdater.Runner.Directory?.FullName;
+                        startInfo.WorkingDirectory = workingDirectory;
+                        startInfo.AssetDirectory = App.DalamudUpdater.AssetDirectory.FullName;
+
+                        var newPidList = GetGameProcess();
+
+                        var newHash = string.Join(", ", newPidList).GetHashCode();
+                        var oldHash = string.Join(", ", oldPidList).GetHashCode();
+
+                        if (oldHash != newHash)
+                        {
+                            if (newPidList.Except(oldPidList).Any())
+                            {
+                                foreach (var pid in newPidList.Except(oldPidList))
+                                {
+                                    if (Process.GetProcessById(pid).ProcessName != "ffxiv_dx11")
+                                    {
+                                        Log.Information("{pid} is not dx11", pid);
+                                        continue;
+                                    }
+
+                                    if (first)
+                                    {
+                                        first = false;
+                                        var result = CustomMessageBox.Show("检测到已经存在游戏进程,即将自动注入,是否要注入?", "自动注入", MessageBoxButton.YesNo);
+                                        if (result == MessageBoxResult.No) continue;
+                                    }
+
+                                    if (Process.GetProcessById(pid).MainModule?.FileName != Path.Combine(App.Settings.GamePath.FullName, "game", "ffxiv_dx11.exe"))
+                                    {
+                                        var result = CustomMessageBox.Show($"即将注入进程{pid},游戏路径与设置中的路径不符,是否注入?", "自动注入", MessageBoxButton.YesNo);
+                                        if (result == MessageBoxResult.No) continue;
+                                    }
+
+                                    WindowsDalamudRunner.Inject(new FileInfo(Path.Combine(workingDirectory!, "Dalamud.Injector.exe")),
+                                                                pid, new Dictionary<string, string>(), DalamudLoadMethod.DllInject, startInfo);
+                                }
+                            }
+
+                            oldPidList = newPidList;
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Setup Injector Error");
+                throw;
+            }
+        }
+
+        private static List<int> GetGameProcess()
+        {
+            return Process.GetProcesses().Where(process =>
+            {
+                if (process.ProcessName == "ffxiv_dx11")
+                {
+                    return !process.MainWindowTitle.Contains("FINAL FANTASY XIV"); //非国际服
+                }
+
+                return false;
+            }).ToList().ConvertAll(process => process.Id).ToList();
+        }
+
         private const int CURRENT_VERSION_LEVEL = 2;
 
         private void SetDefaults()
@@ -308,6 +407,7 @@ namespace XIVLauncher.Windows
 
             Model.IsFastLogin = App.Settings.FastLogin;
             LoginPassword.IsEnabled = LoginPassword.IsVisible;
+            Model.EnableInjector = App.Settings.EnableInjector;
 
             _accountManager = new AccountManager(App.Settings);
 
@@ -366,6 +466,9 @@ namespace XIVLauncher.Windows
                 await SetupHeadlines();
                 Troubleshooting.LogTroubleshooting();
             });
+
+            this.Dispatcher.InvokeAsync(this.SetupInjector);
+            EnableInjectorCheckBox_OnClick(null, null);
 
             Log.Information("MainWindow initialized.");
 
@@ -702,6 +805,18 @@ namespace XIVLauncher.Windows
                 LoginPassword.Visibility = Visibility.Collapsed;
                 LoginPassword.IsEnabled = false;
             }
+        }
+
+        private void EnableInjectorCheckBox_OnClick(object sender, RoutedEventArgs e)
+        {
+            this.ServerSelection.IsEnabled = !this.Model.EnableInjector;
+            this.LoginUsername.IsEnabled = !this.Model.EnableInjector;
+            this.LoginPassword.IsEnabled = !this.Model.EnableInjector;
+            this.FastLoginCheckBox.IsEnabled = !this.Model.EnableInjector;
+            this.LoginButton.IsEnabled = !this.Model.EnableInjector;
+            this.LaunchOptions.IsEnabled = !this.Model.EnableInjector;
+            if (!this.Model.EnableInjector && App.DalamudUpdater is not null) App.DalamudUpdater.CloseOverlay();
+            App.Settings.EnableInjector = this.Model.EnableInjector;
         }
     }
 }

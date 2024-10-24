@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -234,6 +234,57 @@ public class WindowsDalamudRunner : IDalamudRunner
             throw new DalamudRunnerException("Error trying to start Dalamud.", ex);
         }
     }
+
+    public static void Inject(FileInfo runner, int gamePid, IDictionary<string, string> environment, DalamudLoadMethod loadMethod, DalamudStartInfo startInfo, bool safeMode = false)
+    {
+        // Process process = Process.GetProcessById(gamePid);
+        // var gamePath = Path.Combine(process.MainModule.FileName, "..", "..");
+        var launchArguments = new List<string>
+        {
+            "inject -v",
+            $"{gamePid}",
+            //$"--all --warn",
+            //$"--game=\"{gamePath}\"",
+            DalamudInjectorArgs.WorkingDirectory(startInfo.WorkingDirectory),
+            DalamudInjectorArgs.ConfigurationPath(startInfo.ConfigurationPath),
+            DalamudInjectorArgs.LoggingPath(startInfo.LoggingPath),
+            DalamudInjectorArgs.PluginDirectory(startInfo.PluginDirectory),
+            DalamudInjectorArgs.AssetDirectory(startInfo.AssetDirectory),
+            DalamudInjectorArgs.ClientLanguage((int)startInfo.Language),
+            DalamudInjectorArgs.DelayInitialize(startInfo.DelayInitializeMs),
+            DalamudInjectorArgs.TsPackB64(Convert.ToBase64String(Encoding.UTF8.GetBytes(startInfo.TroubleshootingPackData))),
+
+        };
+
+        if (safeMode) launchArguments.Add("--no-plugin");
+
+        var psi = new ProcessStartInfo(runner.FullName)
+        {
+            Arguments = string.Join(" ", launchArguments),
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        foreach (var keyValuePair in environment)
+        {
+            if (psi.EnvironmentVariables.ContainsKey(keyValuePair.Key))
+                psi.EnvironmentVariables[keyValuePair.Key] = keyValuePair.Value;
+            else
+                psi.EnvironmentVariables.Add(keyValuePair.Key, keyValuePair.Value);
+        }
+
+        // psi.EnvironmentVariables.Add("DALAMUD_RUNTIME", startInfo.RuntimeDirectory);
+
+        var dalamudProcess = Process.Start(psi);
+        while (!dalamudProcess.StandardOutput.EndOfStream)
+        {
+            string line = dalamudProcess.StandardOutput.ReadLine();
+            Log.Information(line);
+        }
+    }
+
+
 
     // ReSharper disable SuggestVarOrType_SimpleTypes
 

@@ -1564,6 +1564,18 @@ namespace XIVLauncher.Windows.ViewModel
 
         #region Bindings
 
+        private bool _enableInjector;
+
+        public bool EnableInjector
+        {
+            get => this._enableInjector;
+            set
+            {
+                this._enableInjector = value;
+                OnPropertyChanged(nameof(EnableInjector));
+            }
+        }
+
         private bool _isAutoLogin;
         public bool IsAutoLogin
         {
