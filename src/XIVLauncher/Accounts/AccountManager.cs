@@ -58,10 +58,26 @@ namespace XIVLauncher.Accounts
 
             Log.Verbose($"existingAccount: {existingAccount?.Id}");
 
-            if (existingAccount != null && existingAccount.Password != account.Password)
+            if (existingAccount != null)
             {
-                Log.Verbose("Updating password...");
-                existingAccount.Password = account.Password;
+                if (existingAccount.Password != account.Password)
+                {
+                    Log.Verbose("Updating password...");
+                    existingAccount.Password = account.Password;
+                }
+
+                if (existingAccount.AutoLoginSessionKey != account.AutoLoginSessionKey)
+                {
+                    Log.Verbose("Updating auto-login session key...");
+                    existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey;
+                }
+
+                if (existingAccount.Ticket != account.Ticket)
+                {
+                    Log.Verbose("Updating ticket...");
+                    existingAccount.Ticket = account.Ticket;
+                }
+
                 return;
             }
 

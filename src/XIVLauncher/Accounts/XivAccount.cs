@@ -92,6 +92,7 @@ namespace XIVLauncher.Accounts
         public bool SavePassword { get; set; }
         public bool UseSteamServiceAccount { get; set; }
         public bool UseOtp { get; set; }
+
         [JsonIgnore]
         public string AutoLoginSessionKey {
             get
@@ -120,7 +121,35 @@ namespace XIVLauncher.Accounts
         }
 
         [JsonIgnore]
-        public bool HasKey => !AutoLoginSessionKey.IsNullOrEmpty();
+        public string Ticket
+        {
+            get
+            {
+                var credentials = CredentialManager.GetCredentials($"{CREDS_PREFIX_NEW} Ticket-{UserName.ToLower()}");
+
+                return credentials != null ? credentials.Password : string.Empty;
+            }
+            set
+            {
+                try
+                {
+                    CredentialManager.RemoveCredentials($"{CREDS_PREFIX_NEW} Ticket-{UserName.ToLower()}");
+                }
+                catch (Win32Exception)
+                {
+                    // ignored
+                }
+
+                CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW} Ticket-{UserName.ToLower()}", new NetworkCredential
+                {
+                    UserName = UserName,
+                    Password = value
+                });
+            }
+        }
+
+        [JsonIgnore]
+        public bool HasKey => !AutoLoginSessionKey.IsNullOrEmpty() || !Ticket.IsNullOrEmpty();
 
         public string ChosenCharacterName;
         public string ChosenCharacterWorld;

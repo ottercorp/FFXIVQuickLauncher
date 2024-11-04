@@ -48,7 +48,6 @@ namespace XIVLauncher.Settings
         PreserveWindowPosition.WindowPlacement? MainWindowPlacement { get; set; }
         int? SelectedServer { get; set; }
         bool FastLogin { get; set; }
-        bool EnableInjector { get; set; }
 
         #endregion
     }
