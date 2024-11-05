@@ -1,11 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,9 +9,6 @@ using CheapLoc;
 using Newtonsoft.Json;
 using Serilog;
 using Velopack;
-using Velopack.Sources;
-using XIVLauncher.Common;
-using XIVLauncher.Common.Util;
 using XIVLauncher.Windows;
 
 #nullable enable
@@ -220,9 +213,6 @@ namespace XIVLauncher
             try
             {
                 var mgr = new UpdateManager(UPDATE_URL);
-#if DEBUG
-                mgr = new UpdateManager(new GithubSource(repoUrl: "https://github.com/ottercorp/FFXIVQuickLauncher", null, false));
-#endif
 
                 // check for new version
                 var newRelease = await mgr.CheckForUpdatesAsync();
