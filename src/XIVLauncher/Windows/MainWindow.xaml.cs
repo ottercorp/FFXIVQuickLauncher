@@ -235,7 +235,7 @@ namespace XIVLauncher.Windows
 
                 var account = new XivAccount(data[..8])
                 {
-                    Ticket = data[-36..],
+                    SessionId = data[-36..],
                 };
 
                 this._accountManager.AddAccount(account);

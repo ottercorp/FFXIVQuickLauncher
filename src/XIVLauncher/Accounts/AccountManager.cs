@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using Castle.Core.Internal;
 using Newtonsoft.Json;
 using Serilog;
 using XIVLauncher.Common;
@@ -66,16 +67,17 @@ namespace XIVLauncher.Accounts
                     existingAccount.Password = account.Password;
                 }
 
-                if (existingAccount.AutoLoginSessionKey != account.AutoLoginSessionKey)
+                if (existingAccount.AutoLoginSessionKey != account.AutoLoginSessionKey && !account.AutoLoginSessionKey.IsNullOrEmpty())
                 {
                     Log.Verbose("Updating auto-login session key...");
                     existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey;
+                    existingAccount.SessionId = string.Empty;
                 }
 
-                if (existingAccount.Ticket != account.Ticket)
+                if (existingAccount.SessionId != account.SessionId && !account.SessionId.IsNullOrEmpty())
                 {
                     Log.Verbose("Updating ticket...");
-                    existingAccount.Ticket = account.Ticket;
+                    existingAccount.SessionId = account.SessionId;
                 }
 
                 return;

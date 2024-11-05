@@ -37,7 +37,7 @@ namespace XIVLauncher.Common.Game
         private static string autoLoginSessionKey = null;
 
         public async Task<LoginResult> LoginSdo(string _userName, string _password, LogEventHandler _logEvent = null, bool _forceQr = false, bool _autoLogin = false,
-                                                string _autoLoginSessionKey = null)
+                                                string _autoLoginSessionKey = null, string _sessionId = null)
         {
             PatchListEntry[] pendingPatches = null;
 
@@ -52,6 +52,7 @@ namespace XIVLauncher.Common.Game
                 forceQR = _forceQr;
                 autoLogin = _autoLogin;
                 autoLoginSessionKey = _autoLoginSessionKey;
+                sessionId = _sessionId;
             }
 
             oauthLoginResult = await OauthLoginSdo();
@@ -91,6 +92,19 @@ namespace XIVLauncher.Common.Game
 
         private async Task<OauthLoginResult> OauthLoginSdo()
         {
+            //SessionId登录 5003警告
+            if (!string.IsNullOrEmpty(sessionId))
+            {
+                return new OauthLoginResult
+                {
+                    SessionId = sessionId,
+                    InputUserId = userName,
+                    Password = string.Empty,
+                    SndaId = userName,
+                    MaxExpansion = Constants.MaxExpansion
+                };
+            }
+
             await GetGuid();
 
             //尝试快速登录
@@ -253,25 +267,6 @@ namespace XIVLauncher.Common.Game
         #endregion
 
         #region 快速登陆
-
-        //private async Task<string> ExtendLoginState(string tgtcache)
-        //{
-        //    //延长登录时效
-        //    var result = await GetJsonAsSdoClient("extendLoginState.json", new List<string>() { $"tgt={tgtcache}" }, SdoClient.Daoyu);
-
-        //    if (result.ReturnCode != 0 || result.ErrorType != 0)
-        //    {
-        //        throw new OauthLoginException(result.Data.FailReason);
-        //    }
-
-        //    var tgt = result.Data.Tgt;
-        //    if (string.IsNullOrEmpty(tgt))
-        //    {
-        //        throw new OauthLoginException("快速登陆失败");
-        //    }
-        //    else
-        //        return tgt;
-        //}
 
         private async Task FastLogin()
         {
