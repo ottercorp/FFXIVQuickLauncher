@@ -342,8 +342,6 @@ namespace XIVLauncher.Windows.ViewModel
                     AccountManager.CurrentAccount.Password = loginResult.OauthLogin.Password;
                     AccountManager.CurrentAccount.AreaID = Area.Areaid;
                     AccountManager.CurrentAccount.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
-                    if (this.AccountManager.CurrentAccount.SessionId is not null)
-                        AccountManager.CurrentAccount.SessionId = loginResult.OauthLogin.SessionId;
 
                     AccountManager.Save();
                 }
@@ -502,7 +500,7 @@ namespace XIVLauncher.Windows.ViewModel
                         QRDialog.CloseQRWindow(_window);
                     }
                 }, action == AfterLoginAction.ForceQR,
-                    IsFastLogin, AccountManager.CurrentAccount.AutoLoginSessionKey, this.AccountManager.CurrentAccount.SessionId).ConfigureAwait(false);
+                    IsFastLogin, AccountManager.CurrentAccount.AutoLoginSessionKey).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

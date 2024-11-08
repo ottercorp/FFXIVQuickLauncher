@@ -121,11 +121,11 @@ namespace XIVLauncher.Accounts
         }
 
         [JsonIgnore]
-        public string SessionId
+        public string Ticket
         {
             get
             {
-                var credentials = CredentialManager.GetCredentials($"{CREDS_PREFIX_NEW} SessionId-{UserName.ToLower()}");
+                var credentials = CredentialManager.GetCredentials($"{CREDS_PREFIX_NEW} Ticket-{UserName.ToLower()}");
 
                 return credentials != null ? credentials.Password : string.Empty;
             }
@@ -133,14 +133,14 @@ namespace XIVLauncher.Accounts
             {
                 try
                 {
-                    CredentialManager.RemoveCredentials($"{CREDS_PREFIX_NEW} SessionId-{UserName.ToLower()}");
+                    CredentialManager.RemoveCredentials($"{CREDS_PREFIX_NEW} Ticket-{UserName.ToLower()}");
                 }
                 catch (Win32Exception)
                 {
                     // ignored
                 }
 
-                CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW} SessionId-{UserName.ToLower()}", new NetworkCredential
+                CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW} Ticket-{UserName.ToLower()}", new NetworkCredential
                 {
                     UserName = UserName,
                     Password = value
@@ -149,7 +149,7 @@ namespace XIVLauncher.Accounts
         }
 
         [JsonIgnore]
-        public bool HasKey => !AutoLoginSessionKey.IsNullOrEmpty() || !this.SessionId.IsNullOrEmpty();
+        public bool HasKey => !AutoLoginSessionKey.IsNullOrEmpty() || !Ticket.IsNullOrEmpty();
 
         public string ChosenCharacterName;
         public string ChosenCharacterWorld;
