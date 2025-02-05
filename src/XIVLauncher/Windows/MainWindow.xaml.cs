@@ -348,7 +348,7 @@ namespace XIVLauncher.Windows
 
             App.Settings.IsFt = false;
             App.Settings.UniqueIdCacheEnabled = false;
-            App.Settings.EncryptArguments = false;
+            //App.Settings.EncryptArguments = false;
             App.Settings.EnableBeta ??= false;
 
             App.Settings.AutoStartSteam ??= false;
