@@ -1,0 +1,3 @@
+[submodule "src/FfxivArgLauncher"]
+	path = src/FfxivArgLauncher
+	url = https://github.com/ottercorp/FfxivArgLauncher

@@ -683,7 +683,7 @@ namespace XIVLauncher.Common.Game
         {
             Log.Information(
                 $"XivGame::LaunchGame(args:{additionalArguments})");
-            EnsureLoginEntry(gamePath);
+            //EnsureLoginEntry(gamePath);
             var exePath = Path.Combine(gamePath.FullName, "game", "ffxiv_dx11.exe");
 
             var environment = new Dictionary<string, string>();
