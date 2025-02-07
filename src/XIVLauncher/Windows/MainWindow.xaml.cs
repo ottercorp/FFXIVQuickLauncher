@@ -20,6 +20,7 @@ using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Common.Game.Patch.Acquisition;
 using XIVLauncher.Common.Windows;
+using XIVLauncher.Game;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
 using XIVLauncher.Xaml;
@@ -218,92 +219,33 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void SetupInjector()
+        private void RunArgReader()
         {
             try
             {
-                var startInfo = new DalamudStartInfo
-                {
-                    ConfigurationPath = DalamudSettings.GetConfigPath(new DirectoryInfo(Paths.RoamingPath)),
-                    LoggingPath = Paths.RoamingPath,
-                    PluginDirectory = Path.Combine(Paths.RoamingPath, "installedPlugins"),
-                    Language = ClientLanguage.ChineseSimplified,
-                    DelayInitializeMs = (int)App.Settings.DalamudInjectionDelayMs,
-                    GameVersion = Repository.Ffxiv.GetVer(App.Settings.GamePath)
-                };
-
                 Task.Run(() =>
                 {
-                    var first = true;
-
-                    while (true)
+                    var newPidList = GetGameProcess();
+                    using (var argReader = new RemoteArgReader())
                     {
-                        Thread.Sleep(1000);
-
-                        if (!App.Settings.EnableInjector) continue;
-                        if (App.DalamudUpdater?.Runner is null) continue;
-
-                        if (App.DalamudUpdater.State is not DalamudUpdater.DownloadState.Done)
+                        argReader.Start();
+                        argReader.WaitOnHello();
+                        foreach (var pid in newPidList)
                         {
-                            App.DalamudUpdater.ShowOverlay();
-                            continue;
+                            argReader.OpenProcess(pid);
+                            argReader.ReadArgs();
                         }
-
-                        App.DalamudUpdater.CloseOverlay();
-
-                        var newPidList = GetGameProcess();
-                        var newHash = string.Join(", ", newPidList).GetHashCode();
-                        var oldHash = string.Join(", ", oldPidList).GetHashCode();
-
-                        try
+                        argReader.Stop();
+                        foreach (var item in argReader.Data)
                         {
-                            if (oldHash != newHash)
-                            {
-                                if (newPidList.Except(oldPidList).Any())
-                                {
-                                    foreach (var pid in newPidList.Except(oldPidList))
-                                    {
-                                        Log.Information($"Detected new game pid: {pid}");
-
-                                        if (first)
-                                        {
-                                            var result = CustomMessageBox.Show($"检测到已经存在游戏进程{pid},即将自动注入,是否要注入?", "自动注入", MessageBoxButton.YesNo);
-                                            if (result == MessageBoxResult.No) continue;
-                                        }
-
-                                        if (Process.GetProcessById(pid).MainModule?.FileName != Path.Combine(App.Settings.GamePath.FullName, "game", "ffxiv_dx11.exe"))
-                                        {
-                                            var result = CustomMessageBox.Show($"即将注入进程{pid},游戏路径与设置中的路径不符,是否注入?", "自动注入", MessageBoxButton.YesNo);
-                                            if (result == MessageBoxResult.No) continue;
-                                        }
-
-                                        Log.Information("Start to inject game, pid = {pid}", pid);
-                                        var workingDirectory = App.DalamudUpdater.Runner.Directory?.FullName;
-                                        startInfo.WorkingDirectory = workingDirectory;
-                                        startInfo.AssetDirectory = App.DalamudUpdater.AssetDirectory.FullName;
-                                        startInfo.TroubleshootingPackData = Troubleshooting.GetTroubleshootingJson();
-                                        WindowsDalamudRunner.Inject(new FileInfo(Path.Combine(workingDirectory!, "Dalamud.Injector.exe")),
-                                                                    pid, new Dictionary<string, string>(), DalamudLoadMethod.DllInject, startInfo);
-                                    }
-                                }
-
-                                oldPidList = newPidList;
-                            }
+                            //_accountManager.AddAccount();
                         }
-                        catch (Exception e)
-                        {
-                            Log.Error(e, "Inject Error:");
-                            CustomMessageBox.Show(e is Win32Exception ? $"注入失败，权限不足，请使用管理员运行XIVLauncherCN.\n {e}" : $"注入失败.\n {e}", "注入失败");
-                            Environment.Exit(0);
-                        }
-
-                        first = false;
                     }
                 });
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Setup Injector Error");
+                Log.Error(ex, "Read Arg Error");
                 throw;
             }
         }
@@ -415,7 +357,6 @@ namespace XIVLauncher.Windows
 
             Model.IsFastLogin = App.Settings.FastLogin;
             LoginPassword.IsEnabled = LoginPassword.IsVisible;
-            Model.EnableInjector = App.Settings.EnableInjector;
 
             _accountManager = new AccountManager(App.Settings);
             if (this._accountManager.CurrentAccount != null && !_accountManager.CurrentAccount.Password.IsNullOrEmpty()) ShowPassword_OnClick(null, null);
@@ -476,7 +417,6 @@ namespace XIVLauncher.Windows
                 Troubleshooting.LogTroubleshooting();
             });
 
-            this.Dispatcher.InvokeAsync(this.SetupInjector);
 
             Log.Information("MainWindow initialized.");
 
@@ -639,7 +579,7 @@ namespace XIVLauncher.Windows
         private void QuitMaintenanceQueueButton_OnClick(object sender, RoutedEventArgs e)
         {
             //_maintenanceQueueTimer.Stop();
-            Model.EnableInjector = false;
+            //Model.EnableInjector = false;
         }
 
         private void Card_KeyDown(object sender, KeyEventArgs e)
@@ -816,12 +756,11 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void EnableInjector_OnClick(object sender, RoutedEventArgs e)
+        private void ReadWeGameLoginData_OnClick(object sender, RoutedEventArgs e)
         {
-            Model.EnableInjector = true;
-            if (App.DalamudUpdater is not null) App.DalamudUpdater.ShowOverlay();
             Model.LoadingDialogCancelButtonVisibility = Visibility.Visible;
-            Model.LoadingDialogMessage = "正在使用自动注入模式";
+            Model.LoadingDialogMessage = "正在使用读取登录信息";
+            this.Dispatcher.InvokeAsync(this.RunArgReader);
         }
     }
 }

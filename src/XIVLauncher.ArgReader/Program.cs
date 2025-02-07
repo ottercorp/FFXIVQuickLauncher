@@ -1,20 +1,18 @@
 namespace XIVLauncher.ArgReader;
+using FfxivArgLauncher;
 using Serilog;
 using Serilog.Events;
-using System.Runtime.CompilerServices;
-using XIVLauncher.Common;
-using XIVLauncher.Common.Patching;
-using XIVLauncher.Common.Patching.Rpc.Implementations;
-using FfxivArgLauncher;
-using System.Threading.Channels;
-using XIVLauncher.Common.PatcherIpc;
 using System.Diagnostics;
+using XIVLauncher.Common;
+using XIVLauncher.Common.PatcherIpc;
+using XIVLauncher.Common.Patching.Rpc.Implementations;
 
 internal class Program
 {
     private static SharedMemoryRpc rpc;
     private static ArgReader argReader;
 
+    private static Thread thread;
     static void Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
@@ -30,6 +28,9 @@ internal class Program
         }
 
         InitRpc(args[0]);
+        thread = new Thread(Loop);
+        thread.Start();
+        Log.Information("Exit");
     }
 
     private static void InitRpc(string channelName) {
@@ -47,21 +48,41 @@ internal class Program
         Log.Information("[ArgReader] sent hello");
     }
 
+    private static CancellationTokenSource readerCancelToken = new();
+    private static void Loop()
+    {
+        try
+        {
+            while (!readerCancelToken.IsCancellationRequested)
+            {
+                Thread.Sleep(1000);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[ArgReader] loop encountered an error");
+        }
+    }
+
     private static void RemoteCallHandler(PatcherIpcEnvelope envelope)
     {
         switch (envelope.OpCode)
         {
             case PatcherIpcOpCode.Bye:
-
+                if ((bool)envelope.Data is true) { 
+                    argReader.KillProcess();
+                }
                 Log.Information("[ArgReader] Bye");
+                readerCancelToken.Cancel();
                 break;
 
             case PatcherIpcOpCode.OpenProcess:
                 try
                 {
                     Log.Information($"[ArgReader] Open process: {envelope.Data}");
-                    var processId = int.Parse((string)envelope.Data);
-                    var process = Process.GetProcessById(processId);
+                    var processId = (long)envelope.Data;
+                    var process = Process.GetProcessById((int)processId);
+
                     argReader = new ArgReader(process);
                 }
                 catch (Exception ex)
@@ -79,12 +100,12 @@ internal class Program
                 try
                 {
                     Log.Information($"[ArgReader] Read Args");
-                    var args = argReader.GetArgs();
+                    var data = argReader.GetLoginData();
 
                     rpc.SendMessage(new PatcherIpcEnvelope
                     {
                         OpCode = PatcherIpcOpCode.ArgReadOk,
-                        Data = args
+                        Data = data
                     });
                 }
                 catch (Exception ex)
