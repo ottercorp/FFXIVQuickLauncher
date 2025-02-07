@@ -238,7 +238,12 @@ namespace XIVLauncher.Windows
                         argReader.Stop();
                         foreach (var item in argReader.Data)
                         {
-                            //_accountManager.AddAccount();
+                            var areaId = item.Args.Where(x => x.StartsWith("AreaID=")).Select(x => int.Parse(x.Split('=')[1])).First();
+                            _accountManager.AddAccount(new XivAccount($"WG:{item.SndaID}@{areaId}")
+                            {
+                                AreaID = areaId.ToString(),
+                                Password = item.SessionId
+                            });
                         }
                     }
                 });
