@@ -53,10 +53,15 @@ jobs:
         run: |
           $channel = "win"
           $refver = $env:GITHUB_REF -replace '.*/'
-          $desc = $(git describe --tags) -replace '-(.)-.{9}$','.beta.$1'
+          $desc = $(git describe --tags) -replace '-(\d+)-.{9}$','.beta.$1'
           if ($refver -ne $desc) {
             $channel = "beta"
-            $refver = $desc
+            $timestamp = git log -1 --format=%at
+            # 获取 Git 提交时间（Unix 时间戳）
+            $timestamp = git log -1 --format=%at
+            $datePart = Get-Date -Date ([datetime]::UnixEpoch).AddSeconds($timestamp) -Format "yyyyMMddHHmm"
+            $refver = $(git describe --tags) -replace '-(\d+)-.{9}$','.'
+            $refver = $refver + $datePart
           }
           echo "::set-output name=version::$refver"
 
@@ -76,7 +81,7 @@ jobs:
           $content = $json | ConvertTo-Json
           set-content -Path .\Releases\assets.$channel.json -Value $content
 
-          vpk upload s3 --channel $channel --bucket $env:S3Bucket --endpoint $env:S3Endpoint --keyId $env:S3AccessKeyID --secret $env:S3AccessKeySecret --keepMaxReleases 10
+          vpk upload s3 --channel $channel --bucket $env:S3Bucket --endpoint $env:S3Endpoint --keyId $env:S3AccessKeyID --secret $env:S3AccessKeySecret --keepMaxReleases 5
 
           Remove-Item -Force .\Releases\*.zip
           Remove-Item -Force .\Releases\*.exe
