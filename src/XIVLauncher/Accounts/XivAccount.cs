@@ -1,4 +1,4 @@
-﻿using AdysTech.CredentialManager;
+using AdysTech.CredentialManager;
 using Newtonsoft.Json;
 using Serilog;
 using System;

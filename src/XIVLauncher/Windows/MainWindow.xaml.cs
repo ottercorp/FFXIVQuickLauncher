@@ -823,5 +823,22 @@ namespace XIVLauncher.Windows
             Model.LoadingDialogCancelButtonVisibility = Visibility.Visible;
             Model.LoadingDialogMessage = "正在使用自动注入模式";
         }
+
+        private void BackToLoginPageButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Model.SwitchCard(MainWindowViewModel.LoginCard.MainPage);
+            });
+
+        }
+
+        private void ScanQrCodeLogin_OnClick(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Model.TryLogin(null, null, true, Model.IsSteam, false, MainWindowViewModel.AfterLoginAction.Start);
+            });
+        }
     }
 }

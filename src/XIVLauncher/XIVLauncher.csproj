@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Product>XIVLauncherCN</Product>
     <AssemblyTitle>XIVLauncherCN</AssemblyTitle>
@@ -52,6 +52,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Windows\1.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Remove="Resources\aria2c-xl.exe" />
     <Resource Remove="Resources\CHANGELOG.txt" />
     <Resource Remove="Resources\COPYING.aria2" />
@@ -99,6 +103,10 @@
     <ProjectReference Include="..\XIVLauncher.Common.Windows\XIVLauncher.Common.Windows.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common\XIVLauncher.Common.csproj" />
     <ProjectReference Include="..\XIVLauncher.PatchInstaller\XIVLauncher.PatchInstaller.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Windows\1.png" />
   </ItemGroup>
 
   <ItemGroup>
