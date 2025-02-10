@@ -1,4 +1,4 @@
-﻿namespace XIVLauncher.Common.PatcherIpc
+namespace XIVLauncher.Common.PatcherIpc
 {
     public enum PatcherIpcOpCode
     {
@@ -8,6 +8,12 @@
         InstallRunning,
         InstallOk,
         InstallFailed,
-        Finish
+        Finish,
+
+//for ArgReader
+        OpenProcess,
+        ReadArgs,
+        ArgReadFail,
+        ArgReadOk,
     }
 }

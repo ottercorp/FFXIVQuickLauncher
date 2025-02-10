@@ -1597,21 +1597,6 @@ namespace XIVLauncher.Windows.ViewModel
 
         #region Bindings
 
-        private bool _enableInjector;
-
-        public bool EnableInjector
-        {
-            get => this._enableInjector;
-            set
-            {
-                this._enableInjector = value;
-                App.Settings.EnableInjector = value;
-                IsLoadingDialogOpen = value;
-                if (value) LoadingDialogMessage = "正在使用自动注入模式";
-                OnPropertyChanged(nameof(EnableInjector));
-            }
-        }
-
         private bool _isAutoLogin;
         public bool IsAutoLogin
         {

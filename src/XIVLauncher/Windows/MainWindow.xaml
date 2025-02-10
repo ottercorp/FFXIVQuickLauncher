@@ -153,9 +153,9 @@
                                     x:Name="QueueButton"
                                     Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
                                     Focusable="False"
-                                    ToolTip="切换到自动注入模式(仅建议WeGame用户使用)"
+                                    ToolTip="读取WeGame端FFXIV登录信息"
                                     Margin="0" Height="77" Width="77"
-                                    Click="EnableInjector_OnClick" Cursor="Hand">
+                                    Click="ReadWeGameLoginData_OnClick" Cursor="Hand">
                                     <StackPanel Orientation="Vertical"
                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                                         <materialDesign:PackIcon Kind="Injection"

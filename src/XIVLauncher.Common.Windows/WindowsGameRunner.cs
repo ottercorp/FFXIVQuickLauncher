@@ -1,4 +1,5 @@
-﻿using System;
+using FfxivArgLauncher;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -41,7 +42,10 @@ public class WindowsGameRunner : IGameRunner
         }
         else
         {
-            return NativeAclFix.LaunchGame(workingDirectory, path, arguments, environment, dpiAwareness, process => { });
+            return NativeAclFix.LaunchGame(workingDirectory, path, arguments, environment, dpiAwareness, process => { 
+                var argFix = new ArgFixer(process);
+                argFix.Fix();
+            });
         }
     }
 }
