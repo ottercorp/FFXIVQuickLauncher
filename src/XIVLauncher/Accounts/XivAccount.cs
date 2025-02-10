@@ -7,163 +7,166 @@ using System.Net;
 using System.Threading.Tasks;
 using Castle.Core.Internal;
 using Newtonsoft.Json.Linq;
-
+using SQLite;
+using System.Security.Cryptography;
+using System.IO;
+using System.Linq;
+using System.Diagnostics;
+using System.Security.Principal;
 namespace XIVLauncher.Accounts
 {
-    public class XivAccount
+    public enum XivAccountType
     {
-        private const string CREDS_PREFIX_OLD = "FINAL FANTASY XIV CN";
-        private const string CREDS_PREFIX_NEW = "XIVLAUNCHERCN";
+        Sdo,
+        WeGame,
+        WeGameSid
+    }
 
-        [JsonIgnore]
-        public string Id => $"{UserName}-{UseOtp}-{UseSteamServiceAccount}";
+    public class XivAccount : IEquatable<XivAccount>
+    {
+        //public string Id => $"{UserName}-{UseOtp}-{UseSteamServiceAccount}";
 
-        public override string ToString() => Id;
+        //public override string ToString() => Id;
 
-        public string UserName { get; private set; }
+        /*
+         * 目前有如下几种登录方式:
+         * 盛趣账密     LoginAccount Password
+         * 叨鱼扫码     LoginAccount AutoLoginSessionKey
+         * 叨鱼滑动     LoginAccount AutoLoginSessionKey
+         * WG手动抓包   ThirdLoginAccount  Token
+         * WG抓SID     SndaId&AreaId SessionID
+         * 
+         * SndaId XivAccountType:WeGame ThirdLoginAccount (AutoLoginSessionKey)
+         * SndaId XivAccountType:WeGameSid AreaName (SessionID)
+         * SndaId XivAccountType:Sdo LoginAccount (AutoLoginSessionKey Password)
+         */
 
-        public string AreaID { get; set; } = "1";
+        [Unique]
+        [AutoIncrement]
+        [PrimaryKey]
+        public int index { get; set; }
 
-        [JsonIgnore]
-        public string Password
+        public string Id { get; set; }
+
+        public static XivAccount CreateAccount(XivAccountType accountType, string sndaId, string account = null, string areaName = null, string sessionId = null)
+        {
+            var newAccount = new XivAccount();
+            Debug.Assert(sndaId != null);
+            newAccount.AccountType = accountType;
+            newAccount.SndaId = sndaId;
+            switch (accountType)
+            {
+                case XivAccountType.WeGameSid:
+                    Debug.Assert(areaName != null);
+                    Debug.Assert(account == null);
+                    newAccount.SndaId = sndaId;
+                    newAccount.AreaName = areaName;
+                    newAccount.TestSID = sessionId;
+                    break;
+                case XivAccountType.Sdo:
+                case XivAccountType.WeGame:
+                    Debug.Assert(account != null);
+                    newAccount.LoginAccount = account;
+                    break;
+            }
+            newAccount.GenerateId();
+            return newAccount;
+        }
+
+        public void GenerateId()
+        {
+            switch (this.AccountType)
+            {
+                case XivAccountType.WeGameSid:
+                    Debug.Assert(this.AreaName != null);
+                    Debug.Assert(this.LoginAccount == null);
+                    this.Id = $"{this.SndaId}@{this.AreaName}|{this.AccountType}";
+                    break;
+                case XivAccountType.Sdo:
+                case XivAccountType.WeGame:
+                    Debug.Assert(this.LoginAccount != null);
+                    this.Id = $"{this.LoginAccount}|{this.AccountType}";
+                    break;
+            }
+        }
+
+        public string SndaId { get; set; }
+        // for Account Manager
+        [Ignore]
+        public string DisplayName
         {
             get
             {
-                var credentials = CredentialManager.GetCredentials($"{CREDS_PREFIX_OLD}-{UserName.ToLower()}");
+                if (UserDefinedName is not null)
+                    return UserDefinedName;
+                return this.UniqueName;
+            }
+            private set { }
+        }
 
-                if (credentials != null)
-                {
-                    var saved = CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW}-{UserName.ToLower()}", new NetworkCredential
-                    {
-                        UserName = credentials.UserName,
-                        Password = credentials.Password,
-                    });
+        [Ignore]
+        public string UniqueName
+        {
+            get
+            {
+                if (AccountType == XivAccountType.Sdo || AccountType == XivAccountType.WeGame)
+                    return LoginAccount;
+                if (AccountType == XivAccountType.WeGameSid)
+                    return $"{SndaId}@{AreaName}";
+                return SndaId.ToString();
+            }
+            private set { }
+        }
 
-                    if (saved)
-                    {
-                        try
-                        {
-                            CredentialManager.RemoveCredentials($"{CREDS_PREFIX_OLD}-{UserName.ToLower()}");
-                        }
-                        catch (Win32Exception)
-                        {
-                            // ignored
-                        }
-                    }
-                }
+        // for Input Box
+        [Ignore]
+        public string UserName
+        {
+            get
+            {
+                if (AccountType == XivAccountType.Sdo || AccountType == XivAccountType.WeGame)
+                    return LoginAccount;
                 else
-                {
-                    credentials = CredentialManager.GetCredentials($"{CREDS_PREFIX_NEW}-{UserName.ToLower()}");
-                }
-
-                return credentials != null ? credentials.Password : string.Empty;
+                    return SndaId.ToString();
             }
-            set
-            {
-                try
-                {
-                    CredentialManager.RemoveCredentials($"{CREDS_PREFIX_OLD}-{UserName.ToLower()}");
-                }
-                catch (Win32Exception)
-                {
-                    // ignored
-                }
-
-                try
-                {
-                    CredentialManager.RemoveCredentials($"{CREDS_PREFIX_NEW}-{UserName.ToLower()}");
-                }
-                catch (Win32Exception)
-                {
-                    // ignored
-                }
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW}-{UserName.ToLower()}", new NetworkCredential
-                    {
-                        UserName = UserName,
-                        Password = value
-                    });
-                }
-            }
+            private set { }
         }
+        public string UserDefinedName { get; set; }
+        public XivAccountType AccountType { get; set; }
+        public string LoginAccount { get; set; }
 
-        public bool SavePassword { get; set; }
-        public bool UseSteamServiceAccount { get; set; }
-        public bool UseOtp { get; set; }
-        [JsonIgnore]
-        public string AutoLoginSessionKey {
-            get
-            {
-                var credentials = CredentialManager.GetCredentials($"{CREDS_PREFIX_NEW} AutoLoginSessionKey-{UserName.ToLower()}");
+        public string AreaName { get; set; }
 
-                return credentials != null ? credentials.Password : string.Empty;
-            }
-            set
-            {
-                try
-                {
-                    CredentialManager.RemoveCredentials($"{CREDS_PREFIX_NEW} AutoLoginSessionKey-{UserName.ToLower()}");
-                }
-                catch (Win32Exception)
-                {
-                    // ignored
-                }
+        public bool AutoLogin { get; set; }
 
-                CredentialManager.SaveCredentials($"{CREDS_PREFIX_NEW} AutoLoginSessionKey-{UserName.ToLower()}", new NetworkCredential
-                {
-                    UserName = UserName,
-                    Password = value
-                });
-            }
-        }
+        // Should be encrypted
+        public string AutoLoginSessionKey { get; set; }
+        public string Password { get; set; }
+        public string TestSID { get; set; }
 
-        [JsonIgnore]
-        public bool HasKey => !AutoLoginSessionKey.IsNullOrEmpty();
+        [Ignore]
+        public string ThumbnailUrl { get; set; }
+        [Ignore]
+        public string ChosenCharacterName { get; set; }
+        [Ignore]
+        public string ChosenCharacterWorld { get; set; }
 
-        public string ChosenCharacterName;
-        public string ChosenCharacterWorld;
-
-        public string ThumbnailUrl;
-
-        public string LastSuccessfulOtp;
-
-        public XivAccount(string userName)
+        public override int GetHashCode()
         {
-            UserName = userName.ToLower();
+            var area = this.AreaName;
+            if (this.AccountType != XivAccountType.WeGameSid)
+                area = null;
+            return (UserName, AccountType, area).GetHashCode();
+        }
+
+        public bool Equals(XivAccount other)
+        {
+            return this.GetHashCode() == other.GetHashCode();
         }
 
         public string FindCharacterThumb()
         {
-            if (string.IsNullOrEmpty(ChosenCharacterName) || string.IsNullOrEmpty(ChosenCharacterWorld))
-                return null;
-
-            try
-            {
-                dynamic searchResponse = GetCharacterSearch(ChosenCharacterName, ChosenCharacterWorld)
-                .GetAwaiter().GetResult();
-
-                if (searchResponse.Results.Count > 1) //If we get more than one match from XIVAPI
-                {
-                    foreach (var accountInfo in searchResponse.Results)
-                    {
-                        //We have to check with it all lower in case they type their character name LiKe ThIsLoL. The server XIVAPI returns also contains the DC name, so let's just do a contains on the server to make it easy.
-                        if (accountInfo.Name.Value.ToLower() == ChosenCharacterName.ToLower() && accountInfo.Server.Value.ToLower().Contains(ChosenCharacterWorld.ToLower()))
-                        {
-                            return accountInfo.Avatar.Value;
-                        }
-                    }
-                }
-
-                return searchResponse.Results.Count > 0 ? (string)searchResponse.Results[0].Avatar : null;
-            }
-            catch (Exception ex)
-            {
-                Log.Information(ex, "Couldn't download character search.");
-
-                return null;
-            }
+            return null;
         }
 
         private const string URL = "https://xivapi.com/";

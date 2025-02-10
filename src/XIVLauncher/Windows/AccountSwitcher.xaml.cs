@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -85,7 +85,7 @@ namespace XIVLauncher.Windows
         private void AccountListViewContext_Opened(object sender, RoutedEventArgs e)
         {
             var selectedEntry = AccountListView.SelectedItem as AccountSwitcherEntry;
-            AccountEntrySavePasswordCheck.IsChecked = !selectedEntry.Account.SavePassword;
+            AccountEntrySavePasswordCheck.IsChecked = !selectedEntry.Account.AutoLogin;
         }
 
         private void AccountSwitcher_OnDeactivated(object sender, EventArgs e)
@@ -174,7 +174,7 @@ namespace XIVLauncher.Windows
             var shDesktop = (object)"Desktop";
 
             var shell = new WshShell();
-            var shortcutAddress = (string)shell.SpecialFolders.Item(ref shDesktop) + $@"\XIVLauncherCN - {selectedEntry.Account.UserName} {(selectedEntry.Account.UseSteamServiceAccount ? "(Steam)" : "")}.lnk";
+            var shortcutAddress = (string)shell.SpecialFolders.Item(ref shDesktop) + $@"\XIVLauncherCN - {selectedEntry.Account.Id}.lnk";
             var shortcut = (IWshShortcut)shell.CreateShortcut(shortcutAddress);
             shortcut.Description = $"Open XIVLauncher with the \"{selectedEntry.Account.UserName}\" Sdo account.";
             shortcut.TargetPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "XIVLauncherCN.exe");
@@ -216,7 +216,7 @@ namespace XIVLauncher.Windows
                 return;
 
             var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
-            account.SavePassword = false;
+            account.AutoLogin = false;
             account.Password = string.Empty;
             _accountManager.Save();
         }
@@ -227,7 +227,7 @@ namespace XIVLauncher.Windows
                 return;
 
             var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
-            account.SavePassword = true;
+            account.AutoLogin = true;
             _accountManager.Save();
         }
 

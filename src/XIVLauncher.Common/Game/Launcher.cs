@@ -565,6 +565,7 @@ public partial class Launcher
         public bool TermsAccepted { get; set; }
         public bool Playable { get; set; }
         public int MaxExpansion { get; set; }
+        public LoginType LoginType { get; set; }
     }
 
     private static string GetOauthTopUrl(int region, bool isFreeTrial, bool isSteam, Ticket? steamTicket)

@@ -437,10 +437,42 @@ namespace XIVLauncher.Windows
             if (App.Settings.AutologinEnabled && savedAccount != null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 Log.Information("Engaging Autologin...");
-                Model.TryLogin(savedAccount.UserName, savedAccount.Password,
-                    savedAccount.UseOtp,
-                    savedAccount.UseSteamServiceAccount, true, MainWindowViewModel.AfterLoginAction.Start);
-
+                if (savedAccount.AccountType==XivAccountType.WeGameSid)
+                    Model.TryLogin(
+                        savedAccount.LoginAccount, 
+                        savedAccount.TestSID,
+                        false,
+                        false, 
+                        Model.IsFastLogin, 
+                        MainWindowViewModel.AfterLoginAction.Start
+                        );
+                else if (savedAccount.AccountType == XivAccountType.WeGame)
+                    Model.TryLogin(
+                          savedAccount.LoginAccount,
+                          savedAccount.AutoLoginSessionKey,
+                          false,
+                          false,
+                          Model.IsFastLogin,
+                          MainWindowViewModel.AfterLoginAction.Start
+                          );
+                else if (savedAccount.AccountType == XivAccountType.Sdo)
+                    if (savedAccount.Password!=null)
+                        Model.TryLogin(
+                              savedAccount.LoginAccount,
+                              savedAccount.Password,
+                              false,
+                              false,
+                              Model.IsFastLogin,
+                              MainWindowViewModel.AfterLoginAction.Start
+                              );
+                    else Model.TryLogin(
+                              savedAccount.LoginAccount,
+                              savedAccount.AutoLoginSessionKey,
+                              false,
+                              false,
+                              Model.IsFastLogin,
+                              MainWindowViewModel.AfterLoginAction.Start
+                              );
                 return;
             }
             else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || bool.Parse(Environment.GetEnvironmentVariable("XL_NOAUTOLOGIN") ?? "false"))
@@ -613,7 +645,7 @@ namespace XIVLauncher.Windows
                 {
                     QuitMaintenanceQueueButton_OnClick(null, null);
 
-                    Model.TryLogin(Model.Username, LoginPassword.Password, Model.IsOtp, Model.IsSteam, false, MainWindowViewModel.AfterLoginAction.Start);
+                    Model.TryLogin(Model.Username, LoginPassword.Password, Model.IsOtp, Model.IsSteam, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
                 });
 
                 Console.Beep(523, 150);
@@ -682,13 +714,15 @@ namespace XIVLauncher.Windows
         private void SwitchAccount(XivAccount account, bool saveAsCurrent)
         {
             Model.Username = account.UserName;
-            Model.IsOtp = account.UseOtp;
-            Model.IsSteam = account.UseSteamServiceAccount;
+            //Model.IsOtp = account.UseOtp;
+            //Model.IsSteam = account.UseSteamServiceAccount;
             Model.IsAutoLogin = App.Settings.AutologinEnabled;
-            Model.Area = _sdoAreas.Where(x => x.Areaid == account.AreaID).FirstOrDefault();
-
-            if (account.SavePassword)
-                LoginPassword.Password = account.Password;
+            Model.Area = _sdoAreas.Where(x => x.AreaName == account.AreaName).FirstOrDefault();
+            if (account.AccountType == XivAccountType.Sdo && account.Password != null) {
+                LoginPassword.Visibility = Visibility.Visible;
+                if (account.AutoLogin)
+                    LoginPassword.Password = account.Password;
+            }
 
             if (saveAsCurrent)
             {
@@ -837,7 +871,7 @@ namespace XIVLauncher.Windows
         {
             Dispatcher.Invoke(() =>
             {
-                Model.TryLogin(null, null, true, Model.IsSteam, false, MainWindowViewModel.AfterLoginAction.Start);
+                Model.TryLogin(null, null, true, Model.IsSteam, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
             });
         }
     }

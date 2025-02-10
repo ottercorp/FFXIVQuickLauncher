@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -6,11 +6,17 @@ using Newtonsoft.Json;
 using Serilog;
 using XIVLauncher.Common;
 using XIVLauncher.Settings;
+using SQLite;
+using System.Drawing;
 
 namespace XIVLauncher.Accounts
 {
     public class AccountManager
     {
+        private readonly object syncRoot = new();
+
+        private SQLiteConnection? db;
+
         public ObservableCollection<XivAccount> Accounts;
 
         public XivAccount CurrentAccount
@@ -38,30 +44,19 @@ namespace XIVLauncher.Accounts
             Save();
         }
 
-        public void UpdatePassword(XivAccount account, string password)
-        {
-            Log.Information("UpdatePassword() called");
-            var existingAccount = Accounts.FirstOrDefault(a => a.Id == account.Id);
-            existingAccount.Password = password;
-        }
-
-        public void UpdateLastSuccessfulOtp(XivAccount account, string lastOtp)
-        {
-            var existingAccount = Accounts.FirstOrDefault(a => a.Id == account.Id);
-            existingAccount.LastSuccessfulOtp = lastOtp;
-            Save();
-        }
-
         public void AddAccount(XivAccount account)
         {
-            var existingAccount = Accounts.FirstOrDefault(a => a.Id == account.Id);
+            var existingAccount = Accounts.FirstOrDefault(a => a.Equals(account));
 
             Log.Verbose($"existingAccount: {existingAccount?.Id}");
 
-            if (existingAccount != null && existingAccount.Password != account.Password)
+            if (existingAccount != null)
             {
-                Log.Verbose("Updating password...");
+                Log.Verbose("Updating account...");
                 existingAccount.Password = account.Password;
+                existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey;
+                existingAccount.TestSID = account.TestSID;
+                existingAccount.AreaName = account.AreaName;
                 return;
             }
 
@@ -75,30 +70,80 @@ namespace XIVLauncher.Accounts
         {
             account.Password = string.Empty;
             Accounts.Remove(account);
+
+            lock (this.syncRoot)
+            {
+
+                this.db.RunInTransaction(() =>
+                {
+                    var record = this.db.Table<XivAccount>().FirstOrDefault(a => a.Id == account.Id);
+                    if (record != null)
+                    {
+                        this.db.Delete(account);
+                    }
+                });
+            }
         }
 
         #region SaveLoad
 
-        private static readonly string ConfigPath = Path.Combine(Paths.RoamingPath, "accountsList.json");
+        private static readonly string DatabasePath = Path.Combine(Paths.RoamingPath, "accounts.db");
+
+        public void Save(XivAccount account)
+        {
+            lock (this.syncRoot)
+            {
+
+                this.db.RunInTransaction(() =>
+                {
+                    var record = this.db.Table<XivAccount>().FirstOrDefault(a => a.Id == account.Id);
+                    if (record == null)
+                    {
+                        this.db.Insert(account);
+                    }
+                    else
+                    {
+                        record = account;
+                        this.db.Update(record);
+                    }
+                });
+            }
+        }
 
         public void Save()
         {
-            File.WriteAllText(ConfigPath,  JsonConvert.SerializeObject(Accounts, Formatting.Indented));
+            foreach (var item in Accounts)
+            {
+                this.Save(item);
+            }
+        }
+
+        public void SetupDb()
+        {
+            this.db = new SQLiteConnection(DatabasePath,
+                   SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.FullMutex);
+            this.db.CreateTable<XivAccount>();
         }
 
         public void Load()
         {
-            if (!File.Exists(ConfigPath))
+            try
             {
-                Accounts = new ObservableCollection<XivAccount>();
+                this.SetupDb();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to load VFS database, starting fresh");
 
-                Save();
+                if (File.Exists(DatabasePath))
+                    File.Delete(DatabasePath);
+
+                this.SetupDb();
+
             }
 
-            Accounts = JsonConvert.DeserializeObject<ObservableCollection<XivAccount>>(File.ReadAllText(ConfigPath));
-
             // If the file is corrupted, this will be null anyway
-            Accounts ??= new ObservableCollection<XivAccount>();
+            Accounts ??= new ObservableCollection<XivAccount>(this.db.Table<XivAccount>());
         }
 
         #endregion

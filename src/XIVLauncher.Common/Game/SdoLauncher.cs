@@ -20,9 +20,20 @@ using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.PlatformAbstractions;
 using System.Threading;
 using XIVLauncher.Common.Util;
+using System.Security.Principal;
 
 namespace XIVLauncher.Common.Game
 {
+    public enum LoginType
+    {
+        SdoStatic,
+        SdoSlide,
+        SdoQrCode,
+        WeGameToken,
+        WeGameSid,
+        AutoLoginSession
+    }
+
     public partial class Launcher
     {
         //private readonly string qrPath = Path.Combine(Environment.CurrentDirectory, "Resources", "QR.png");
@@ -39,6 +50,21 @@ namespace XIVLauncher.Common.Game
         private const int QRCodeExpirationTime = 300 * 1000;// ms
         private const int SlideExpirationTime = 30 * 1000;// ms
         private const int AutoLoginKeepDays = 30;
+
+        public async Task<LoginResult> LoginBySid(string sid) {
+            var oath = new OauthLoginResult
+            {
+                SessionId = sid,
+                MaxExpansion = Constants.MaxExpansion,
+                LoginType = LoginType.WeGameSid,
+            };
+
+            return new LoginResult
+            {
+                OauthLogin = oath,
+                State = LoginState.Ok,
+            };
+        }
 
         public async Task<LoginResult> LoginBySdoStatic(string account, string password)
         {
@@ -74,7 +100,8 @@ namespace XIVLauncher.Common.Game
                 //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = null,
-                MaxExpansion = Constants.MaxExpansion
+                MaxExpansion = Constants.MaxExpansion,
+                LoginType = LoginType.SdoStatic,
             };
 
             return new LoginResult
@@ -97,7 +124,8 @@ namespace XIVLauncher.Common.Game
                 //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
-                MaxExpansion = Constants.MaxExpansion
+                MaxExpansion = Constants.MaxExpansion,
+                LoginType = LoginType.WeGameToken,
             };
             return new LoginResult
             {
@@ -138,7 +166,8 @@ namespace XIVLauncher.Common.Game
                 //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
-                MaxExpansion = Constants.MaxExpansion
+                MaxExpansion = Constants.MaxExpansion,
+                LoginType = LoginType.SdoQrCode
             };
             return new LoginResult
             {
@@ -164,7 +193,8 @@ namespace XIVLauncher.Common.Game
                 //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
-                MaxExpansion = Constants.MaxExpansion
+                MaxExpansion = Constants.MaxExpansion,
+                LoginType = LoginType.SdoSlide
             };
             return new LoginResult
             {
@@ -199,7 +229,8 @@ namespace XIVLauncher.Common.Game
                 //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLoginSessionKey,
-                MaxExpansion = Constants.MaxExpansion
+                MaxExpansion = Constants.MaxExpansion,
+                LoginType = LoginType.AutoLoginSession
             };
             return new LoginResult
             {
@@ -345,7 +376,7 @@ namespace XIVLauncher.Common.Game
             var qrCodeExpiration = new CancellationTokenSource();
             qrCodeExpiration.CancelAfter(QRCodeExpirationTime);
 
-            var request = this.GetSdoHttpRequestMessage(HttpMethod.Get, "getCodeKey.json", new List<string>() { $"maxsize=89"});
+            var request = this.GetSdoHttpRequestMessage(HttpMethod.Get, "getCodeKey.json", new List<string>() { $"maxsize=89" });
             var response = await this.client.SendAsync(request);
             var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
             var codeKey = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY="))?.Split(';')[0];
@@ -524,9 +555,11 @@ namespace XIVLauncher.Common.Game
                 [JsonProperty("inputUserId")]
                 public string InputUserId;
 
+                [JsonConverter(typeof(MaskMiddleConverter))]
                 [JsonProperty("accountArray")]
                 public List<string> AccountArray;
 
+                [JsonConverter(typeof(MaskMiddleConverter))]
                 [JsonProperty("sndaIdArray")]
                 public List<string> SndaIdArray;
             }
