@@ -577,7 +577,7 @@ namespace XIVLauncher.Windows.ViewModel
                     }
 
                     msgbox = new CustomMessageBox.Builder()
-                            .WithCaption($"{Loc.Localize("LoginNoOauthTitle", "Login issue")}-{sdoLoginEx.ErrorCode}")
+                            .WithCaption($"{Loc.Localize("LoginNoOauthTitle", "Login issue")}: {sdoLoginEx.ErrorCode}")
                             .WithImage(MessageBoxImage.Question)
                             .WithParentWindow(_window)
                             .WithText(sdoLoginEx.Message);
