@@ -339,7 +339,6 @@ namespace XIVLauncher.Windows.ViewModel
                         break;
 
                 }
-
             }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
@@ -569,6 +568,14 @@ namespace XIVLauncher.Windows.ViewModel
                         this.loginCts = null;
                         return null;
                     }
+                    if (sdoLoginEx.RemoveAutoLoginSessionKey)
+                    {
+                        Log.Information($"快速登录失败,清除SessionKey:{username}");
+                        var account = this.AccountManager.Accounts.First(x => x.UserName == username);
+                        account.AutoLoginSessionKey = null;
+                        this.AccountManager.Save(account);
+                    }
+
                     msgbox = new CustomMessageBox.Builder()
                             .WithCaption($"{Loc.Localize("LoginNoOauthTitle", "Login issue")}-{sdoLoginEx.ErrorCode}")
                             .WithImage(MessageBoxImage.Question)

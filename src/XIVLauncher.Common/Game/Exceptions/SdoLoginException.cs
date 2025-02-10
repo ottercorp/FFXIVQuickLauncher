@@ -35,10 +35,12 @@ public class SdoLoginException : Exception
 {
     public int ErrorCode;
     //public string OauthErrorResult { get; private set; }
+    public bool RemoveAutoLoginSessionKey;
 
-    public SdoLoginException(int errorCode,string message)
+    public SdoLoginException(int errorCode,string message,bool removeAutoLoginSessionKey=false)
         : base(message)
     {
         this.ErrorCode = errorCode;
+        this.RemoveAutoLoginSessionKey = removeAutoLoginSessionKey;
     }
 }

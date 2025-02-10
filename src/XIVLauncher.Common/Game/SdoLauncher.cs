@@ -51,7 +51,8 @@ namespace XIVLauncher.Common.Game
         private const int SlideExpirationTime = 30 * 1000;// ms
         private const int AutoLoginKeepDays = 30;
 
-        public async Task<LoginResult> LoginBySid(string sid) {
+        public async Task<LoginResult> LoginBySid(string sid)
+        {
             var oath = new OauthLoginResult
             {
                 SessionId = sid,
@@ -214,29 +215,45 @@ namespace XIVLauncher.Common.Game
 
             if (result.ReturnCode != 0)
             {
-                throw new SdoLoginException(result.ReturnCode, result.Data.FailReason);
+                throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
             }
 
             sndaId = result.Data.SndaId;
             tgt = result.Data.Tgt;
 
-            var sessionId = await GetSessionId(tgt, guid);
+            try
+            {
+                var sessionId = await GetSessionId(tgt, guid);
+                var oath = new OauthLoginResult
+                {
+                    SessionId = sessionId,
+                    InputUserId = account,
+                    //Password = password,
+                    SndaId = sndaId,
+                    AutoLoginSessionKey = autoLoginSessionKey,
+                    MaxExpansion = Constants.MaxExpansion,
+                    LoginType = LoginType.AutoLoginSession
+                };
+                return new LoginResult
+                {
+                    OauthLogin = oath,
+                    State = LoginState.Ok,
+                };
+            }
+            catch (Exception ex)
+            {
+                if (ex is SdoLoginException sdoEx)
+                {
+                    sdoEx.RemoveAutoLoginSessionKey = true;
+                    throw sdoEx;
+                }
+                else
+                {
+                    throw;
+                }
 
-            var oath = new OauthLoginResult
-            {
-                SessionId = sessionId,
-                InputUserId = account,
-                //Password = password,
-                SndaId = sndaId,
-                AutoLoginSessionKey = autoLoginSessionKey,
-                MaxExpansion = Constants.MaxExpansion,
-                LoginType = LoginType.AutoLoginSession
-            };
-            return new LoginResult
-            {
-                OauthLogin = oath,
-                State = LoginState.Ok,
-            };
+            }
+
         }
 
         private async Task<string> GetSessionId(string tgt, string guid)
@@ -273,7 +290,7 @@ namespace XIVLauncher.Common.Game
             var result = await this.GetJsonAsSdoClient("autoLogin.json", new List<string>() { $"autoLoginSessionKey={autoLoginSessionKey}", $"guid={guid}" });
             //-10515005 "对不起，自动登录已失效，请重新登录"
             if (result.ReturnCode != 0)
-                throw new SdoLoginException(result.ReturnCode, result.Data.FailReason);
+                throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
             Log.Information($"LoginSessionKey Updated, {(result.Data.AutoLoginMaxAge / 3600f):F1} hours left");
             autoLoginSessionKey = result.Data.AutoLoginSessionKey;
             var tgt = result.Data.Tgt;
