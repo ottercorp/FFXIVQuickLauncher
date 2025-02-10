@@ -145,6 +145,8 @@ namespace XIVLauncher.Accounts
         public string TestSID { get; set; }
 
         [Ignore]
+        public bool IsWeGame => (this.AccountType != XivAccountType.Sdo);
+        [Ignore]
         public string ThumbnailUrl { get; set; }
         [Ignore]
         public string ChosenCharacterName { get; set; }

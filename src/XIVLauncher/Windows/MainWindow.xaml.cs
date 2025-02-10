@@ -83,6 +83,8 @@ namespace XIVLauncher.Windows
 
             Model.ReloadHeadlines += () => Task.Run(SetupHeadlines);
 
+            LoginTypeSelection.ItemsSource = GuiLoginType.Get();
+            LoginTypeSelection.SelectedValue = LoginType.SdoSlide;
             NewsListView.ItemsSource = new List<News>
             {
                 new News
@@ -135,7 +137,7 @@ namespace XIVLauncher.Windows
                 Dispatcher.BeginInvoke(new Action(async () =>
                 {
                     ServerSelection.ItemsSource = _sdoAreas;
-                    ServerSelection.SelectedIndex = App.Settings.SelectedServer.GetValueOrDefault(0);
+                    ServerSelection.SelectedIndex = 0;
                 }));
             }
         }
@@ -437,48 +439,32 @@ namespace XIVLauncher.Windows
             if (App.Settings.AutologinEnabled && savedAccount != null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 Log.Information("Engaging Autologin...");
-                if (savedAccount.AccountType==XivAccountType.WeGameSid)
+                if (savedAccount.AccountType == XivAccountType.WeGameSid)
+                {
                     Model.TryLogin(
-                        savedAccount.LoginAccount, 
+                        LoginType.WeGameSid,
+                        savedAccount.LoginAccount,
                         savedAccount.TestSID,
-                        false,
-                        false, 
-                        Model.IsFastLogin, 
+                        Model.IsFastLogin,
+                        MainWindowViewModel.AfterLoginAction.Start
+                    );
+                }
+                else
+                {
+                    Model.TryLogin(
+                        LoginType.AutoLoginSession,
+                        savedAccount.LoginAccount,
+                        savedAccount.AutoLoginSessionKey,
+                        Model.IsFastLogin,
                         MainWindowViewModel.AfterLoginAction.Start
                         );
-                else if (savedAccount.AccountType == XivAccountType.WeGame)
-                    Model.TryLogin(
-                          savedAccount.LoginAccount,
-                          savedAccount.AutoLoginSessionKey,
-                          false,
-                          false,
-                          Model.IsFastLogin,
-                          MainWindowViewModel.AfterLoginAction.Start
-                          );
-                else if (savedAccount.AccountType == XivAccountType.Sdo)
-                    if (savedAccount.Password!=null)
-                        Model.TryLogin(
-                              savedAccount.LoginAccount,
-                              savedAccount.Password,
-                              false,
-                              false,
-                              Model.IsFastLogin,
-                              MainWindowViewModel.AfterLoginAction.Start
-                              );
-                    else Model.TryLogin(
-                              savedAccount.LoginAccount,
-                              savedAccount.AutoLoginSessionKey,
-                              false,
-                              false,
-                              Model.IsFastLogin,
-                              MainWindowViewModel.AfterLoginAction.Start
-                              );
+                }
                 return;
             }
             else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || bool.Parse(Environment.GetEnvironmentVariable("XL_NOAUTOLOGIN") ?? "false"))
             {
                 App.Settings.AutologinEnabled = false;
-                AutoLoginCheckBox.IsChecked = false;
+                //AutoLoginCheckBox.IsChecked = false;
             }
 
             if (App.Settings.GamePath?.Exists != true)
@@ -495,7 +481,6 @@ namespace XIVLauncher.Windows
 
                 SettingsControl.ReloadSettings();
             }
-
             Task.Run(async () =>
             {
                 await SetupServers();
@@ -645,7 +630,7 @@ namespace XIVLauncher.Windows
                 {
                     QuitMaintenanceQueueButton_OnClick(null, null);
 
-                    Model.TryLogin(Model.Username, LoginPassword.Password, Model.IsOtp, Model.IsSteam, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
+                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Password, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
                 });
 
                 Console.Beep(523, 150);
@@ -718,7 +703,8 @@ namespace XIVLauncher.Windows
             //Model.IsSteam = account.UseSteamServiceAccount;
             Model.IsAutoLogin = App.Settings.AutologinEnabled;
             Model.Area = _sdoAreas.Where(x => x.AreaName == account.AreaName).FirstOrDefault();
-            if (account.AccountType == XivAccountType.Sdo && account.Password != null) {
+            if (account.AccountType == XivAccountType.Sdo && account.Password != null)
+            {
                 LoginPassword.Visibility = Visibility.Visible;
                 if (account.AutoLogin)
                     LoginPassword.Password = account.Password;
@@ -811,9 +797,40 @@ namespace XIVLauncher.Windows
 
         private void ServerSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (this.DataContext != null) 
+            if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).Area = (SdoArea)((ComboBox)sender).SelectedItem;
             App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
+        }
+
+        private void LoginTypeSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (this.DataContext != null)
+                ((MainWindowViewModel)this.DataContext).GuiLoginType = (GuiLoginType)((ComboBox)sender).SelectedItem;
+            var loginType = (LoginType)((ComboBox)sender).SelectedValue;
+            App.Settings.SelectedLoginType = loginType;
+            switch (loginType)
+            {
+                case LoginType.SdoQrCode:
+                    LoginUsername.Visibility = Visibility.Hidden;
+                    LoginPassword.Visibility = Visibility.Hidden;
+                    break;
+                case LoginType.SdoSlide:
+                    LoginUsername.Visibility = Visibility.Visible;
+                    //LoginPassword.IsEnabled = false;
+                    //MaterialDesignThemes.Wpf.HintAssist.SetHint(LoginPassword, "(不需要输入密码)");
+                    LoginPassword.Visibility = Visibility.Hidden;
+                    break;
+                case LoginType.WeGameSid:
+                    LoginPassword.Visibility = Visibility.Hidden;
+                    break;
+                case LoginType.SdoStatic:
+                    LoginUsername.Visibility = Visibility.Visible;
+                    LoginPassword.Visibility = Visibility.Visible;
+                    break;
+                case LoginType.WeGameToken:
+                    LoginPassword.Visibility = Visibility.Visible;
+                    break;
+            }
         }
 
         private void LoginUsername_OnTextChanged(object sender, TextChangedEventArgs e)
@@ -865,14 +882,6 @@ namespace XIVLauncher.Windows
                 Model.SwitchCard(MainWindowViewModel.LoginCard.MainPage);
             });
 
-        }
-
-        private void ScanQrCodeLogin_OnClick(object sender, RoutedEventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                Model.TryLogin(null, null, true, Model.IsSteam, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
-            });
         }
     }
 }

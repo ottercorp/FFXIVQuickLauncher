@@ -24,6 +24,23 @@ using System.Security.Principal;
 
 namespace XIVLauncher.Common.Game
 {
+    public class GuiLoginType
+    {
+        public LoginType LoginType { get; set; }
+        public string DisplayName { get; set; }
+
+        public static GuiLoginType[] Get()
+        {
+            return
+            [
+            new GuiLoginType { LoginType = LoginType.SdoSlide, DisplayName = "一键登录" },
+            new GuiLoginType { LoginType = LoginType.SdoQrCode, DisplayName = "扫码登录" },
+            new GuiLoginType { LoginType = LoginType.SdoStatic, DisplayName = "密码登录" },
+            new GuiLoginType { LoginType = LoginType.WeGameToken, DisplayName = "WeGame抓包" },
+            new GuiLoginType { LoginType = LoginType.WeGameSid, DisplayName = "WeGame SID" }
+            ];
+        }
+    }
     public enum LoginType
     {
         SdoStatic,

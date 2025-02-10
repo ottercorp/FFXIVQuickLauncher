@@ -162,7 +162,7 @@ namespace XIVLauncher.Windows.ViewModel
                         return;
                 }
 
-                TryLogin(this.Username, this.Password, false, this.IsSteam, IsFastLogin, action);
+                TryLogin(this.GuiLoginType.LoginType, this.Username, this.Password, IsFastLogin, action);
             };
         }
 
@@ -183,14 +183,14 @@ namespace XIVLauncher.Windows.ViewModel
                 );
         }
 
-        public void TryLogin(string username, string password, bool isScanQrCode, bool isSteam, bool doingAutoLogin, AfterLoginAction action)
+        public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, AfterLoginAction action)
         {
             if (this.IsLoggingIn)
                 return;
             //if (username == null) username = string.Empty;
             if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
             {
-                _window.Dispatcher.Invoke(() => TryLogin(username, password, isScanQrCode, isSteam, doingAutoLogin, action));
+                _window.Dispatcher.Invoke(() => TryLogin(loginType, username, password, doingAutoLogin, action));
                 return;
             }
 
@@ -199,14 +199,14 @@ namespace XIVLauncher.Windows.ViewModel
             IsEnabled = false;
             //LoginCardTransitionerIndex = 0;
             var currentCard = (LoginCard)LoginCardTransitionerIndex;
-            this.SwitchCard(isScanQrCode ? LoginCard.ScanQrCode : LoginCard.Logining);
+            this.SwitchCard(loginType == LoginType.SdoQrCode ? LoginCard.ScanQrCode : LoginCard.Logining);
             IsLoggingIn = true;
 
             Task.Run(() =>
             {
                 try
                 {
-                    Login(username, password, doingAutoLogin, action).Wait();
+                    Login(loginType, username, password, doingAutoLogin, action).Wait();
                 }
                 catch (Exception ex)
                 {
@@ -224,49 +224,9 @@ namespace XIVLauncher.Windows.ViewModel
             });
         }
 
-        private LoginType DetermineLoginType(string username, string password)
-        {
-            if (username.IsNullOrEmpty() && password.IsNullOrEmpty())
-                return LoginType.SdoQrCode;
-            if ((!username.IsNullOrEmpty()) && password.IsNullOrEmpty())
-            {
-                var currentAccount = AccountManager.CurrentAccount;
-                if (currentAccount != null && currentAccount.UserName == username)
-                {
-                    if (currentAccount.AccountType == XivAccountType.WeGameSid)
-                    {
-                        if (currentAccount.AreaName != Area.AreaName)
-                        {
-                            throw new Exception("当前账号为WeGame账号，不同大区登录密钥不通用,请重新获取登录密钥，或者在账号选择器中重新选择对于的大区WeGame账号。");
-                        }
-                        return LoginType.WeGameSid;
-                    }
-
-                    if (currentAccount.AccountType == XivAccountType.WeGame)
-                        return LoginType.AutoLoginSession;
-                }
-                return LoginType.SdoSlide;
-            }
-            if ((!username.IsNullOrEmpty()) && !password.IsNullOrEmpty())
-            {
-                return (password.Length > 20) ? LoginType.WeGameToken : LoginType.SdoStatic;
-            }
-
-            throw new Exception($"无法决定登录类型");
-        }
-
-        private async Task Login(string username, string password, bool doingAutoLogin, AfterLoginAction action)
+        private async Task Login(LoginType loginType, string username, string password, bool doingAutoLogin, AfterLoginAction action)
         {
             ProblemCheck.RunCheck(_window);
-
-            // null null true  扫码
-            // **** null false 叨鱼滑动
-            // **** **** false 盛趣静态（密码很长的是WeGame抓包)
-            // **** **** false (开快速登录) AutoLogin
-
-            // null **** false (没开快速登录) WeGameSid
-
-            var type = DetermineLoginType(username, password);
 
             var bootRes = await HandleBootCheck().ConfigureAwait(false);
 
@@ -318,31 +278,44 @@ namespace XIVLauncher.Windows.ViewModel
             //}
             //PersistAccount(username, password);
 
-            if (doingAutoLogin)
+            var finalLoginType = loginType;
+            if (doingAutoLogin && loginType != LoginType.SdoQrCode)
             {
-                switch (type)
+                var savedAccount = (loginType == LoginType.WeGameSid)
+                    ? AccountManager.Accounts.FirstOrDefault(x => x.UserName == username && x.AreaName == Area.AreaName)
+                    : AccountManager.Accounts.FirstOrDefault(x => x.UserName == username);
+                if (savedAccount != null)
                 {
-                    case LoginType.AutoLoginSession:
-                    case LoginType.SdoSlide:
-                        var account = AccountManager.Accounts.FirstOrDefault(x => x.UserName == username);
-                        if (account != null && account.AutoLoginSessionKey != null)
-                        {
-                            password = AccountManager.Accounts.First(x => x.UserName == username).AutoLoginSessionKey;
-                            type = LoginType.AutoLoginSession;
-                        }
-                        break;
-                    case LoginType.WeGameSid:
-                        password = AccountManager.Accounts.First(x => x.UserName == username).TestSID;
-                        break;
-                    case LoginType.SdoStatic:
-                        password = AccountManager.Accounts.First(x => x.UserName == username).Password;
-                        break;
-
+                    switch (loginType)
+                    {
+                        case LoginType.SdoSlide:
+                        case LoginType.SdoStatic:
+                        case LoginType.WeGameToken:
+                            password = savedAccount.AutoLoginSessionKey;
+                            finalLoginType = LoginType.AutoLoginSession;
+                            break;
+                        case LoginType.WeGameSid:
+                            password = savedAccount.TestSID;
+                            finalLoginType = LoginType.WeGameSid;
+                            break;
+                    }
+                }
+                else if (loginType == LoginType.WeGameSid)
+                {
+                    var msgbox = new CustomMessageBox.Builder()
+                     .WithCaption(Loc.Localize("LoginNoOauthTitle", "Login issue"))
+                     .WithImage(MessageBoxImage.Error)
+                     .WithShowHelpLinks(true)
+                     .WithShowDiscordLink(true)
+                     .WithText("当前账号为WeGame账号，不同大区登录密钥不通用,请重新获取登录密钥，或者在账号选择器中重新选择正确的大区WeGame账号")
+                     .WithParentWindow(_window);
+                    msgbox.Show();
+                    return;
                 }
             }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
-            var loginResult = await TryLoginToGame(type, username, password, doingAutoLogin, action).ConfigureAwait(false);
+            var loginResult = await TryLoginToGame(finalLoginType, username, password, doingAutoLogin, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
             if (loginResult.State == Launcher.LoginState.NeedsPatchGame && action != AfterLoginAction.Repair)
@@ -358,7 +331,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (action != AfterLoginAction.UpdateOnly)
             {
-                if (loginResult.State == Launcher.LoginState.Ok)
+                if (loginResult.State == Launcher.LoginState.Ok && (finalLoginType != LoginType.WeGameSid))
                 {
                     var accountToSave = new XivAccount()
                     {
@@ -367,24 +340,13 @@ namespace XIVLauncher.Windows.ViewModel
                         SndaId = loginResult.OauthLogin.SndaId,
 
                     };
-
-                    switch (type)
-                    {
-                        case LoginType.WeGameToken:
-                            accountToSave.AccountType = XivAccountType.WeGame;
-                            break;
-                        case LoginType.SdoQrCode:
-                        case LoginType.SdoSlide:
-                        case LoginType.SdoStatic:
-                            accountToSave.AccountType = XivAccountType.Sdo;
-                            accountToSave.AreaName = Area.AreaName;
-                            break;
-                    }
+                    accountToSave.AccountType = (loginType == LoginType.WeGameToken) ? accountToSave.AccountType = XivAccountType.WeGame : accountToSave.AccountType = XivAccountType.Sdo;
+                    accountToSave.AreaName = Area.AreaName;
 
                     if (doingAutoLogin)
                     {
                         accountToSave.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
-                        if (type == LoginType.SdoStatic)
+                        if (finalLoginType == LoginType.SdoStatic)
                         {
                             accountToSave.Password = password;
                         }
@@ -1702,6 +1664,17 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 _username = value;
                 OnPropertyChanged(nameof(Username));
+            }
+        }
+
+        private GuiLoginType _guiLoginType;
+        public GuiLoginType GuiLoginType
+        {
+            get => _guiLoginType;
+            set
+            {
+                _guiLoginType = value;
+                OnPropertyChanged(nameof(GuiLoginType));
             }
         }
 
