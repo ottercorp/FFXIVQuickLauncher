@@ -60,7 +60,7 @@ jobs:
             # 获取 Git 提交时间（Unix 时间戳）
             $timestamp = git log -1 --format=%at
             $datePart = Get-Date -Date ([datetime]::UnixEpoch).AddSeconds($timestamp) -Format "yyyyMMddHHmm"
-            $refver = $(git describe --tags) -replace '-(\d+)-.{9}$','.'
+            $refver = $(git describe --tags) -replace '-(\d+)-.{9}$','.beta.'
             $refver = $refver + $datePart
           }
           echo "::set-output name=version::$refver"
