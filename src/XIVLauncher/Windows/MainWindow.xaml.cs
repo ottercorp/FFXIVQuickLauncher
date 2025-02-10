@@ -416,11 +416,11 @@ namespace XIVLauncher.Windows
             this.SetDefaults();
 
             Model.IsFastLogin = App.Settings.FastLogin;
-            LoginPassword.IsEnabled = LoginPassword.IsVisible;
+            //LoginPassword.IsEnabled = LoginPassword.IsVisible;
             Model.EnableInjector = App.Settings.EnableInjector;
 
             _accountManager = new AccountManager(App.Settings);
-            if (this._accountManager.CurrentAccount != null && !_accountManager.CurrentAccount.Password.IsNullOrEmpty()) ShowPassword_OnClick(null, null);
+            //if (this._accountManager.CurrentAccount != null && !_accountManager.CurrentAccount.Password.IsNullOrEmpty()) ShowPassword_OnClick(null, null);
 
             var savedAccount = _accountManager.CurrentAccount;
 
@@ -826,6 +826,7 @@ namespace XIVLauncher.Windows
                 case LoginType.SdoStatic:
                     LoginUsername.Visibility = Visibility.Visible;
                     LoginPassword.Visibility = Visibility.Visible;
+                    LoginPassword.Visibility = Visibility.Visible;
                     break;
                 case LoginType.WeGameToken:
                     LoginPassword.Visibility = Visibility.Visible;
@@ -849,22 +850,6 @@ namespace XIVLauncher.Windows
             //{
             //    LoginPassword.Password = _accountManager.CurrentAccount?.Password;
             //}
-        }
-
-        private void ShowPassword_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (LoginPassword.Visibility == Visibility.Collapsed)
-            {
-                LoginPassword.Visibility = Visibility.Visible;
-                LoginPassword.IsEnabled = true;
-                LoginPassword.Password = _accountManager.CurrentAccount?.Password;
-            }
-            else
-            {
-                LoginPassword.Visibility = Visibility.Collapsed;
-                LoginPassword.Password = string.Empty;
-                LoginPassword.IsEnabled = false;
-            }
         }
 
         private void EnableInjector_OnClick(object sender, RoutedEventArgs e)
