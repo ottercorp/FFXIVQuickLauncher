@@ -3,6 +3,7 @@ using FfxivArgLauncher;
 using Serilog;
 using Serilog.Events;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using XIVLauncher.Common;
 using XIVLauncher.Common.PatcherIpc;
 using XIVLauncher.Common.Patching.Rpc.Implementations;
@@ -68,13 +69,13 @@ internal class Program
     {
         switch (envelope.OpCode)
         {
-            case PatcherIpcOpCode.Bye:
-                if ((bool)envelope.Data is true) { 
-                    argReader.KillProcess();
-                }
-                Log.Information("[ArgReader] Bye");
-                readerCancelToken.Cancel();
-                break;
+            //case PatcherIpcOpCode.Bye:
+            //    if ((bool)envelope.Data is true) { 
+            //        argReader.KillProcess();
+            //    }
+            //    Log.Information("[ArgReader] Bye");
+            //    readerCancelToken.Cancel();
+            //    break;
 
             case PatcherIpcOpCode.OpenProcess:
                 try
@@ -101,7 +102,6 @@ internal class Program
                 {
                     Log.Information($"[ArgReader] Read Args");
                     var data = argReader.GetLoginData();
-
                     rpc.SendMessage(new PatcherIpcEnvelope
                     {
                         OpCode = PatcherIpcOpCode.ArgReadOk,

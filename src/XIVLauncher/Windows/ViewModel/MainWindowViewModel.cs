@@ -505,7 +505,7 @@ namespace XIVLauncher.Windows.ViewModel
                     case LoginType.WeGameToken:
                         return await Launcher.LoginByWeGameToken(username, password, autoLogin).ConfigureAwait(false);
                     case LoginType.WeGameSid:
-                        return await Launcher.LoginBySid(password).ConfigureAwait(false);
+                        return await Launcher.LoginBySid(username,password).ConfigureAwait(false);
                     default:
                         throw new Exception($"Known LoginType:{type}");
                 }

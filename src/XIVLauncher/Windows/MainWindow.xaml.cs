@@ -223,38 +223,58 @@ namespace XIVLauncher.Windows
 
         private void RunArgReader()
         {
-            try
+            Task.Run(() =>
             {
-                Task.Run(() =>
+                try
                 {
-                    var newPidList = GetGameProcess();
+                    var pidList = new List<int>();
+                    Dispatcher.Invoke(() =>
+                    {
+                        Model.LoadingDialogMessage = "正在读取WeGame端FFXIV登录信息\n等待游戏进程...";
+                    });
+
+                    while (true)
+                    {
+                        pidList = GetGameProcess();
+                        if (pidList.Count > 0)
+                            break;
+                        Thread.Sleep(1000);
+                    }
                     using (var argReader = new RemoteArgReader())
                     {
                         argReader.Start();
                         argReader.WaitOnHello();
-                        foreach (var pid in newPidList)
+                        foreach (var pid in pidList)
                         {
                             argReader.OpenProcess(pid);
                             argReader.ReadArgs();
                         }
                         argReader.Stop();
-                        foreach (var item in argReader.Data)
+                        var weGameData = argReader.Data.Where(x => x.IsWegame());
+                        foreach (var item in weGameData)
                         {
-                            var areaId = item.Args.Where(x => x.StartsWith("AreaID=")).Select(x => int.Parse(x.Split('=')[1])).First();
-                            _accountManager.AddAccount(new XivAccount($"WG:{item.SndaID}@{areaId}")
-                            {
-                                AreaID = areaId.ToString(),
-                                Password = item.SessionId
-                            });
+                            var areaId = item.Args.Where(x => x.StartsWith("AreaID=")).Select(x => x.Split('=')[1]).First();
+                            var areaName = this._sdoAreas.First(x => x.Areaid == areaId).AreaName;
+                            var newAccount = XivAccount.CreateAccount(XivAccountType.WeGameSid, sndaId: item.SndaID, areaName: areaName, sessionId: item.SessionId);
+                            newAccount.AutoLogin = true;
+                            _accountManager.AddAccount(newAccount);
                         }
+                        Dispatcher.Invoke(() =>
+                        {
+                            Model.LoadingDialogMessage = "读取完成";
+                        });
                     }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Read Arg Error");
+                    throw;
+                }
+                Dispatcher.Invoke(() =>
+                {
+                    Model.IsLoadingDialogOpen = false;
                 });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Read Arg Error");
-                throw;
-            }
+            });
         }
 
         private static List<int> GetGameProcess()
@@ -442,7 +462,6 @@ namespace XIVLauncher.Windows
             });
 
 
-            this.Dispatcher.InvokeAsync(this.SetupInjector);
             Log.Information("MainWindow initialized.");
 
             Show();
@@ -605,6 +624,7 @@ namespace XIVLauncher.Windows
         {
             //_maintenanceQueueTimer.Stop();
             //Model.EnableInjector = false;
+            Model.IsLoadingDialogOpen = false;
         }
 
         private void Card_KeyDown(object sender, KeyEventArgs e)
@@ -651,11 +671,17 @@ namespace XIVLauncher.Windows
             //Model.IsSteam = account.UseSteamServiceAccount;
             Model.IsAutoLogin = App.Settings.AutologinEnabled;
             Model.Area = _sdoAreas.Where(x => x.AreaName == account.AreaName).FirstOrDefault();
-            if (account.AccountType == XivAccountType.Sdo && account.Password != null)
+            switch (account.AccountType)
             {
-                LoginPassword.Visibility = Visibility.Visible;
-                if (account.AutoLogin)
-                    LoginPassword.Password = account.Password;
+                case XivAccountType.Sdo:
+                    LoginTypeSelection.SelectedValue = LoginType.SdoSlide;
+                    break;
+                case XivAccountType.WeGame:
+                    LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
+                    break;
+                case XivAccountType.WeGameSid:
+                    LoginTypeSelection.SelectedValue = LoginType.WeGameSid;
+                    break;
             }
 
             if (saveAsCurrent)
@@ -800,27 +826,12 @@ namespace XIVLauncher.Windows
             //}
         }
 
-        private void ShowPassword_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (LoginPassword.Visibility == Visibility.Collapsed)
-            {
-                LoginPassword.Visibility = Visibility.Visible;
-                LoginPassword.IsEnabled = true;
-                LoginPassword.Password = _accountManager.CurrentAccount?.Password;
-            }
-            else
-            {
-                LoginPassword.Visibility = Visibility.Collapsed;
-                LoginPassword.Password = string.Empty;
-                LoginPassword.IsEnabled = false;
-            }
-        }
-
         private void ReadWeGameLoginData_OnClick(object sender, RoutedEventArgs e)
         {
+            Model.IsLoadingDialogOpen = true;
             Model.LoadingDialogCancelButtonVisibility = Visibility.Visible;
-            Model.LoadingDialogMessage = "正在使用读取登录信息";
-            this.Dispatcher.InvokeAsync(this.RunArgReader);
+            Model.LoadingDialogMessage = "正在读取WeGame端FFXIV登录信息";
+            this.RunArgReader();
         }
 
         private void BackToLoginPageButton_OnClick(object sender, RoutedEventArgs e)

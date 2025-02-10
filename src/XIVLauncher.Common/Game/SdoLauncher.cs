@@ -68,10 +68,11 @@ namespace XIVLauncher.Common.Game
         private const int SlideExpirationTime = 30 * 1000;// ms
         private const int AutoLoginKeepDays = 30;
 
-        public async Task<LoginResult> LoginBySid(string sid)
+        public async Task<LoginResult> LoginBySid(string sndaId,string sid)
         {
             var oath = new OauthLoginResult
             {
+                SndaId = sndaId,
                 SessionId = sid,
                 MaxExpansion = Constants.MaxExpansion,
                 LoginType = LoginType.WeGameSid,

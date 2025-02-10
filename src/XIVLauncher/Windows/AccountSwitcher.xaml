@@ -48,7 +48,7 @@
                       </Grid.ColumnDefinitions>
                       <StackPanel Orientation="Horizontal" Height="42">
                           <Image Source="{Binding ProfileImage}"></Image>
-                          <TextBlock Text="{Binding Account.UserName}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                    <TextBlock Text="{Binding Account.DisplayName}" VerticalAlignment="Center" Margin="12,0,0,0" />
                       </StackPanel>
 
                       <StackPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
