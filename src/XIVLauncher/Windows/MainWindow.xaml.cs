@@ -725,11 +725,13 @@ namespace XIVLauncher.Windows
 
             switch (loginType)
             {
+                //Todo: 各种地方的Hint
                 case LoginType.SdoSlide:
                     break;
                 case LoginType.SdoQrCode:
                     LoginUsername.Visibility = Visibility.Hidden;
                     LoginPassword.Visibility = Visibility.Hidden;
+
                     break;
                 case LoginType.WeGameSid:
                     LoginPassword.Visibility = Visibility.Collapsed;
