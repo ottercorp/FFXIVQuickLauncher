@@ -247,7 +247,7 @@ namespace XIVLauncher.Common.Game
             {
                 //throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
                 //回退
-                Log.Information("AutoLogin session key error, falling back to slide");
+                Log.Information("AutoLogin session key error, falling back");
                 return null;
             }
             else
@@ -278,16 +278,7 @@ namespace XIVLauncher.Common.Game
                 }
                 catch (Exception ex)
                 {
-                    if (ex is SdoLoginException sdoEx)
-                    {
-                        sdoEx.RemoveAutoLoginSessionKey = true;
-                        throw sdoEx;
-                    }
-                    else
-                    {
-                        throw;
-                    }
-
+                    return null;
                 }
             }
 
