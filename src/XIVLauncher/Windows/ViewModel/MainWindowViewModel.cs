@@ -495,7 +495,7 @@ namespace XIVLauncher.Windows.ViewModel
                     }
                     catch (Exception e)
                     {
-                        Log.Warning("LoginBySessionKey failed, fallback to {fallbackLoginType}", fallbackLoginType);
+                        Log.Error("LoginBySessionKey failed, fallback to {fallbackLoginType}:{ex}", fallbackLoginType, e);
                         type = fallbackLoginType;
                     }
                 }
