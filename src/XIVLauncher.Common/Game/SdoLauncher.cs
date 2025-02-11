@@ -85,8 +85,6 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        private static bool IsAutoLoginKey(string key) => key.StartsWith("ULS", StringComparison.Ordinal);
-
         public async Task<LoginResult> LoginBySdoStatic(string account, string password)
         {
             var guid = await this.GetGuid();
@@ -132,8 +130,15 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginByWeGameToken(string account, string token, bool autoLogin)
+        public async Task<LoginResult> LoginByWeGameToken(string account, string token, string autologinkey, bool autoLogin)
         {
+            if (!string.IsNullOrEmpty(autologinkey))
+            {
+                var oauth = await LoginBySessionKey(account, autologinkey);
+                if (oauth is not null)
+                    return oauth;
+            }
+
             var guid = await this.GetGuid();
             var (sndaId, tgt, autoLoginSessionKey) = await ThirdPartyLogin(account, token, autoLogin, AutoLoginKeepDays);
             var sessionId = await GetSessionId(tgt, guid);
@@ -197,8 +202,15 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginBySlide(string account, bool autoLogin, CancellationTokenSource cts, Action<string> showVerificationCode)
+        public async Task<LoginResult> LoginBySlide(string account,string autologinkey, bool autoLogin, CancellationTokenSource cts, Action<string> showVerificationCode)
         {
+            if (!string.IsNullOrEmpty(autologinkey))
+            {
+                var oauth = await LoginBySessionKey(account, autologinkey);
+                if (oauth is not null)
+                    return oauth;
+            }
+
             var guid = await this.GetGuid();
             // Wait for Slide
             await CancelPushMessageLogin(string.Empty, guid);
@@ -224,7 +236,7 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginBySessionKey(string account, string autoLoginSessionKey, CancellationTokenSource cts, Action<string> showVerificationCode)
+        public async Task<LoginResult> LoginBySessionKey(string account, string autoLoginSessionKey)
         {
             var guid = await this.GetGuid();
             //快速登录,刷新SessionKey
@@ -234,9 +246,9 @@ namespace XIVLauncher.Common.Game
             if (newAutoLoginSessionKey is null)
             {
                 //throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
-                //回退到滑动
+                //回退
                 Log.Information("AutoLogin session key error, falling back to slide");
-                return await LoginBySlide(account, true, cts, showVerificationCode);
+                return null;
             }
             else
             {
@@ -258,7 +270,6 @@ namespace XIVLauncher.Common.Game
                         MaxExpansion = Constants.MaxExpansion,
                         LoginType = LoginType.AutoLoginSession
                     };
-                    Console.WriteLine(newAutoLoginSessionKey);
                     return new LoginResult
                     {
                         OauthLogin = oath,

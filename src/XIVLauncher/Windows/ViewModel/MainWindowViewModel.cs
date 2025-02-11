@@ -279,6 +279,7 @@ namespace XIVLauncher.Windows.ViewModel
             //PersistAccount(username, password);
 
             var finalLoginType = loginType;
+            string autologinkey = null;
             if (doingAutoLogin && loginType != LoginType.SdoQrCode)
             {
                 var savedAccount = (loginType == LoginType.WeGameSid)
@@ -289,14 +290,14 @@ namespace XIVLauncher.Windows.ViewModel
                     switch (loginType)
                     {
                         case LoginType.SdoSlide:
-                        case LoginType.SdoStatic:
+                        //case LoginType.SdoStatic:
                         case LoginType.WeGameToken:
-                            password = savedAccount.AutoLoginSessionKey;
-                            finalLoginType = LoginType.AutoLoginSession;
+                            autologinkey = savedAccount.AutoLoginSessionKey;
+                            finalLoginType = loginType;
                             break;
                         case LoginType.WeGameSid:
                             password = savedAccount.TestSID;
-                            finalLoginType = LoginType.WeGameSid;
+                            finalLoginType = loginType;
                             break;
                     }
                 }
@@ -315,7 +316,7 @@ namespace XIVLauncher.Windows.ViewModel
             }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
-            var loginResult = await TryLoginToGame(finalLoginType, username, password, doingAutoLogin, action).ConfigureAwait(false);
+            var loginResult = await TryLoginToGame(finalLoginType, username, password, autologinkey, doingAutoLogin, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
             if (loginResult.State == Launcher.LoginState.NeedsPatchGame && action != AfterLoginAction.Repair)
@@ -464,6 +465,7 @@ namespace XIVLauncher.Windows.ViewModel
             LoginType type,
             string username,
             string password,
+            string autologinkey,
             bool autoLogin,
             AfterLoginAction action
             )
@@ -487,14 +489,8 @@ namespace XIVLauncher.Windows.ViewModel
                 {
                     case LoginType.SdoStatic:
                         return await Launcher.LoginBySdoStatic(username, password).ConfigureAwait(false);
-                    case LoginType.AutoLoginSession:
-                        return await Launcher.LoginBySessionKey(username, password, this.loginCts, (code) =>
-                        {
-                            Log.Information($"叨鱼确认码:{code}");
-                            this.LoginMessage = $"确认码: {code}";
-                        }).ConfigureAwait(false);
                     case LoginType.SdoSlide:
-                        return await Launcher.LoginBySlide(username, autoLogin, this.loginCts, (code) =>
+                        return await Launcher.LoginBySlide(username, autologinkey, autoLogin, this.loginCts, (code) =>
                         {
                             Log.Information($"叨鱼确认码:{code}");
                             this.LoginMessage = $"确认码: {code}";
@@ -507,7 +503,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                         }).ConfigureAwait(false);
                     case LoginType.WeGameToken:
-                        return await Launcher.LoginByWeGameToken(username, password, autoLogin).ConfigureAwait(false);
+                        return await Launcher.LoginByWeGameToken(username, password, autologinkey, autoLogin).ConfigureAwait(false);
                     case LoginType.WeGameSid:
                         return await Launcher.LoginBySid(username,password).ConfigureAwait(false);
                     default:
