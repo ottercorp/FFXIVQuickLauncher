@@ -293,11 +293,11 @@ namespace XIVLauncher.Windows.ViewModel
                         //case LoginType.SdoStatic:
                         case LoginType.WeGameToken:
                             autologinkey = savedAccount.AutoLoginSessionKey;
-                            finalLoginType = loginType;
+                            finalLoginType = LoginType.AutoLoginSession;
                             break;
                         case LoginType.WeGameSid:
                             password = savedAccount.TestSID;
-                            finalLoginType = loginType;
+                            finalLoginType = LoginType.WeGameSid;
                             break;
                     }
                 }
@@ -316,7 +316,7 @@ namespace XIVLauncher.Windows.ViewModel
             }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
-            var loginResult = await TryLoginToGame(finalLoginType, username, password, autologinkey, doingAutoLogin, action).ConfigureAwait(false);
+            var loginResult = await TryLoginToGame(finalLoginType, loginType, username, password, autologinkey, doingAutoLogin, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
             if (loginResult.State == Launcher.LoginState.NeedsPatchGame && action != AfterLoginAction.Repair)
@@ -463,6 +463,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         private async Task<Launcher.LoginResult> TryLoginToGame(
             LoginType type,
+            LoginType fallbackLoginType,
             string username,
             string password,
             string autologinkey,
@@ -485,27 +486,44 @@ namespace XIVLauncher.Windows.ViewModel
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
                 this.loginCts = new CancellationTokenSource();
+
+                if (type == LoginType.AutoLoginSession)
+                {
+                    try
+                    {
+                        return await this.Launcher.LoginBySessionKey(username, autologinkey).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Warning("LoginBySessionKey failed, fallback to {fallbackLoginType}", fallbackLoginType);
+                        type = fallbackLoginType;
+                    }
+                }
+
                 switch (type)
                 {
                     case LoginType.SdoStatic:
                         return await Launcher.LoginBySdoStatic(username, password).ConfigureAwait(false);
+
                     case LoginType.SdoSlide:
-                        return await Launcher.LoginBySlide(username, autologinkey, autoLogin, this.loginCts, (code) =>
+                        return await Launcher.LoginBySlide(username, autoLogin, this.loginCts, (code) =>
                         {
                             Log.Information($"叨鱼确认码:{code}");
                             this.LoginMessage = $"确认码: {code}";
-
                         }).ConfigureAwait(false);
+
                     case LoginType.SdoQrCode:
                         return await Launcher.LoginByScanQrCode(autoLogin, this.loginCts, (qrBytes) =>
                         {
                             this.QrCodeBitmapImage = ConvertByteArrayToBitmapImage(qrBytes);
-
                         }).ConfigureAwait(false);
+
                     case LoginType.WeGameToken:
-                        return await Launcher.LoginByWeGameToken(username, password, autologinkey, autoLogin).ConfigureAwait(false);
+                        return await Launcher.LoginByWeGameToken(username, password, autoLogin).ConfigureAwait(false);
+
                     case LoginType.WeGameSid:
                         return await Launcher.LoginBySid(username,password).ConfigureAwait(false);
+
                     default:
                         throw new Exception($"Known LoginType:{type}");
                 }
