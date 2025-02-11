@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Product>XIVLauncherCN</Product>
     <AssemblyTitle>XIVLauncherCN</AssemblyTitle>
@@ -102,6 +102,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FfxivArgLauncher\FfxivArgLauncher.csproj" />
+    <ProjectReference Include="..\XIVLauncher.ArgReader\XIVLauncher.ArgReader.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common.Windows\XIVLauncher.Common.Windows.csproj" />
     <ProjectReference Include="..\XIVLauncher.Common\XIVLauncher.Common.csproj" />
     <ProjectReference Include="..\XIVLauncher.PatchInstaller\XIVLauncher.PatchInstaller.csproj" />

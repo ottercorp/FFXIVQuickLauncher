@@ -222,79 +222,6 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void RunArgReader()
-        {
-            Task.Run(() =>
-            {
-                try
-                {
-                    var pidList = new List<int>();
-                    Dispatcher.Invoke(() =>
-                    {
-                        Model.LoadingDialogMessage = "正在读取WeGame端FFXIV登录信息\n等待游戏进程...";
-                    });
-
-                    while (true)
-                    {
-                        pidList = GetGameProcess();
-                        if (pidList.Count > 0)
-                            break;
-                        Thread.Sleep(1000);
-                    }
-                    using (var argReader = new RemoteArgReader())
-                    {
-                        argReader.Start();
-                        argReader.WaitOnHello();
-                        foreach (var pid in pidList)
-                        {
-                            argReader.OpenProcess(pid);
-                            argReader.ReadArgs();
-                        }
-                        argReader.Stop();
-                        //var weGameData = argReader.Data;
-                        var weGameData = argReader.Data.Where(x => x.IsWegame());
-                        foreach (var item in weGameData)
-                        {
-                            var areaId = item.Args.Where(x => x.Contains("AreaID=")).Select(x => x.Split('=')[1]).First();
-                            var areaName = this._sdoAreas.First(x => x.Areaid == areaId).AreaName;
-                            var newAccount = XivAccount.CreateAccount(XivAccountType.WeGameSid, sndaId: item.SndaID, areaName: areaName, sessionId: item.SessionId);
-                            newAccount.AutoLogin = true;
-                            newAccount.GenerateId();
-                            _accountManager.AddAccount(newAccount);
-                            _accountManager.CurrentAccount = newAccount;
-                            _accountManager.Save();
-                        }
-                        Dispatcher.Invoke(() =>
-                        {
-                            Model.LoadingDialogMessage = "读取完成";
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Read Arg Error");
-                    throw;
-                }
-                Dispatcher.Invoke(() =>
-                {
-                    Model.IsLoadingDialogOpen = false;
-                });
-            });
-        }
-
-        private static List<int> GetGameProcess()
-        {
-            return Process.GetProcesses().Where(process =>
-            {
-                if (process.ProcessName == "ffxiv_dx11")
-                {
-                    return !process.MainWindowTitle.Contains("FINAL FANTASY XIV"); //非国际服
-                }
-
-                return false;
-            }).ToList().ConvertAll(process => process.Id).ToList();
-        }
-
         private const int CURRENT_VERSION_LEVEL = 2;
 
         private void SetDefaults()
@@ -418,6 +345,7 @@ namespace XIVLauncher.Windows
                         savedAccount.LoginAccount,
                         savedAccount.TestSID,
                         Model.IsFastLogin,
+                        Model.IsReadWegameInfo,
                         MainWindowViewModel.AfterLoginAction.Start
                     );
                 }
@@ -428,6 +356,7 @@ namespace XIVLauncher.Windows
                         savedAccount.LoginAccount,
                         savedAccount.AutoLoginSessionKey,
                         Model.IsFastLogin,
+                        Model.IsReadWegameInfo,
                         MainWindowViewModel.AfterLoginAction.Start
                         );
                 }
@@ -602,7 +531,7 @@ namespace XIVLauncher.Windows
                 {
                     QuitMaintenanceQueueButton_OnClick(null, null);
 
-                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Password, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
+                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Password, Model.IsFastLogin, Model.IsReadWegameInfo, MainWindowViewModel.AfterLoginAction.Start);
                 });
 
                 Console.Beep(523, 150);
@@ -787,24 +716,28 @@ namespace XIVLauncher.Windows
                 ((MainWindowViewModel)this.DataContext).GuiLoginType = (GuiLoginType)((ComboBox)sender).SelectedItem;
             var loginType = (LoginType)((ComboBox)sender).SelectedValue;
             App.Settings.SelectedLoginType = loginType;
+            // Default
+            LoginUsername.Visibility = Visibility.Visible;
+            LoginPassword.Visibility = Visibility.Hidden;
+
+            FastLoginCheckBox.Visibility = Visibility.Visible;
+            ReadWeGameInfoCheckBox.Visibility = Visibility.Collapsed;
+
             switch (loginType)
             {
+                case LoginType.SdoSlide:
+                    break;
                 case LoginType.SdoQrCode:
                     LoginUsername.Visibility = Visibility.Hidden;
-                    LoginPassword.Visibility = Visibility.Collapsed;
-                    break;
-                case LoginType.SdoSlide:
-                    LoginUsername.Visibility = Visibility.Visible;
-                    //LoginPassword.IsEnabled = false;
-                    //MaterialDesignThemes.Wpf.HintAssist.SetHint(LoginPassword, "(不需要输入密码)");
-                    LoginPassword.Visibility = Visibility.Collapsed;
+                    LoginPassword.Visibility = Visibility.Hidden;
                     break;
                 case LoginType.WeGameSid:
                     LoginPassword.Visibility = Visibility.Collapsed;
+                    FastLoginCheckBox.Visibility = Visibility.Collapsed;
+                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
                     break;
                 case LoginType.SdoStatic:
                     LoginUsername.Visibility = Visibility.Visible;
-                    LoginPassword.Visibility = Visibility.Visible;
                     LoginPassword.Visibility = Visibility.Visible;
                     break;
                 case LoginType.WeGameToken:
@@ -833,10 +766,6 @@ namespace XIVLauncher.Windows
 
         private void ReadWeGameLoginData_OnClick(object sender, RoutedEventArgs e)
         {
-            Model.IsLoadingDialogOpen = true;
-            Model.LoadingDialogCancelButtonVisibility = Visibility.Visible;
-            Model.LoadingDialogMessage = "正在读取WeGame端FFXIV登录信息";
-            this.RunArgReader();
         }
 
         private void BackToLoginPageButton_OnClick(object sender, RoutedEventArgs e)

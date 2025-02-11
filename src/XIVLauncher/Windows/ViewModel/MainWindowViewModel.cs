@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Castle.Core.Internal;
 using CheapLoc;
+using FfxivArgLauncher;
 using Serilog;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
@@ -162,8 +163,43 @@ namespace XIVLauncher.Windows.ViewModel
                         return;
                 }
 
-                TryLogin(this.GuiLoginType.LoginType, this.Username, this.Password, IsFastLogin, action);
+                TryLogin(this.GuiLoginType.LoginType, this.Username, this.Password, IsFastLogin, IsReadWegameInfo, action);
             };
+        }
+
+        private async Task<LoginData> ReadWegameInfo(string username, string targetAreaId)
+        {
+            var pidList = AppUtil.GetGameProcessIds();
+            var argReader = new RemoteArgReader();
+            await argReader.Start();
+            while (true)
+            {
+                await Task.Delay(1000);
+                var newPidList = AppUtil.GetGameProcessIds().Except(pidList);
+#if DEBUG
+                newPidList = AppUtil.GetGameProcessIds();
+#endif
+                if (newPidList.Count() == 0)
+                    continue;
+                foreach (var pid in newPidList)
+                {
+                    await argReader.OpenProcess(pid);
+                    var data = await argReader.ReadArgs();
+
+                    if (username.IsNullOrEmpty())
+                    {
+                        return data;
+                    }
+                    else
+                    {
+                        var areaId = data.Args.Where(x => x.Contains("AreaID=")).Select(x => x.Split('=')[1]).First();
+                        if (areaId == targetAreaId && username == data.SndaID)
+                        {
+                            return data;
+                        }
+                    }
+                }
+            }
         }
 
         public enum LoginCard
@@ -183,14 +219,14 @@ namespace XIVLauncher.Windows.ViewModel
                 );
         }
 
-        public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, AfterLoginAction action)
+        public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
         {
             if (this.IsLoggingIn)
                 return;
             //if (username == null) username = string.Empty;
             if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
             {
-                _window.Dispatcher.Invoke(() => TryLogin(loginType, username, password, doingAutoLogin, action));
+                _window.Dispatcher.Invoke(() => TryLogin(loginType, username, password, doingAutoLogin, readWeGameInfo, action));
                 return;
             }
 
@@ -206,7 +242,7 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 try
                 {
-                    Login(loginType, username, password, doingAutoLogin, action).Wait();
+                    Login(loginType, username, password, doingAutoLogin, readWeGameInfo, action).Wait();
                 }
                 catch (Exception ex)
                 {
@@ -224,7 +260,7 @@ namespace XIVLauncher.Windows.ViewModel
             });
         }
 
-        private async Task Login(LoginType loginType, string username, string password, bool doingAutoLogin, AfterLoginAction action)
+        private async Task Login(LoginType loginType, string username, string password, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
         {
             ProblemCheck.RunCheck(_window);
 
@@ -280,6 +316,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             var finalLoginType = loginType;
             string autologinkey = null;
+
             if (doingAutoLogin && loginType != LoginType.SdoQrCode)
             {
                 var savedAccount = (loginType == LoginType.WeGameSid)
@@ -301,7 +338,7 @@ namespace XIVLauncher.Windows.ViewModel
                             break;
                     }
                 }
-                else if (loginType == LoginType.WeGameSid)
+                else if (loginType == LoginType.WeGameSid && !username.IsNullOrEmpty())
                 {
                     var msgbox = new CustomMessageBox.Builder()
                      .WithCaption(Loc.Localize("LoginNoOauthTitle", "Login issue"))
@@ -314,8 +351,21 @@ namespace XIVLauncher.Windows.ViewModel
                     return;
                 }
             }
+
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
+
+            if (loginType == LoginType.WeGameSid)
+            {
+                readWeGameInfo = username.IsNullOrEmpty() ? true : readWeGameInfo;
+                // process expire sid time
+                if (readWeGameInfo)
+                {
+                    var loginData = await ReadWegameInfo(username, Area.Areaid);
+                    username = loginData.SndaID;
+                    password = loginData.SessionId;
+                }
+            }
             var loginResult = await TryLoginToGame(finalLoginType, loginType, username, password, autologinkey, doingAutoLogin, action).ConfigureAwait(false);
             if (loginResult == null)
                 return;
@@ -341,10 +391,17 @@ namespace XIVLauncher.Windows.ViewModel
                         SndaId = loginResult.OauthLogin.SndaId,
 
                     };
-                    accountToSave.AccountType = (loginType == LoginType.WeGameToken) ? accountToSave.AccountType = XivAccountType.WeGame : accountToSave.AccountType = XivAccountType.Sdo;
+
+                    accountToSave.AccountType = loginType switch
+                    {
+                        LoginType.WeGameSid => XivAccountType.WeGameSid,
+                        LoginType.WeGameToken => XivAccountType.WeGame,
+                        LoginType.SdoStatic or LoginType.SdoSlide or LoginType.SdoQrCode => XivAccountType.Sdo
+                    };
+
                     accountToSave.AreaName = Area.AreaName;
 
-                    if (doingAutoLogin)
+                    if (doingAutoLogin && accountToSave.AccountType != XivAccountType.WeGameSid)
                     {
                         accountToSave.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
                         if (finalLoginType == LoginType.SdoStatic)
@@ -352,7 +409,11 @@ namespace XIVLauncher.Windows.ViewModel
                             accountToSave.Password = password;
                         }
                     }
-                    accountToSave.AutoLogin = doingAutoLogin;
+
+                    if (readWeGameInfo && accountToSave.AccountType == XivAccountType.WeGameSid)
+                    {
+                        accountToSave.SndaId = password;
+                    }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);
                     AccountManager.CurrentAccount = accountToSave;
@@ -522,7 +583,7 @@ namespace XIVLauncher.Windows.ViewModel
                         return await Launcher.LoginByWeGameToken(username, password, autoLogin).ConfigureAwait(false);
 
                     case LoginType.WeGameSid:
-                        return await Launcher.LoginBySid(username,password).ConfigureAwait(false);
+                        return await Launcher.LoginBySid(username, password).ConfigureAwait(false);
 
                     default:
                         throw new Exception($"Known LoginType:{type}");
@@ -1634,6 +1695,17 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 _isFastLogin = value;
                 OnPropertyChanged(nameof(IsFastLogin));
+            }
+        }
+
+        private bool _isReadWegameInfo;
+        public bool IsReadWegameInfo
+        {
+            get => _isReadWegameInfo;
+            set
+            {
+                _isReadWegameInfo = value;
+                OnPropertyChanged(nameof(IsReadWegameInfo));
             }
         }
 

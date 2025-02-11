@@ -1,14 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using System.Windows.Documents;
+using System.Threading.Tasks;
 using FfxivArgLauncher;
 using Serilog;
 using XIVLauncher.Common.Game.Patch.PatchList;
 using XIVLauncher.Common.PatcherIpc;
-using XIVLauncher.Common.Patching;
 using XIVLauncher.Common.Patching.Rpc;
 using XIVLauncher.Common.Patching.Rpc.Implementations;
 
@@ -18,24 +16,25 @@ public class RemoteArgReader : IDisposable
 {
     private IRpc rpc;
 
-    public enum InstallerState
+    public enum ReaderState
     {
         NotStarted,
         NotReady,
         Ready,
         Busy,
-        Failed
+        Failed,
+        Finish
     }
 
-    public InstallerState State { get; private set; } = InstallerState.NotStarted;
+    public ReaderState State { get; private set; } = ReaderState.NotStarted;
 
-    public HashSet<LoginData> Data = new();
+    private LoginData Data;
 
     public RemoteArgReader()
     {
     }
 
-    public void Start()
+    public async Task Start()
     {
         var rpcName = "XLArgReader" + Guid.NewGuid().ToString();
 
@@ -44,24 +43,16 @@ public class RemoteArgReader : IDisposable
         this.rpc = new SharedMemoryRpc(rpcName);
         this.rpc.MessageReceived += RemoteCallHandler;
 
-        var path = Path.Combine(AppContext.BaseDirectory,
-            "XIVLauncher.ArgReader.exe");
+        var path = Path.Combine(AppContext.BaseDirectory, "XIVLauncher.ArgReader.exe");
 
-        var startInfo = new ProcessStartInfo(path);
-        startInfo.UseShellExecute = true;
+        var startInfo = new ProcessStartInfo(path)
+        {
+            UseShellExecute = true,
+            Verb = "runas",
+            Arguments = $"{rpcName}"
+        };
 
-        //Start as admin
-        startInfo.Verb = "runas";
-
-        //if (!Debugger.IsAttached)
-        //{
-        //    startInfo.CreateNoWindow = true;
-        //    startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-        //}
-
-        startInfo.Arguments = $"{rpcName}";
-
-        State = InstallerState.NotReady;
+        State = ReaderState.NotReady;
 
         try
         {
@@ -72,84 +63,102 @@ public class RemoteArgReader : IDisposable
             Log.Error(ex, "Could not launch Args Reader");
             throw new Exception("Start failed.", ex);
         }
+
+        await WaitOn(ReaderState.Finish);
+        Log.Information("[ArgReaderIPC] Start");
     }
 
     private void RemoteCallHandler(PatcherIpcEnvelope envelope)
     {
+        Log.Information("[ArgReaderIPC] Received message with OpCode: {0}", envelope.OpCode);
+
         switch (envelope.OpCode)
         {
             case PatcherIpcOpCode.Hello:
-                //_client.Initialize(_clientPort);
                 Log.Information("[ArgReaderIPC] GOT HELLO");
-                State = InstallerState.Ready;
+                State = ReaderState.Finish;
                 break;
 
             case PatcherIpcOpCode.ArgReadOk:
-                State = InstallerState.Busy;
-                Log.Information($"[ArgReaderIPC] GOT ARGS:{envelope.Data}");
-                var data = (LoginData)envelope.Data;
-                if (data.IsWegame())
-                    this.Data.Add(data);
+                Log.Information($"[ArgReaderIPC] GOT ARGS: {envelope.Data}");
+                this.Data = (LoginData)envelope.Data;
+                State = ReaderState.Finish;
                 break;
 
             case PatcherIpcOpCode.ArgReadFail:
                 Log.Information("[ArgReaderIPC] GOT FAILED");
-                State = InstallerState.Failed;
-                Stop();
+                State = ReaderState.Failed;
+                Stop(false);
                 throw new Exception((string)envelope.Data);
-                break;
 
             default:
+                Log.Error("[ArgReaderIPC] Received unknown OpCode: {0}", envelope.OpCode);
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    public void WaitOnHello()
+    public async Task WaitOn(ReaderState state)
     {
-        for (var i = 0; i < 40; i++)
+        Log.Information("[ArgReaderIPC] Waiting for state: {0}", state);
+        await Task.Run(() =>
         {
-            if (State == InstallerState.Ready)
-                return;
+            for (var i = 0; i < 40; i++)
+            {
+                if (State == state)
+                {
+                    Log.Information("[ArgReaderIPC] Desired state reached: {0}", state);
+                    return;
+                }
 
-            Thread.Sleep(500);
-        }
-
-        throw new Exception("Installer RPC timed out.");
-    }
-
-    public void Stop()
-    {
-        //if (State == InstallerState.NotReady || State == InstallerState.NotStarted || State == InstallerState.Busy)
-        //    return;
-
-        this.rpc.SendMessage(new PatcherIpcEnvelope
-        {
-            OpCode = PatcherIpcOpCode.Bye,
-            Data = false,
+                Thread.Sleep(500);
+            }
+            Log.Error("[ArgReaderIPC] Reader RPC timed out.");
+            throw new Exception("[ArgReaderIPC] Reader RPC timed out.");
         });
     }
 
-    public void OpenProcess(int pid)
+    public void Stop(bool killProcess)
     {
-        State = InstallerState.Busy;
+        Log.Information("[ArgReaderIPC] Stopping RPC with killProcess: {0}", killProcess);
+        this.rpc.SendMessage(new PatcherIpcEnvelope
+        {
+            OpCode = PatcherIpcOpCode.Bye,
+            Data = killProcess
+        });
+    }
+
+    public async Task OpenProcess(int pid)
+    {
+        Log.Information("[ArgReaderIPC] Opening process with PID: {0}", pid);
+        State = ReaderState.Busy;
         this.rpc.SendMessage(new PatcherIpcEnvelope
         {
             OpCode = PatcherIpcOpCode.OpenProcess,
             Data = pid
         });
+
+        await WaitOn(ReaderState.Finish);
+        Log.Information($"[ArgReaderIPC] OpenProcess: {pid}");
     }
 
-    public void ReadArgs()
+    public async Task<LoginData> ReadArgs()
     {
-        State = InstallerState.Busy;
+        Log.Information("[ArgReaderIPC] Reading arguments");
+        State = ReaderState.Busy;
         this.rpc.SendMessage(new PatcherIpcEnvelope
         {
-            OpCode = PatcherIpcOpCode.ReadArgs,
+            OpCode = PatcherIpcOpCode.ReadArgs
         });
+
+        await WaitOn(ReaderState.Finish);
+        Log.Information($"[ArgReaderIPC] ReadArgs: {Data}");
+        return Data;
     }
 
     public void Dispose()
     {
-        Stop();
+        Log.Information("[ArgReaderIPC] Disposing");
+        this.rpc.MessageReceived -= RemoteCallHandler;
+        Stop(false);
     }
 }

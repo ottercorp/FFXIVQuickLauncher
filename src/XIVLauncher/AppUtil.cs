@@ -140,18 +140,18 @@ namespace XIVLauncher
                         // Should return "C:\Program Files (x86)\Steam\steamapps\common\game Online" if installed with default options.
                         // foreach (var steamAppId in ValidSteamAppIds)
                         // {
-                            using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\最终幻想14"))
+                        using (var subkey = hklm.OpenSubKey($@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\最终幻想14"))
+                        {
+                            if (subkey != null && subkey.GetValue("InstallLocation", null) is string path)
                             {
-                                if (subkey != null && subkey.GetValue("InstallLocation", null) is string path)
+                                if (Directory.Exists(path) && GameHelpers.IsValidGamePath(path) && !foundVersions.ContainsKey(path))
                                 {
-                                    if (Directory.Exists(path) && GameHelpers.IsValidGamePath(path) && !foundVersions.ContainsKey(path))
-                                    {
-                                        // InstallLocation is the root path of the game (the one containing boot and game) itself
-                                        var baseVersion = Repository.Ffxiv.GetVer(new DirectoryInfo(path));
-                                        foundVersions.Add(path, SeVersion.Parse(baseVersion));
-                                    }
+                                    // InstallLocation is the root path of the game (the one containing boot and game) itself
+                                    var baseVersion = Repository.Ffxiv.GetVer(new DirectoryInfo(path));
+                                    foundVersions.Add(path, SeVersion.Parse(baseVersion));
                                 }
                             }
+                        }
                         // }
                     }
                 }
@@ -228,6 +228,14 @@ namespace XIVLauncher
             }
 
             return true;
+        }
+
+        public static IEnumerable<int> GetGameProcessIds()
+        {
+            return Process.GetProcesses()
+            .Where(p => p.ProcessName == "ffxiv_dx11")
+            .Where(p => !p.MainWindowTitle.Contains("FINAL FANTASY XIV"))
+            .Select(p => p.Id);
         }
     }
 }

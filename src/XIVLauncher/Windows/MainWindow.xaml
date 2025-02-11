@@ -302,13 +302,24 @@
                                                 Visibility="Visible"
                                                 DockPanel.Dock="Top"
                                                 Content="快速登录"
-                                                HorizontalAlignment="Center"
+                                                HorizontalAlignment="Stretch"
                                                 Margin="0,8,0,0"
                                                 VerticalAlignment="Top"
                                                 x:Name="FastLoginCheckBox"
                                                 Click="FastLoginCheckBox_OnClick"
                                                 ToolTip="缓存登录信息,类PC叨鱼快速登录"
                                                 IsChecked="{Binding IsFastLogin}" />
+                                            
+                                            <CheckBox
+                                                Visibility="Hidden"
+                                                DockPanel.Dock="Top"
+                                                Content="读取登录信息"
+                                                HorizontalAlignment="Stretch"
+                                                Margin="0,8,0,0"
+                                                VerticalAlignment="Top"
+                                                x:Name="ReadWeGameInfoCheckBox"
+                                                ToolTip="从WeGame版FFXIV中读取登录信息"
+                                                IsChecked="{Binding IsReadWegameInfo}" />
 
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
