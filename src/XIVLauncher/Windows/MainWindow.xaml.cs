@@ -63,6 +63,7 @@ namespace XIVLauncher.Windows
             InitializeComponent();
 
             this.DataContext = new MainWindowViewModel(this);
+            _accountManager = Model.AccountManager;
             _launcher = Model.Launcher;
 
             Closed += Model.OnWindowClosed;
@@ -250,14 +251,18 @@ namespace XIVLauncher.Windows
                             argReader.ReadArgs();
                         }
                         argReader.Stop();
+                        //var weGameData = argReader.Data;
                         var weGameData = argReader.Data.Where(x => x.IsWegame());
                         foreach (var item in weGameData)
                         {
-                            var areaId = item.Args.Where(x => x.StartsWith("AreaID=")).Select(x => x.Split('=')[1]).First();
+                            var areaId = item.Args.Where(x => x.Contains("AreaID=")).Select(x => x.Split('=')[1]).First();
                             var areaName = this._sdoAreas.First(x => x.Areaid == areaId).AreaName;
                             var newAccount = XivAccount.CreateAccount(XivAccountType.WeGameSid, sndaId: item.SndaID, areaName: areaName, sessionId: item.SessionId);
                             newAccount.AutoLogin = true;
+                            newAccount.GenerateId();
                             _accountManager.AddAccount(newAccount);
+                            _accountManager.CurrentAccount = newAccount;
+                            _accountManager.Save();
                         }
                         Dispatcher.Invoke(() =>
                         {
@@ -386,7 +391,7 @@ namespace XIVLauncher.Windows
             //LoginPassword.IsEnabled = LoginPassword.IsVisible;
             //Model.EnableInjector = App.Settings.EnableInjector;
 
-            _accountManager = new AccountManager(App.Settings);
+            //_accountManager = new AccountManager(App.Settings);
             //if (this._accountManager.CurrentAccount != null && !_accountManager.CurrentAccount.Password.IsNullOrEmpty()) ShowPassword_OnClick(null, null);
 
             var savedAccount = _accountManager.CurrentAccount;

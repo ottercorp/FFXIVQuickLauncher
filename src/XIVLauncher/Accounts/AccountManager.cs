@@ -60,9 +60,6 @@ namespace XIVLauncher.Accounts
                 return;
             }
 
-            if (existingAccount != null)
-                return;
-
             Accounts.Add(account);
         }
 
