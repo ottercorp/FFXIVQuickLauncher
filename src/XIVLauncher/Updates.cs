@@ -216,7 +216,7 @@ namespace XIVLauncher
             {
                 var updateOptions = App.Settings.EnableBeta is true
                                         ? new UpdateOptions { ExplicitChannel = "beta", AllowVersionDowngrade = true }
-                                        : new UpdateOptions { AllowVersionDowngrade = true };
+                                        : new UpdateOptions { ExplicitChannel = "win", AllowVersionDowngrade = true };
                 var mgr = new UpdateManager(UPDATE_URL, updateOptions);
 
                 // check for new version
