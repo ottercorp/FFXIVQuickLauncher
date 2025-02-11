@@ -786,16 +786,16 @@ namespace XIVLauncher.Windows
             {
                 case LoginType.SdoQrCode:
                     LoginUsername.Visibility = Visibility.Hidden;
-                    LoginPassword.Visibility = Visibility.Hidden;
+                    LoginPassword.Visibility = Visibility.Collapsed;
                     break;
                 case LoginType.SdoSlide:
                     LoginUsername.Visibility = Visibility.Visible;
                     //LoginPassword.IsEnabled = false;
                     //MaterialDesignThemes.Wpf.HintAssist.SetHint(LoginPassword, "(不需要输入密码)");
-                    LoginPassword.Visibility = Visibility.Hidden;
+                    LoginPassword.Visibility = Visibility.Collapsed;
                     break;
                 case LoginType.WeGameSid:
-                    LoginPassword.Visibility = Visibility.Hidden;
+                    LoginPassword.Visibility = Visibility.Collapsed;
                     break;
                 case LoginType.SdoStatic:
                     LoginUsername.Visibility = Visibility.Visible;

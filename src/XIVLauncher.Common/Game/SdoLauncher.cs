@@ -85,6 +85,8 @@ namespace XIVLauncher.Common.Game
             };
         }
 
+        private static bool IsAutoLoginKey(string key) => key.StartsWith("ULS", StringComparison.Ordinal);
+
         public async Task<LoginResult> LoginBySdoStatic(string account, string password)
         {
             var guid = await this.GetGuid();
@@ -222,54 +224,60 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginBySessionKey(string account, string autoLoginSessionKey)
+        public async Task<LoginResult> LoginBySessionKey(string account, string autoLoginSessionKey, CancellationTokenSource cts, Action<string> showVerificationCode)
         {
             var guid = await this.GetGuid();
             //快速登录,刷新SessionKey
             var (sndaId, tgt, newAutoLoginSessionKey) = await UpdateAutoLoginSessionKey(guid, autoLoginSessionKey);
 
-            //快速登录
-            var result = await this.GetJsonAsSdoClient("fastLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
 
-            if (result.ReturnCode != 0)
+            if (newAutoLoginSessionKey is null)
             {
-                throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
+                //throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
+                //回退到滑动
+                Log.Information("AutoLogin session key error, falling back to slide");
+                return await LoginBySlide(account, true, cts, showVerificationCode);
             }
-
-            sndaId = result.Data.SndaId;
-            tgt = result.Data.Tgt;
-
-            try
+            else
             {
-                var sessionId = await GetSessionId(tgt, guid);
-                var oath = new OauthLoginResult
-                {
-                    SessionId = sessionId,
-                    InputUserId = account,
-                    //Password = password,
-                    SndaId = sndaId,
-                    AutoLoginSessionKey = autoLoginSessionKey,
-                    MaxExpansion = Constants.MaxExpansion,
-                    LoginType = LoginType.AutoLoginSession
-                };
-                return new LoginResult
-                {
-                    OauthLogin = oath,
-                    State = LoginState.Ok,
-                };
-            }
-            catch (Exception ex)
-            {
-                if (ex is SdoLoginException sdoEx)
-                {
-                    sdoEx.RemoveAutoLoginSessionKey = true;
-                    throw sdoEx;
-                }
-                else
-                {
-                    throw;
-                }
+                //快速登录
+                var result = await this.GetJsonAsSdoClient("fastLogin.json", new List<string>() { $"tgt={tgt}", $"guid={guid}" });
 
+                try
+                {
+                    sndaId = result.Data.SndaId;
+                    tgt = result.Data.Tgt;
+                    var sessionId = await GetSessionId(tgt, guid);
+                    var oath = new OauthLoginResult
+                    {
+                        SessionId = sessionId,
+                        InputUserId = account,
+                        //Password = password,
+                        SndaId = sndaId,
+                        AutoLoginSessionKey = newAutoLoginSessionKey,
+                        MaxExpansion = Constants.MaxExpansion,
+                        LoginType = LoginType.AutoLoginSession
+                    };
+                    Console.WriteLine(newAutoLoginSessionKey);
+                    return new LoginResult
+                    {
+                        OauthLogin = oath,
+                        State = LoginState.Ok,
+                    };
+                }
+                catch (Exception ex)
+                {
+                    if (ex is SdoLoginException sdoEx)
+                    {
+                        sdoEx.RemoveAutoLoginSessionKey = true;
+                        throw sdoEx;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+
+                }
             }
 
         }
@@ -308,37 +316,14 @@ namespace XIVLauncher.Common.Game
             var result = await this.GetJsonAsSdoClient("autoLogin.json", new List<string>() { $"autoLoginSessionKey={autoLoginSessionKey}", $"guid={guid}" });
             //-10515005 "对不起，自动登录已失效，请重新登录"
             if (result.ReturnCode != 0)
-                throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
+                //throw new SdoLoginException(result.ReturnCode, result.Data.FailReason, true);
+                return (null, null, null);
             Log.Information($"LoginSessionKey Updated, {(result.Data.AutoLoginMaxAge / 3600f):F1} hours left");
             autoLoginSessionKey = result.Data.AutoLoginSessionKey;
             var tgt = result.Data.Tgt;
             var sndaId = result.Data.SndaId;
             return (sndaId, tgt, autoLoginSessionKey);
         }
-
-
-        #region 快速登陆
-
-        //private async Task<string> ExtendLoginState(string tgtcache)
-        //{
-        //    //延长登录时效
-        //    var result = await GetJsonAsSdoClient("extendLoginState.json", new List<string>() { $"tgt={tgtcache}" }, SdoClient.Daoyu);
-
-        //    if (result.ReturnCode != 0 || result.ErrorType != 0)
-        //    {
-        //        throw new OauthLoginException(result.Data.FailReason);
-        //    }
-
-        //    var tgt = result.Data.Tgt;
-        //    if (string.IsNullOrEmpty(tgt))
-        //    {
-        //        throw new OauthLoginException("快速登陆失败");
-        //    }
-        //    else
-        //        return tgt;
-        //}
-
-        #endregion
 
         #region 手机APP滑动登陆
 

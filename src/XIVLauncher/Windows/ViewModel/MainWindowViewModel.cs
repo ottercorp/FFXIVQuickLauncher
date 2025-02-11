@@ -488,7 +488,11 @@ namespace XIVLauncher.Windows.ViewModel
                     case LoginType.SdoStatic:
                         return await Launcher.LoginBySdoStatic(username, password).ConfigureAwait(false);
                     case LoginType.AutoLoginSession:
-                        return await Launcher.LoginBySessionKey(username, password).ConfigureAwait(false);
+                        return await Launcher.LoginBySessionKey(username, password, this.loginCts, (code) =>
+                        {
+                            Log.Information($"叨鱼确认码:{code}");
+                            this.LoginMessage = $"确认码: {code}";
+                        }).ConfigureAwait(false);
                     case LoginType.SdoSlide:
                         return await Launcher.LoginBySlide(username, autoLogin, this.loginCts, (code) =>
                         {
