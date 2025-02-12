@@ -75,19 +75,7 @@ namespace XIVLauncher.Accounts
 
         public void GenerateId()
         {
-            switch (this.AccountType)
-            {
-                case XivAccountType.WeGameSid:
-                    Debug.Assert(this.AreaName != null);
-                    Debug.Assert(this.LoginAccount == null);
-                    this.Id = $"{this.SndaId}@{this.AreaName}|{this.AccountType}";
-                    break;
-                case XivAccountType.Sdo:
-                case XivAccountType.WeGame:
-                    Debug.Assert(this.LoginAccount != null);
-                    this.Id = $"{this.LoginAccount}|{this.AccountType}";
-                    break;
-            }
+            this.Id = $"{this.LoginAccount}|{this.AccountType}";
         }
 
         public string SndaId { get; set; }
@@ -99,21 +87,7 @@ namespace XIVLauncher.Accounts
             {
                 if (UserDefinedName is not null)
                     return UserDefinedName;
-                return this.UniqueName;
-            }
-            private set { }
-        }
-
-        [Ignore]
-        public string UniqueName
-        {
-            get
-            {
-                if (AccountType == XivAccountType.Sdo || AccountType == XivAccountType.WeGame)
-                    return LoginAccount;
-                if (AccountType == XivAccountType.WeGameSid)
-                    return $"{SndaId}@{AreaName}";
-                return SndaId.ToString();
+                return this.UserName;
             }
             private set { }
         }
@@ -155,10 +129,7 @@ namespace XIVLauncher.Accounts
 
         public override int GetHashCode()
         {
-            var area = this.AreaName;
-            if (this.AccountType != XivAccountType.WeGameSid)
-                area = null;
-            return (UserName, AccountType, area).GetHashCode();
+            return (UserName, AccountType).GetHashCode();
         }
 
         public bool Equals(XivAccount other)
