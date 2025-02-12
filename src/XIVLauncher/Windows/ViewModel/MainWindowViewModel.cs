@@ -185,19 +185,12 @@ namespace XIVLauncher.Windows.ViewModel
                 {
                     await argReader.OpenProcess(pid);
                     var data = await argReader.ReadArgs();
+#if DEBUG
+                    Console.WriteLine(data.CommandLine);
+#endif
+                    argReader.Stop(true);
+                    return data;
 
-                    if (username.IsNullOrEmpty())
-                    {
-                        return data;
-                    }
-                    else
-                    {
-                        var areaId = data.Args.Where(x => x.Contains("AreaID=")).Select(x => x.Split('=')[1]).First();
-                        if (areaId == targetAreaId && username == data.SndaID)
-                        {
-                            return data;
-                        }
-                    }
                 }
             }
         }
@@ -319,9 +312,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (doingAutoLogin && loginType != LoginType.SdoQrCode)
             {
-                var savedAccount = (loginType == LoginType.WeGameSid)
-                    ? AccountManager.Accounts.FirstOrDefault(x => x.UserName == username && x.AreaName == Area.AreaName)
-                    : AccountManager.Accounts.FirstOrDefault(x => x.UserName == username);
+                var savedAccount = AccountManager.Accounts.FirstOrDefault(x => x.UserName == username);
                 if (savedAccount != null)
                 {
                     switch (loginType)
@@ -338,14 +329,14 @@ namespace XIVLauncher.Windows.ViewModel
                             break;
                     }
                 }
-                else if (loginType == LoginType.WeGameSid && !username.IsNullOrEmpty())
+                else if (loginType == LoginType.WeGameSid && !readWeGameInfo)
                 {
                     var msgbox = new CustomMessageBox.Builder()
                      .WithCaption(Loc.Localize("LoginNoOauthTitle", "Login issue"))
                      .WithImage(MessageBoxImage.Error)
                      .WithShowHelpLinks(true)
                      .WithShowDiscordLink(true)
-                     .WithText("当前账号为WeGame账号，不同大区登录密钥不通用,请重新获取登录密钥，或者在账号选择器中重新选择正确的大区WeGame账号")
+                     .WithText("当前账号为WeGame账号，未找到保存的密钥，请重新获取登录密钥，或者在账号选择器中重新选择正确的大区WeGame账号")
                      .WithParentWindow(_window);
                     msgbox.Show();
                     return;
@@ -382,14 +373,13 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (action != AfterLoginAction.UpdateOnly)
             {
-                if (loginResult.State == Launcher.LoginState.Ok && (finalLoginType != LoginType.WeGameSid))
+                if (loginResult.State == Launcher.LoginState.Ok)
                 {
-                    var accountToSave = new XivAccount()
+                    var accountToSave = this.AccountManager.Accounts.FirstOrDefault(x => x.UserName == loginResult.OauthLogin?.InputUserId) ?? new XivAccount()
                     {
                         AutoLogin = true,
                         LoginAccount = loginResult.OauthLogin.InputUserId,
                         SndaId = loginResult.OauthLogin.SndaId,
-
                     };
 
                     accountToSave.AccountType = loginType switch
@@ -412,7 +402,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                     if (readWeGameInfo && accountToSave.AccountType == XivAccountType.WeGameSid)
                     {
-                        accountToSave.SndaId = password;
+                        accountToSave.TestSID = password;
                     }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);

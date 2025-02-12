@@ -155,12 +155,12 @@ Global
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.Release|x64.Build.0 = Release|Any CPU
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.Release|x86.ActiveCfg = Release|Any CPU
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.Release|x86.Build.0 = Release|Any CPU
-		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|Any CPU.ActiveCfg = Release|Any CPU
-		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|Any CPU.Build.0 = Release|Any CPU
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|x64.ActiveCfg = Release|Any CPU
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|x64.Build.0 = Release|Any CPU
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|x86.ActiveCfg = Release|Any CPU
 		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|x86.Build.0 = Release|Any CPU
+		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4C54256-C18B-4619-A888-AC820BDD6020}.ReleaseNoUpdate|Any CPU.Build.0 = Debug|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -173,12 +173,12 @@ Global
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.Release|x64.Build.0 = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.Release|x86.ActiveCfg = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.Release|x86.Build.0 = Release|Any CPU
-		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|Any CPU.ActiveCfg = Release|Any CPU
-		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|Any CPU.Build.0 = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|x64.ActiveCfg = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|x64.Build.0 = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|x86.ActiveCfg = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|x86.Build.0 = Release|Any CPU
+		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|Any CPU.ActiveCfg = Debug|Any CPU
+		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
