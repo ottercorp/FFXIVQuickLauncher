@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using Castle.Core.Internal;
 using CheapLoc;
+using MaterialDesignThemes.Wpf;
 using Serilog;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
@@ -718,10 +719,13 @@ namespace XIVLauncher.Windows
             App.Settings.SelectedLoginType = loginType;
             // Default
             LoginUsername.Visibility = Visibility.Visible;
-            LoginPassword.Visibility = Visibility.Hidden;
+            LoginPassword.Visibility = Visibility.Collapsed;
 
             FastLoginCheckBox.Visibility = Visibility.Visible;
             ReadWeGameInfoCheckBox.Visibility = Visibility.Collapsed;
+
+            HintAssist.SetHint(this.LoginUsername, "盛趣账号");
+            HintAssist.SetHint(this.LoginPassword, "密码");
 
             switch (loginType)
             {
@@ -730,20 +734,21 @@ namespace XIVLauncher.Windows
                     break;
                 case LoginType.SdoQrCode:
                     LoginUsername.Visibility = Visibility.Hidden;
-                    LoginPassword.Visibility = Visibility.Hidden;
-
-                    break;
-                case LoginType.WeGameSid:
-                    LoginPassword.Visibility = Visibility.Collapsed;
-                    FastLoginCheckBox.Visibility = Visibility.Collapsed;
-                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
                     break;
                 case LoginType.SdoStatic:
                     LoginUsername.Visibility = Visibility.Visible;
                     LoginPassword.Visibility = Visibility.Visible;
+                    FastLoginCheckBox.Visibility = Visibility.Collapsed;
                     break;
                 case LoginType.WeGameToken:
                     LoginPassword.Visibility = Visibility.Visible;
+                    HintAssist.SetHint(this.LoginUsername, "Wegame抓包账号");
+                    HintAssist.SetHint(this.LoginPassword, "抓包Token");
+                    break;
+                case LoginType.WeGameSid:
+                    FastLoginCheckBox.Visibility = Visibility.Collapsed;
+                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
+                    HintAssist.SetHint(this.LoginUsername, "从Wegame自动获取的账号");
                     break;
             }
         }
