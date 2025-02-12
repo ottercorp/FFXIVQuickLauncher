@@ -174,6 +174,11 @@ namespace XIVLauncher.Windows.ViewModel
             await argReader.Start();
             while (true)
             {
+                if (loginCts.IsCancellationRequested)
+                {
+                    argReader.Stop(false);
+                    return null;
+                }
                 await Task.Delay(1000);
                 var newPidList = AppUtil.GetGameProcessIds().Except(pidList);
 #if DEBUG
@@ -181,17 +186,15 @@ namespace XIVLauncher.Windows.ViewModel
 #endif
                 if (newPidList.Count() == 0)
                     continue;
-                foreach (var pid in newPidList)
-                {
-                    await argReader.OpenProcess(pid);
-                    var data = await argReader.ReadArgs();
+                var pid = newPidList.First();
+                await argReader.OpenProcess(pid);
+                var data = await argReader.ReadArgs();
 #if DEBUG
-                    Console.WriteLine(data.CommandLine);
+                Console.WriteLine(data.CommandLine);
 #endif
-                    argReader.Stop(true);
-                    return data;
+                argReader.Stop(true);
+                return data;
 
-                }
             }
         }
 
@@ -229,6 +232,7 @@ namespace XIVLauncher.Windows.ViewModel
             //LoginCardTransitionerIndex = 0;
             var currentCard = (LoginCard)LoginCardTransitionerIndex;
             this.SwitchCard(loginType == LoginType.SdoQrCode ? LoginCard.ScanQrCode : LoginCard.Logining);
+            this.loginCts = new CancellationTokenSource();
             IsLoggingIn = true;
 
             Task.Run(() =>
@@ -353,6 +357,7 @@ namespace XIVLauncher.Windows.ViewModel
                 if (readWeGameInfo)
                 {
                     var loginData = await ReadWegameInfo(username, Area.Areaid);
+                    if (loginData == null) { return; }
                     username = loginData.SndaID;
                     password = loginData.SessionId;
                 }
@@ -536,7 +541,6 @@ namespace XIVLauncher.Windows.ViewModel
                 var checkResult = await Launcher.CheckGameUpdate(Area, gamePath, action == AfterLoginAction.Repair);
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
-                this.loginCts = new CancellationTokenSource();
 
                 if (type == LoginType.AutoLoginSession)
                 {

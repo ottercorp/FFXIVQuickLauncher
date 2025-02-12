@@ -34,6 +34,7 @@ public class RemoteArgReader : IDisposable
     {
     }
 
+    private Process process;
     public async Task Start()
     {
         var rpcName = "XLArgReader" + Guid.NewGuid().ToString();
@@ -56,7 +57,7 @@ public class RemoteArgReader : IDisposable
 
         try
         {
-            Process.Start(startInfo);
+            this.process = Process.Start(startInfo);
         }
         catch (Exception ex)
         {
@@ -125,6 +126,15 @@ public class RemoteArgReader : IDisposable
             OpCode = PatcherIpcOpCode.Bye,
             Data = killProcess
         });
+        Task.Run(() =>
+        {
+            Thread.Sleep(1000);
+            try
+            {
+                process?.Kill();
+            }
+            catch { }
+        });
     }
 
     public async Task OpenProcess(int pid)
@@ -159,6 +169,5 @@ public class RemoteArgReader : IDisposable
     {
         Log.Information("[ArgReaderIPC] Disposing");
         this.rpc.MessageReceived -= RemoteCallHandler;
-        Stop(false);
     }
 }
