@@ -742,7 +742,7 @@ namespace XIVLauncher.Windows
                     break;
                 case LoginType.WeGameToken:
                     LoginPassword.Visibility = Visibility.Visible;
-                    HintAssist.SetHint(this.LoginUsername, "Wegame抓包账号");
+                    HintAssist.SetHint(this.LoginUsername, "SndaId");
                     HintAssist.SetHint(this.LoginPassword, "抓包Token");
                     break;
                 case LoginType.WeGameSid:
@@ -773,6 +773,7 @@ namespace XIVLauncher.Windows
 
         private void ReadWeGameLoginData_OnClick(object sender, RoutedEventArgs e)
         {
+            CustomMessageBox.Show("自动注入目前已禁用，请在上方选择其他方式登录。", "看看别处");
         }
 
         private void BackToLoginPageButton_OnClick(object sender, RoutedEventArgs e)
