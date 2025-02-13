@@ -380,9 +380,9 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 if (loginResult.State == Launcher.LoginState.Ok)
                 {
-                    var accountToSave = this.AccountManager.Accounts.FirstOrDefault(x => x.UserName == loginResult.OauthLogin?.InputUserId) ?? new XivAccount()
+                    var accountToSave = new XivAccount()
                     {
-                        AutoLogin = true,
+                        AutoLogin = loginType == LoginType.WeGameSid || doingAutoLogin,
                         LoginAccount = loginResult.OauthLogin.InputUserId,
                         SndaId = loginResult.OauthLogin.SndaId,
                     };
