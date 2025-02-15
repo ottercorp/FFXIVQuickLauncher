@@ -374,6 +374,7 @@ namespace XIVLauncher.Windows.ViewModel
                 CustomMessageBox.Show(
                     "密钥为空,无法登录",
                     "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+                return;
             }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
