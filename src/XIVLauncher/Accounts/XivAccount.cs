@@ -75,7 +75,7 @@ namespace XIVLauncher.Accounts
 
         public void GenerateId()
         {
-            this.Id = $"{this.LoginAccount}|{this.AccountType}";
+            this.Id = $"{this.UserName}|{this.AccountType}";
         }
 
         public string SndaId { get; set; }

@@ -54,6 +54,12 @@ public class RemoteArgReader : IDisposable
             Arguments = $"{rpcName}"
         };
 
+        if (!Debugger.IsAttached)
+        {
+            startInfo.CreateNoWindow = true;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        }
+
         State = ReaderState.NotReady;
 
         try

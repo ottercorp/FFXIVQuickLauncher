@@ -181,6 +181,7 @@ namespace XIVLauncher.Windows.ViewModel
                 }
                 await Task.Delay(1000);
                 var newPidList = AppUtil.GetGameProcessIds().Except(pidList);
+                this.LoginMessage = $"请使用WeGame启动需要读取的FFXIV";
 #if DEBUG
                 newPidList = AppUtil.GetGameProcessIds();
 #endif
@@ -190,7 +191,7 @@ namespace XIVLauncher.Windows.ViewModel
                 await argReader.OpenProcess(pid);
                 var data = await argReader.ReadArgs();
 #if DEBUG
-                Console.WriteLine(data.CommandLine);
+                this.LoginMessage = $"读取成功";
 #endif
                 argReader.Stop(true);
                 return data;
