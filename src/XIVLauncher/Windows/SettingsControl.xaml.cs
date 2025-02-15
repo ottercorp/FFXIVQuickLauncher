@@ -18,6 +18,7 @@ using XIVLauncher.Common.Game.Patch.Acquisition;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
+using XIVLauncher.Accounts.Cred;
 
 namespace XIVLauncher.Windows
 {
@@ -34,7 +35,8 @@ namespace XIVLauncher.Windows
         private const int BYTES_TO_MB = 1048576;
 
         private bool _hasTriggeredLogo = false;
-
+        
+        private MainWindowViewModel MainWindowViewModel;
         public SettingsControl()
         {
             InitializeComponent();
@@ -42,7 +44,6 @@ namespace XIVLauncher.Windows
             QqButton.Click += SupportLinks.OpenQQChannel;
             FaqButton.Click += SupportLinks.OpenFaq;
             DataContext = new SettingsControlViewModel();
-
             ReloadSettings();
         }
 
@@ -61,13 +62,13 @@ namespace XIVLauncher.Windows
             if (App.Settings.PatchPath != null)
                 ViewModel.PatchPath = App.Settings.PatchPath.FullName;
 
-            LanguageComboBox.SelectedIndex = (int) App.Settings.Language.GetValueOrDefault(ClientLanguage.English);
-            LauncherLanguageComboBox.SelectedIndex = (int) App.Settings.LauncherLanguage.GetValueOrDefault(LauncherLanguage.English);
+            LanguageComboBox.SelectedIndex = (int)App.Settings.Language.GetValueOrDefault(ClientLanguage.English);
+            LauncherLanguageComboBox.SelectedIndex = (int)App.Settings.LauncherLanguage.GetValueOrDefault(LauncherLanguage.English);
             LauncherLanguageNoticeTextBlock.Visibility = Visibility.Hidden;
             AddonListView.ItemsSource = App.Settings.AddonList ??= new List<AddonEntry>();
             AskBeforePatchingCheckBox.IsChecked = App.Settings.AskBeforePatchInstall;
             KeepPatchesCheckBox.IsChecked = App.Settings.KeepPatches;
-            PatchAcquisitionComboBox.SelectedIndex = (int) App.Settings.PatchAcquisitionMethod.GetValueOrDefault(AcquisitionMethod.Aria);
+            PatchAcquisitionComboBox.SelectedIndex = (int)App.Settings.PatchAcquisitionMethod.GetValueOrDefault(AcquisitionMethod.Aria);
             AutoStartSteamCheckBox.IsChecked = App.Settings.AutoStartSteam;
 
             InjectionDelayUpDown.Value = App.Settings.DalamudInjectionDelayMs;
@@ -86,15 +87,17 @@ namespace XIVLauncher.Windows
 
             LaunchArgsTextBox.Text = App.Settings.AdditionalLaunchArgs;
 
-            DpiAwarenessComboBox.SelectedIndex = (int) App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware);
+            DpiAwarenessComboBox.SelectedIndex = (int)App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware);
 
             VersionLabel.Text += " - v" + AppUtil.GetAssemblyVersion() + " - " + AppUtil.GetGitHash() + " - " + Environment.Version;
 
-            var val = (decimal) App.Settings.SpeedLimitBytes / BYTES_TO_MB;
+            var val = (decimal)App.Settings.SpeedLimitBytes / BYTES_TO_MB;
 
             SpeedLimiterUpDown.Value = val;
 
             IsFreeTrialCheckbox.IsChecked = App.Settings.IsFt;
+
+            AccountStorageEncryptCombox.SelectedIndex = (int)App.Settings.CredType.GetValueOrDefault(CredType.WindowsCredManager);
         }
 
         private void AcceptButton_Click(object sender, RoutedEventArgs e)
@@ -118,7 +121,7 @@ namespace XIVLauncher.Windows
             App.Settings.AddonList = (List<AddonEntry>)AddonListView.ItemsSource;
             App.Settings.AskBeforePatchInstall = AskBeforePatchingCheckBox.IsChecked == true;
             App.Settings.KeepPatches = KeepPatchesCheckBox.IsChecked == true;
-            App.Settings.PatchAcquisitionMethod = (AcquisitionMethod) PatchAcquisitionComboBox.SelectedIndex;
+            App.Settings.PatchAcquisitionMethod = (AcquisitionMethod)PatchAcquisitionComboBox.SelectedIndex;
             App.Settings.AutoStartSteam = AutoStartSteamCheckBox.IsChecked == true;
 
             App.Settings.InGameAddonEnabled = EnableHooksCheckBox.IsChecked == true;
@@ -135,13 +138,15 @@ namespace XIVLauncher.Windows
 
             App.Settings.AdditionalLaunchArgs = LaunchArgsTextBox.Text;
 
-            App.Settings.DpiAwareness = (DpiAwareness) DpiAwarenessComboBox.SelectedIndex;
+            App.Settings.DpiAwareness = (DpiAwareness)DpiAwarenessComboBox.SelectedIndex;
 
             SettingsDismissed?.Invoke(this, null);
 
-            App.Settings.SpeedLimitBytes = (long) (SpeedLimiterUpDown.Value * BYTES_TO_MB);
+            App.Settings.SpeedLimitBytes = (long)(SpeedLimiterUpDown.Value * BYTES_TO_MB);
 
             App.Settings.IsFt = this.IsFreeTrialCheckbox.IsChecked == true;
+            App.Settings.CredType = (CredType)AccountStorageEncryptCombox.SelectedIndex;
+            App.AccountManager.ChangeCredType(App.Settings.CredType);
 
             Transitioner.MoveNextCommand.Execute(null, null);
         }
@@ -175,7 +180,8 @@ namespace XIVLauncher.Windows
             var addonSetup = new GenericAddonSetupWindow();
             addonSetup.ShowDialog();
 
-            if (addonSetup.Result != null && !string.IsNullOrEmpty(addonSetup.Result.Path)) {
+            if (addonSetup.Result != null && !string.IsNullOrEmpty(addonSetup.Result.Path))
+            {
                 var addonList = App.Settings.AddonList;
 
                 addonList.Add(new AddonEntry
@@ -223,7 +229,7 @@ namespace XIVLauncher.Windows
 
         private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
         {
-            App.Settings.AddonList = (List<AddonEntry>) AddonListView.ItemsSource;
+            App.Settings.AddonList = (List<AddonEntry>)AddonListView.ItemsSource;
         }
 
         private void RemoveAddonEntry_OnClick(object sender, RoutedEventArgs e)
@@ -439,6 +445,11 @@ namespace XIVLauncher.Windows
         {
             var asw = new AdvancedSettingsWindow();
             asw.ShowDialog();
+        }
+
+        private void LauncherLanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }

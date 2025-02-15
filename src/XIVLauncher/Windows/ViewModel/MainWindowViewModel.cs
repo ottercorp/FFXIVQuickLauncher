@@ -36,7 +36,7 @@ using XIVLauncher.Xaml;
 
 namespace XIVLauncher.Windows.ViewModel
 {
-    internal class MainWindowViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : INotifyPropertyChanged
     {
         private readonly Window _window;
 
@@ -47,7 +47,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         public Launcher Launcher { get; private set; }
 
-        public AccountManager AccountManager { get; private set; } = new(App.Settings);
+        public AccountManager AccountManager { get; private set; } = App.AccountManager;
 
         public Action Activate;
         public Action Hide;
@@ -335,15 +335,23 @@ namespace XIVLauncher.Windows.ViewModel
                 }
                 else if (loginType == LoginType.WeGameSid && !readWeGameInfo)
                 {
-                    var msgbox = new CustomMessageBox.Builder()
-                     .WithCaption(Loc.Localize("LoginNoOauthTitle", "Login issue"))
-                     .WithImage(MessageBoxImage.Error)
-                     .WithShowHelpLinks(true)
-                     .WithShowDiscordLink(true)
-                     .WithText("当前账号为WeGame账号，未找到保存的密钥，请重新获取登录密钥，或者在账号选择器中重新选择正确的大区WeGame账号")
-                     .WithParentWindow(_window);
-                    msgbox.Show();
-                    return;
+                    readWeGameInfo = true;
+                }
+
+                try
+                {
+                    if (password != null)
+                        password = await AccountManager.CredProvider.Decrypt(password);
+                    if (autologinkey != null)
+                        autologinkey = await AccountManager.CredProvider.Decrypt(autologinkey);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to decrypt password");
+                    CustomMessageBox.Show(
+                        "解密失败,无法使用自动登录",
+                        "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+                    finalLoginType = loginType;
                 }
             }
 
@@ -363,6 +371,7 @@ namespace XIVLauncher.Windows.ViewModel
                 }
             }
             var loginResult = await TryLoginToGame(finalLoginType, loginType, username, password, autologinkey, doingAutoLogin, action).ConfigureAwait(false);
+
             if (loginResult == null)
                 return;
             if (loginResult.State == Launcher.LoginState.NeedsPatchGame && action != AfterLoginAction.Repair)
@@ -398,16 +407,16 @@ namespace XIVLauncher.Windows.ViewModel
 
                     if (doingAutoLogin && accountToSave.AccountType != XivAccountType.WeGameSid)
                     {
-                        accountToSave.AutoLoginSessionKey = loginResult.OauthLogin.AutoLoginSessionKey;
+                        accountToSave.AutoLoginSessionKey = await AccountManager.CredProvider.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
                         if (finalLoginType == LoginType.SdoStatic)
                         {
-                            accountToSave.Password = password;
+                            accountToSave.Password = await AccountManager.CredProvider.Encrypt(password);
                         }
                     }
 
                     if (readWeGameInfo && accountToSave.AccountType == XivAccountType.WeGameSid)
                     {
-                        accountToSave.TestSID = password;
+                        accountToSave.TestSID = await AccountManager.CredProvider.Encrypt(password);
                     }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);
@@ -421,7 +430,8 @@ namespace XIVLauncher.Windows.ViewModel
                         loginResult.State,
                         loginResult.PendingPatches?.Length,
                         loginResult.OauthLogin?.Playable);
-
+            await AccountManager.CredProvider.ClearCache();
+            password = null;
             if (await TryProcessLoginResult(loginResult, false, action).ConfigureAwait(false))
             {
                 if (App.Settings.ExitLauncherAfterGameExit ?? true)
@@ -1356,7 +1366,7 @@ namespace XIVLauncher.Windows.ViewModel
                                                        Area.AreaConfigUpload,
                                                        App.Settings.AdditionalLaunchArgs,
                                                        App.Settings.GamePath,
-                                                       App.Settings.EncryptArguments.GetValueOrDefault(false),
+                                                       App.Settings.EncryptArgumentsV2.GetValueOrDefault(true),
                                                        App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware));
             // var launched = this.Launcher.LaunchGame(gameRunner,
             //     loginResult.UniqueId,

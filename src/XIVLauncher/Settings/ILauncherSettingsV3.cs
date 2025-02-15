@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using XIVLauncher.Accounts.Cred;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Addon;
 using XIVLauncher.Common.Dalamud;
@@ -25,6 +26,7 @@ namespace XIVLauncher.Settings
         LauncherLanguage? LauncherLanguage { get; set; }
         string CurrentAccountId { get; set; }
         bool? EncryptArguments { get; set; }
+        bool? EncryptArgumentsV2 { get; set; }
         DirectoryInfo PatchPath { get; set; }
         bool? AskBeforePatchInstall { get; set; }
         long SpeedLimitBytes { get; set; }
@@ -53,6 +55,7 @@ namespace XIVLauncher.Settings
         bool EnableInjector { get; set; }
         bool? EnableBeta { get; set; }
 
+        CredType? CredType { get; set; }
         #endregion
     }
 }

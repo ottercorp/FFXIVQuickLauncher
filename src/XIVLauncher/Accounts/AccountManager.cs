@@ -8,7 +8,8 @@ using XIVLauncher.Common;
 using XIVLauncher.Settings;
 using SQLite;
 using System.Drawing;
-
+using XIVLauncher.Accounts.Cred;
+using XIVLauncher.Accounts.Cred.CredProviders;
 namespace XIVLauncher.Accounts
 {
     public class AccountManager
@@ -30,13 +31,89 @@ namespace XIVLauncher.Accounts
 
         private readonly ILauncherSettingsV3 _setting;
 
+        private readonly CredData CredData;
+        private CredType? CurrentCredType;
+        public ICredProvider CredProvider { get; private set; }
+
         public AccountManager(ILauncherSettingsV3 setting)
         {
             Load();
 
             _setting = setting;
 
+            var credPath = Path.Combine(Paths.RoamingPath, "cred.json");
+            this.CredData = new CredData("XIVLauncherCN", credPath);
+
             Accounts.CollectionChanged += Accounts_CollectionChanged;
+            ChangeCredType(setting.CredType.GetValueOrDefault(CredType.WindowsCredManager));
+        }
+
+        public async void ChangeCredType(CredType? type)
+        {
+            if (type == this.CurrentCredType)
+                return;
+            var oldCred = this.CredProvider;
+            var newCred = GetCredProvider(type.Value);
+            var isSupported = await newCred.IsSupported();
+            if (!isSupported)
+            {
+                throw new Exception($"Cred type: {type} not supported");
+            }
+
+            if (oldCred == null)
+            {
+                this.CurrentCredType = type;
+                this.CredProvider = newCred;
+                return;
+            }
+
+            Log.Information($"Change cred type from {this.CurrentCredType} to {type}");
+            foreach (var item in Accounts)
+            {
+                if (item.AutoLoginSessionKey != null)
+                {
+                    try
+                    {
+                        var sessionKey = await oldCred.Decrypt(item.AutoLoginSessionKey);
+                        item.AutoLoginSessionKey = await newCred.Encrypt(sessionKey);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"Failed to change {item.Id}.AutoLoginSessionKey");
+                    }
+                }
+
+                if (item.TestSID != null)
+                {
+                    try
+                    {
+                        var testSid = await oldCred.Decrypt(item.TestSID);
+                        item.TestSID = await newCred.Encrypt(testSid);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"Failed to change {item.Id}.TestSID");
+                    }
+                }
+                Save();
+            }
+
+            this.CurrentCredType = type;
+            this.CredProvider = newCred;
+        }
+
+        private ICredProvider GetCredProvider(CredType type)
+        {
+            switch (type)
+            {
+                case CredType.WindowsCredManager:
+                    return new CredentialManager(this.CredData);
+                case CredType.WindowsHello:
+                    return new WindowsHello(this.CredData);
+                case CredType.NoEncryption:
+                    return new NoCred(this.CredData);
+            }
+            return null;
         }
 
         private void Accounts_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -59,8 +136,10 @@ namespace XIVLauncher.Accounts
                 existingAccount.AreaName = account.AreaName;
                 return;
             }
-
-            Accounts.Add(account);
+            else
+            {
+                Accounts.Add(account);
+            }
         }
 
         public void RemoveAccount(XivAccount account)
@@ -113,6 +192,7 @@ namespace XIVLauncher.Accounts
             {
                 this.Save(item);
             }
+            ChangeCredType(this.CurrentCredType);
         }
 
         public void SetupDb()

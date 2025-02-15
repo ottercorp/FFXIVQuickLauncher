@@ -100,7 +100,7 @@ namespace XIVLauncher.Support
                 DalamudEnabled = App.Settings.InGameAddonEnabled,
                 DalamudLoadMethod = App.Settings.InGameAddonLoadMethod.GetValueOrDefault(),
                 DalamudInjectionDelay = App.Settings.DalamudInjectionDelayMs,
-                EncryptArguments = App.Settings.EncryptArguments.GetValueOrDefault(false),
+                EncryptArguments = App.Settings.EncryptArgumentsV2.GetValueOrDefault(true),
                 LauncherVersion = AppUtil.GetAssemblyVersion(),
                 LauncherHash = AppUtil.GetGitHash(),
                 Official = AppUtil.GetBuildOrigin() == "goatcorp/FFXIVQuickLauncher",

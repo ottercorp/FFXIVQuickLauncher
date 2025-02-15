@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="XIVLauncher.Windows.SettingsControl"
+<UserControl x:Class="XIVLauncher.Windows.SettingsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -71,7 +71,7 @@
             </TabItem>
             <TabItem Header="{Binding SettingsGameSettingsLoc}">
                 <StackPanel Margin="10,10,0,0">
-                    <CheckBox x:Name="IsFreeTrialCheckbox" Click="IsFreeTrialCheckbox_OnClick"
+                    <CheckBox x:Name="IsFreeTrialCheckbox" Click="IsFreeTrialCheckbox_OnClick" Visibility="Collapsed"
                               Content="{Binding IsFreeTrialLoc}" Foreground="{DynamicResource MaterialDesignBody}"
                               HorizontalAlignment="Left" Margin="0,0,0,15" />
                     
@@ -89,7 +89,7 @@
                     <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0, 20, 0, 0"
                                Foreground="{DynamicResource MaterialDesignBody}" Text="{Binding ChooseLauncherLanguageLoc}" />
                     <ComboBox SelectedIndex="1" Margin="0, 3, 0, 0" x:Name="LauncherLanguageComboBox"
-                              Foreground="{DynamicResource MaterialDesignBody}" SelectionChanged="LauncherLanguageCombo_SelectionChanged">
+                              Foreground="{DynamicResource MaterialDesignBody}" SelectionChanged="LauncherLanguageCombo_SelectionChanged" Cursor="">
                         <ComboBoxItem>日本語</ComboBoxItem>
                         <ComboBoxItem>English</ComboBoxItem>
                         <ComboBoxItem>Deutsch</ComboBoxItem>
@@ -109,6 +109,15 @@
                     <TextBlock x:Name="LauncherLanguageNoticeTextBlock" Visibility="Hidden"
                                HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="OrangeRed"
                                Margin="0,0,0,0" Text="{Binding LauncherLanguageNoticeLoc}" />
+
+                    <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
+                               Foreground="{DynamicResource MaterialDesignBody}" Text="请选择自动登录密码的加密方式" />
+                    <ComboBox SelectedIndex="1" Margin="0, 3, 0, 0" x:Name="AccountStorageEncryptCombox"
+                              Foreground="{DynamicResource MaterialDesignBody}">
+                        <ComboBoxItem>无 (不建议)</ComboBoxItem>
+                        <ComboBoxItem>系统凭据管理器</ComboBoxItem>
+                        <ComboBoxItem>Windows Hello</ComboBoxItem>
+                    </ComboBox>
                 </StackPanel>
             </TabItem>
             <TabItem Header="{Binding SettingsAutoLaunchLoc}">

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -16,6 +17,7 @@ using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
 using Velopack;
+using XIVLauncher.Accounts;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Dalamud;
 using XIVLauncher.Common.Game;
@@ -84,7 +86,7 @@ namespace XIVLauncher
         public static ILauncherSettingsV3 Settings;
         public static WindowsSteam Steam;
         public static CommonUniqueIdCache UniqueIdCache;
-
+        public static AccountManager AccountManager;
 #if !XL_NOAUTOUPDATE
         private UpdateLoadingDialog _updateWindow;
 #endif
@@ -200,7 +202,7 @@ namespace XIVLauncher
                     }
 
                     Settings.DalamudRolloutBucket = DalamudUpdater.RolloutBucket;
-                    
+
                     var dalamudWindowThread = new Thread(DalamudOverlayThreadStart);
                     dalamudWindowThread.SetApartmentState(ApartmentState.STA);
                     dalamudWindowThread.IsBackground = true;
@@ -374,7 +376,7 @@ namespace XIVLauncher
                 File.Delete(GetConfigPath("launcher"));
                 SetupSettings();
             }
-
+            AccountManager = new AccountManager(Settings);
 #if !XL_LOC_FORCEFALLBACKS
             try
             {
