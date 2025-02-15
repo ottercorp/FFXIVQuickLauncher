@@ -169,6 +169,19 @@ namespace XIVLauncher.Windows.ViewModel
 
         private async Task<LoginData> ReadWegameInfo(string username, string targetAreaId)
         {
+            try
+            {
+                Process.Start(new ProcessStartInfo()
+                {
+                    FileName = "wegame://StartFor=2000340",
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not Launch WeGame");
+            }
+
             var pidList = AppUtil.GetGameProcessIds();
             var argReader = new RemoteArgReader();
             await argReader.Start();
@@ -355,7 +368,13 @@ namespace XIVLauncher.Windows.ViewModel
                     finalLoginType = loginType;
                 }
             }
-
+            if (password.IsNullOrEmpty() && loginType != LoginType.SdoQrCode)
+            {
+                Log.Error($"{username} 密码为空");
+                CustomMessageBox.Show(
+                    "密钥为空,无法登录",
+                    "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
+            }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
 
@@ -367,7 +386,8 @@ namespace XIVLauncher.Windows.ViewModel
                 {
                     var loginData = await ReadWegameInfo(username, Area.Areaid);
                     if (loginData == null) { return; }
-                    if (loginData.SndaID.IsNullOrEmpty() || loginData.SessionId.IsNullOrEmpty()) {
+                    if (loginData.SndaID.IsNullOrEmpty() || loginData.SessionId.IsNullOrEmpty())
+                    {
                         throw new Exception("获取WeGame登录信息失败");
                     }
                     username = loginData.SndaID;
@@ -418,9 +438,10 @@ namespace XIVLauncher.Windows.ViewModel
                         }
                     }
 
-                    if (readWeGameInfo && accountToSave.AccountType == XivAccountType.WeGameSid)
+                    if (accountToSave.AccountType == XivAccountType.WeGameSid)
                     {
                         accountToSave.TestSID = await AccountManager.CredProvider.Encrypt(password);
+                        //accountToSave.TestSID = await AccountManager.CredProvider.Encrypt("password");
                     }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);
