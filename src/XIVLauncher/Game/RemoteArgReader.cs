@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FfxivArgLauncher;
@@ -98,12 +99,12 @@ public class RemoteArgReader : IDisposable
         }
     }
 
-    public async Task WaitOn(ReaderState state)
+    public async Task WaitOn(ReaderState state, int wait = 40)
     {
         Log.Information("[ArgReaderIPC] Waiting for state: {0}", state);
         await Task.Run(() =>
         {
-            for (var i = 0; i < 40; i++)
+            for (var i = 0; i < wait; i++)
             {
                 if (State == state)
                 {

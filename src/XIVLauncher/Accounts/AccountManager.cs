@@ -10,6 +10,7 @@ using SQLite;
 using System.Drawing;
 using XIVLauncher.Accounts.Cred;
 using XIVLauncher.Accounts.Cred.CredProviders;
+using Castle.Core.Internal;
 namespace XIVLauncher.Accounts
 {
     public class AccountManager
@@ -123,6 +124,11 @@ namespace XIVLauncher.Accounts
 
         public void AddAccount(XivAccount account)
         {
+            if (account.UserName.IsNullOrEmpty() || account.Id.IsNullOrEmpty())
+            {
+                throw new Exception($"UserName:{account.UserName} Id:{account.Id} 不能为空");
+            }
+
             var existingAccount = Accounts.FirstOrDefault(a => a.Equals(account));
 
             Log.Verbose($"existingAccount: {existingAccount?.Id}");
@@ -221,6 +227,14 @@ namespace XIVLauncher.Accounts
 
             // If the file is corrupted, this will be null anyway
             Accounts ??= new ObservableCollection<XivAccount>(this.db.Table<XivAccount>());
+
+            foreach (var account in Accounts)
+            {
+                if (account.UserName.IsNullOrEmpty() || account.Id.IsNullOrEmpty())
+                {
+                    Accounts.Remove(account);
+                }
+            }
         }
 
         #endregion

@@ -2,6 +2,7 @@ namespace XIVLauncher.ArgReader;
 using FfxivArgLauncher;
 using Serilog;
 using Serilog.Events;
+using SharpCompress;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using XIVLauncher.Common;
@@ -77,6 +78,10 @@ internal class Program
                     if ((bool)envelope.Data is true)
                     {
                         argReader.KillProcess();
+                        // 清理残留sdologin.exe
+                        Process.GetProcesses()
+                        .Where(p => p.ProcessName == "sdologin")
+                        .ForEach(p => p.Kill());
                     }
                     Log.Information("[ArgReader] Bye");
                     readerCancelToken.Cancel();

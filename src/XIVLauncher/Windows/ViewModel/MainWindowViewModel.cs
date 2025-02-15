@@ -366,6 +366,9 @@ namespace XIVLauncher.Windows.ViewModel
                 {
                     var loginData = await ReadWegameInfo(username, Area.Areaid);
                     if (loginData == null) { return; }
+                    if (loginData.SndaID.IsNullOrEmpty() || loginData.SessionId.IsNullOrEmpty()) {
+                        throw new Exception("获取WeGame登录信息失败");
+                    }
                     username = loginData.SndaID;
                     password = loginData.SessionId;
                 }
