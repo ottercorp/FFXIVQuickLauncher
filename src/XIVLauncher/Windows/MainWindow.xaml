@@ -153,7 +153,7 @@
                                     x:Name="QueueButton"
                                     Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
                                     Focusable="False"
-                                    ToolTip="读取WeGame端FFXIV登录信息"
+                                    ToolTip="请在上方选择对应的登录方式"
                                     Margin="0" Height="77" Width="77"
                                     Click="ReadWeGameLoginData_OnClick" Cursor="Hand">
                                     <StackPanel Orientation="Vertical"

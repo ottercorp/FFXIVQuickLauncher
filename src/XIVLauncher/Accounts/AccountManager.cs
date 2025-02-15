@@ -136,7 +136,9 @@ namespace XIVLauncher.Accounts
             if (existingAccount != null)
             {
                 Log.Verbose("Updating account...");
+                existingAccount.Id = account.Id;
                 existingAccount.Password = account.Password;
+                existingAccount.AutoLogin = account.AutoLogin;
                 existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey;
                 existingAccount.TestSID = account.TestSID;
                 existingAccount.AreaName = account.AreaName;

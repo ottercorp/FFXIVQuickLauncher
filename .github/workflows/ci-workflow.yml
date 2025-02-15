@@ -1,6 +1,9 @@
 name: Build XIVLauncher
 on: [push, pull_request]
-concurrency: build_xl
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-release:
