@@ -78,8 +78,10 @@ jobs:
           7z a .\Releases\XIVLauncherCN-$channel-Portable.7z .\Releases\scratch\* -t7z -mx=9
 
           $json = Get-Content -Raw .\Releases\assets.$channel.json | ConvertFrom-Json
-          for ($i = 0; $i -lt $json.Files.Count; $i++) {
-          $json.Files[$i] = $json.Files[$i] -replace 'zip','7z'
+          foreach ($file in $json) {
+            if ($file.ContainsKey("RelativeFileName")) {
+              $file.RelativeFileName = $file.RelativeFileName -replace 'zip', '7z'
+            }
           }
           $content = $json | ConvertTo-Json
           set-content -Path .\Releases\assets.$channel.json -Value $content
