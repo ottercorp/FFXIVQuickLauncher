@@ -79,9 +79,7 @@ jobs:
 
           $json = Get-Content -Raw .\Releases\assets.$channel.json | ConvertFrom-Json
           foreach ($file in $json) {
-            if ($file.ContainsKey("RelativeFileName")) {
-              $file.RelativeFileName = $file.RelativeFileName -replace 'zip', '7z'
-            }
+            $file.RelativeFileName = $file.RelativeFileName -replace 'zip', '7z'
           }
           $content = $json | ConvertTo-Json
           set-content -Path .\Releases\assets.$channel.json -Value $content
