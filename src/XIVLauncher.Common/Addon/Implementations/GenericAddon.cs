@@ -103,6 +103,7 @@ namespace XIVLauncher.Common.Addon.Implementations
                 {
                     FileName = Path,
                     Arguments = CommandLine,
+                    UseShellExecute = true,
                     WorkingDirectory = System.IO.Path.GetDirectoryName(Path),
                 },
             };
