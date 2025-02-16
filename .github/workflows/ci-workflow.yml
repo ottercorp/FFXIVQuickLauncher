@@ -36,7 +36,7 @@ jobs:
           cd "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\"
            .\MSBuild.exe $Env:GITHUB_WORKSPACE\src\XIVLauncher.sln /t:Build /p:Configuration=Release
       - name: Generate Hashes File
-        run: .\scripts\CreateHashList.ps1 .\src\bin
+        run: .\scripts\CreateHashList.ps1 .\src\bin\win-x64
       - name: Attest Artifacts
         if: ${{ github.repository_owner == 'ottercorp' && github.event_name == 'push' }}
         uses: actions/attest-build-provenance@v1
@@ -72,14 +72,14 @@ jobs:
           mkdir Releases
           dotnet tool install -g vpk
           vpk download s3 --channel $channel --bucket $env:S3Bucket --endpoint $env:S3Endpoint --keyId $env:S3AccessKeyID --secret $env:S3AccessKeySecret
-          vpk pack -u XIVLauncherCN -v $refver -p .\bin -o .\Releases -e XIVLauncherCN.exe --channel $channel --packAuthors OtterCorp --releaseNotes .\XIVLauncher\Resources\CHANGELOG.txt --icon .\XIVLauncher\Resources\dalamud_icon.ico --splashImage .\XIVLauncher\Resources\logo.png --framework net8.0-x64-desktop
+          vpk pack -u XIVLauncherCN -v $refver -p .\bin\win-x64 -o .\Releases -e XIVLauncherCN.exe --channel $channel --packAuthors OtterCorp --releaseNotes .\XIVLauncher\Resources\CHANGELOG.txt --icon .\XIVLauncher\Resources\dalamud_icon.ico --splashImage .\XIVLauncher\Resources\logo.png --framework net8.0-x64-desktop
 
           Expand-Archive -Path ".\Releases\XIVLauncherCN-$channel-Portable.zip" -DestinationPath .\Releases\scratch -Force
           7z a .\Releases\XIVLauncherCN-$channel-Portable.7z .\Releases\scratch\* -t7z -mx=9
 
           $json = Get-Content -Raw .\Releases\assets.$channel.json | ConvertFrom-Json
-          for ($i = 0; $i -lt $json.Files.Count; $i++) {
-          $json.Files[$i] = $json.Files[$i] -replace 'zip','7z'
+          foreach ($file in $json) {
+            $file.RelativeFileName = $file.RelativeFileName -replace 'zip', '7z'
           }
           $content = $json | ConvertTo-Json
           set-content -Path .\Releases\assets.$channel.json -Value $content
