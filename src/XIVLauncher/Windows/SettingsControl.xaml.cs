@@ -435,7 +435,7 @@ namespace XIVLauncher.Windows
             if (App.Steam.AsyncStartTask != null)
             {
                 CustomMessageBox.Show(Loc.Localize("SteamFtToggleAutoStartWarning", "To apply this setting, XIVLauncher needs to restart.\nPlease reopen XIVLauncher."),
-                    "XIVLauncherCN", image: MessageBoxImage.Information, showDiscordLink: false, showHelpLinks: false);
+                                      "XIVLauncherCN", image: MessageBoxImage.Information, showDiscordLink: false, showHelpLinks: false);
                 App.Settings.IsFt = IsFreeTrialCheckbox.IsChecked == true;
                 CloseMainWindowGracefully?.Invoke(this, null);
             }
@@ -445,11 +445,6 @@ namespace XIVLauncher.Windows
         {
             var asw = new AdvancedSettingsWindow();
             asw.ShowDialog();
-        }
-
-        private void LauncherLanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
         }
     }
 }
