@@ -29,16 +29,20 @@ namespace XIVLauncher.Common.Game
         public LoginType LoginType { get; set; }
         public string DisplayName { get; set; }
 
-        public static GuiLoginType[] Get()
+        public static List<GuiLoginType> Get(bool showWeGameToken = false)
         {
-            return
-            [
-            new GuiLoginType { LoginType = LoginType.SdoSlide, DisplayName = "一键登录" },
-            new GuiLoginType { LoginType = LoginType.SdoQrCode, DisplayName = "扫码登录" },
-            new GuiLoginType { LoginType = LoginType.SdoStatic, DisplayName = "密码登录" },
-            new GuiLoginType { LoginType = LoginType.WeGameToken, DisplayName = "WeGame抓包" },
-            new GuiLoginType { LoginType = LoginType.WeGameSid, DisplayName = "WeGame SID" }
-            ];
+            var types = new List<GuiLoginType>
+            {
+                new GuiLoginType { LoginType = LoginType.SdoSlide, DisplayName = "一键登录" },
+                new GuiLoginType { LoginType = LoginType.SdoQrCode, DisplayName = "扫码登录" },
+                new GuiLoginType { LoginType = LoginType.SdoStatic, DisplayName = "密码登录" },
+                new GuiLoginType { LoginType = LoginType.WeGameSid, DisplayName = "WeGame SID"}
+            };
+            if (showWeGameToken)
+            {
+                types.Add(new GuiLoginType { LoginType = LoginType.WeGameToken, DisplayName = "WeGame抓包" });
+            }
+            return types;
         }
     }
     public enum LoginType
@@ -68,7 +72,7 @@ namespace XIVLauncher.Common.Game
         private const int SlideExpirationTime = 30 * 1000;// ms
         private const int AutoLoginKeepDays = 30;
 
-        public async Task<LoginResult> LoginBySid(string sndaId,string sid)
+        public async Task<LoginResult> LoginBySid(string sndaId, string sid)
         {
             var oath = new OauthLoginResult
             {

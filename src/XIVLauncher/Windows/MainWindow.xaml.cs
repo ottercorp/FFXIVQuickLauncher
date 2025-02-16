@@ -86,7 +86,7 @@ namespace XIVLauncher.Windows
 
             Model.ReloadHeadlines += () => Task.Run(SetupHeadlines);
 
-            LoginTypeSelection.ItemsSource = GuiLoginType.Get();
+            LoginTypeSelection.ItemsSource = GuiLoginType.Get(App.Settings.ShowWeGameTokenLogin.GetValueOrDefault(false));
             LoginTypeSelection.SelectedValue = LoginType.SdoSlide;
             NewsListView.ItemsSource = new List<News>
             {
@@ -708,10 +708,10 @@ namespace XIVLauncher.Windows
 
         private void LoginTypeSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            var selectedItem = (GuiLoginType)((ComboBox)sender).SelectedItem;
             if (this.DataContext != null)
-                ((MainWindowViewModel)this.DataContext).GuiLoginType = (GuiLoginType)((ComboBox)sender).SelectedItem;
-            var loginType = (LoginType)((ComboBox)sender).SelectedValue;
-            App.Settings.SelectedLoginType = loginType;
+                ((MainWindowViewModel)this.DataContext).GuiLoginType = selectedItem;
+            App.Settings.SelectedLoginType = selectedItem.LoginType;
             // Default
             LoginUsername.Visibility = Visibility.Visible;
             LoginPassword.Visibility = Visibility.Collapsed;
@@ -722,7 +722,7 @@ namespace XIVLauncher.Windows
             HintAssist.SetHint(this.LoginUsername, "盛趣账号");
             HintAssist.SetHint(this.LoginPassword, "密码");
 
-            switch (loginType)
+            switch (selectedItem.LoginType)
             {
                 //Todo: 各种地方的Hint
                 case LoginType.SdoSlide:

@@ -55,7 +55,7 @@ namespace XIVLauncher.Settings
         bool EnableInjector { get; set; }
         bool? EnableBeta { get; set; }
         bool? HasAgreeWeGameUsage { get; set; }
-
+        bool? ShowWeGameTokenLogin { get; set; }
         CredType? CredType { get; set; }
         #endregion
     }
