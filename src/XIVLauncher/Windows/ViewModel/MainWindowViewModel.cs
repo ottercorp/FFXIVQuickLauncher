@@ -330,8 +330,11 @@ namespace XIVLauncher.Windows.ViewModel
 
             var finalLoginType = loginType;
             string autologinkey = null;
-            if (loginType == LoginType.WeGameSid) {
+            if (loginType == LoginType.WeGameSid)
+            {
+                // 选择WeGameSid登录时，忽略已经输入的密码框里面的内容，并打开自动登录
                 doingAutoLogin = true;
+                password = string.Empty;
             }
 
             if (doingAutoLogin && loginType != LoginType.SdoQrCode)
@@ -404,7 +407,8 @@ namespace XIVLauncher.Windows.ViewModel
                         .WithParentWindow(_window)
                         .Show();
 
-                    if (readWeGameUsageAsk == MessageBoxResult.No) {
+                    if (readWeGameUsageAsk == MessageBoxResult.No)
+                    {
                         App.Settings.HasAgreeWeGameUsage = false;
                         return;
                     }
