@@ -325,8 +325,14 @@ namespace XIVLauncher.Windows.ViewModel
             //}
             //PersistAccount(username, password);
 
+            if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
+            App.Settings.FastLogin = IsFastLogin;
+
             var finalLoginType = loginType;
             string autologinkey = null;
+            if (loginType == LoginType.WeGameSid) {
+                doingAutoLogin = true;
+            }
 
             if (doingAutoLogin && loginType != LoginType.SdoQrCode)
             {
@@ -358,6 +364,8 @@ namespace XIVLauncher.Windows.ViewModel
                         password = await AccountManager.CredProvider.Decrypt(password);
                     if (autologinkey != null)
                         autologinkey = await AccountManager.CredProvider.Decrypt(autologinkey);
+                    if (password.IsNullOrEmpty() && autologinkey.IsNullOrEmpty())
+                        throw new Exception("Failed to decrypt password");
                 }
                 catch (Exception ex)
                 {
@@ -368,8 +376,6 @@ namespace XIVLauncher.Windows.ViewModel
                     finalLoginType = loginType;
                 }
             }
-            if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
-            App.Settings.FastLogin = IsFastLogin;
 
             if (loginType == LoginType.WeGameSid)
             {
@@ -408,7 +414,8 @@ namespace XIVLauncher.Windows.ViewModel
                     }
                 }
 
-                readWeGameInfo = username.IsNullOrEmpty() ? true : readWeGameInfo;
+                readWeGameInfo = username.IsNullOrEmpty() || password.IsNullOrEmpty() ? true : readWeGameInfo;
+
                 // process expire sid time
                 if (readWeGameInfo)
                 {

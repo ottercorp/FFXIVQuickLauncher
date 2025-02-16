@@ -80,7 +80,7 @@ internal class Program
                         argReader.KillProcess();
                         // 清理残留sdologin.exe
                         Process.GetProcesses()
-                        .Where(p => p.ProcessName == "sdologin")
+                        .Where(p => p.ProcessName == "sdologin" || p.ProcessName == "SdoLoginComServer")
                         .ForEach(p => p.Kill());
                     }
                     Log.Information("[ArgReader] Bye");
