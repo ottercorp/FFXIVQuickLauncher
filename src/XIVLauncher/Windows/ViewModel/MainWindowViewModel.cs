@@ -368,14 +368,6 @@ namespace XIVLauncher.Windows.ViewModel
                     finalLoginType = loginType;
                 }
             }
-            if (password.IsNullOrEmpty() && loginType != LoginType.SdoQrCode)
-            {
-                Log.Error($"{username} 密码为空");
-                CustomMessageBox.Show(
-                    "密钥为空,无法登录",
-                    "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: _window);
-                return;
-            }
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
 
