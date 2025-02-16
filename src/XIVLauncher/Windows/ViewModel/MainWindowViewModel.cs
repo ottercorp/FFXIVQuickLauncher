@@ -373,6 +373,41 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (loginType == LoginType.WeGameSid)
             {
+                if (!App.Settings.HasAgreeWeGameUsage.GetValueOrDefault(false))
+                {
+                    var readWeGameUsageAsk = CustomMessageBox.Builder
+                        .NewFrom(
+                        """
+                        为保障您的账号安全，请在使用本功能前仔细阅读以下内容：
+                        🔐 功能原理说明
+                        本工具通过读取最终幻想14游戏中WeGame平台生成的会话密钥实现快速启动功能，不会对WeGame客户端进行任何修改，也不会获取您的WeGame账号密码等敏感信息。
+                        ⚠️ 注意事项
+                        会话密钥具有较长有效期，建议您：
+                        定期通过WeGame官方客户端登录以刷新密钥
+                        避免在公共/共享设备使用本功能
+                        发现异常登录时立即通过WeGame重置密钥
+                        本工具不会且无法主动更新会话密钥，密钥有效性完全依赖WeGame平台的生成机制
+
+                        点击【确认使用】即表示您已理解：妥善保管设备安全是密钥有效性的最终保障，建议每30天通过官方客户端完整登录一次以保持最佳安全性
+                        """)
+                        .WithImage(MessageBoxImage.Warning)
+                        .WithButtons(MessageBoxButton.YesNo)
+                        .WithYesButtonText("确认使用")
+                        .WithCaption("WeGame SID登录功能说明")
+                        .WithYesCountdown(15)
+                        .WithParentWindow(_window)
+                        .Show();
+
+                    if (readWeGameUsageAsk == MessageBoxResult.No) {
+                        App.Settings.HasAgreeWeGameUsage = false;
+                        return;
+                    }
+                    else
+                    {
+                        App.Settings.HasAgreeWeGameUsage = true;
+                    }
+                }
+
                 readWeGameInfo = username.IsNullOrEmpty() ? true : readWeGameInfo;
                 // process expire sid time
                 if (readWeGameInfo)

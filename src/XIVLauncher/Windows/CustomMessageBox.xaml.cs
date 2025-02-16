@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -108,6 +109,28 @@ namespace XIVLauncher.Windows
                         MessageBoxResult.No => Button2,
                         _ => throw new ArgumentOutOfRangeException(nameof(builder.DefaultResult), builder.DefaultResult, null),
                     }).Focus();
+                    if (builder.YesCountDownSeconds > 0)
+                    {
+                        Button1.IsEnabled = false;
+                        var countdown = builder.YesCountDownSeconds;
+                        Task.Run(async () =>
+                        {
+                            while (countdown > 0)
+                            {
+                                await Task.Delay(1000);
+                                countdown -= 1;
+                                if (countdown <= 0)
+                                    break;
+                                Dispatcher.Invoke(() => Button1.Content = $"{builder.YesButtonText ?? ViewModel.YesWithShortcutLoc} ({countdown})");
+                            }
+                            Dispatcher.Invoke(() =>
+                            {
+                                Button1.IsEnabled = true;
+                                Button1.Content = builder.YesButtonText ?? ViewModel.YesWithShortcutLoc;
+                            }
+                            );
+                        });
+                    }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(builder.Buttons), builder.Buttons, null);
@@ -275,7 +298,7 @@ namespace XIVLauncher.Windows
         private void NewGitHubIssueButton_OnClick(object sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo($"{App.REPO_URL}/issues/new?assignees=octocat&labels=bug%2Ctriage&template=bugreport.yml") { UseShellExecute = true });
-    }
+        }
 
         public enum ExitOnCloseModes
         {
@@ -305,6 +328,7 @@ namespace XIVLauncher.Windows
             internal bool ShowNewGitHubIssue = false;
             internal Window ParentWindow = null;
             internal bool OverrideTopMostFromParentWindow = true;
+            internal float YesCountDownSeconds = 0;
 
             public Builder() { }
             public Builder WithText(string text) { Text = text; return this; }
@@ -360,6 +384,8 @@ namespace XIVLauncher.Windows
 
                 return this;
             }
+
+            public Builder WithYesCountdown(float countDownSeconds) { YesCountDownSeconds = countDownSeconds; return this; }
 
             public static Builder NewFrom(string text) => new Builder().WithText(text);
             public static Builder NewFrom(Exception exc, string context, ExitOnCloseModes exitOnCloseMode = ExitOnCloseModes.DontExitOnClose)
