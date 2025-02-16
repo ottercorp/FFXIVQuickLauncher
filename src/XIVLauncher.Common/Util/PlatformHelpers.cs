@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Serilog;
@@ -191,15 +192,10 @@ public static class PlatformHelpers
 
     public static string GetVersion()
     {
-        if (GetPlatform() != Platform.Win32)
-        {
-            return $"XIVLauncher running on {GetPlatform()}";
-        }
-        else
-        {
-            var file = Process.GetCurrentProcess().MainModule!.FileName;
-            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(file);
-            return $"XIVLauncherCN " + fileVersionInfo.ProductVersion.Substring(0, fileVersionInfo.ProductVersion.IndexOf('+') + 10);
-        }
+        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        AssemblyInformationalVersionAttribute attribute = (AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyInformationalVersionAttribute));
+        AssemblyProductAttribute name = (AssemblyProductAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyProductAttribute));
+        Console.WriteLine(name?.Product + " v" + attribute?.InformationalVersion);
+        return name?.Product + " v" + attribute?.InformationalVersion;
     }
 }
