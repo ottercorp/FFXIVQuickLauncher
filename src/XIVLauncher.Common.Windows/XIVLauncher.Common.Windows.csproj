@@ -51,9 +51,9 @@
         <PackageReference Include="Reloaded.Memory" Version="7.0.0" />
         <PackageReference Include="Reloaded.Memory.Buffers" Version="2.0.0" />
         <PackageReference Include="Reloaded.Memory.Sigscan" Version="3.0.0" />
-        <PackageReference Include="Serilog" Version="2.12.0" />
+        <PackageReference Include="Serilog" Version="4.0.2" />
         <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.333">
             <PrivateAssets>all</PrivateAssets>
