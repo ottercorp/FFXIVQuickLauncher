@@ -635,7 +635,8 @@ namespace XIVLauncher.Windows
                     Playable = true,
                     Region = 0,
                     SessionId = "0",
-                    TermsAccepted = true
+                    TermsAccepted = true,
+                    SndaId = "114514",
                 },
                 State = Launcher.LoginState.Ok,
                 UniqueId = "0"
