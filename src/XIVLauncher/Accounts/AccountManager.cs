@@ -61,6 +61,15 @@ namespace XIVLauncher.Accounts
                 throw new Exception($"Cred type: {type} not supported");
             }
 
+            var testText = EncryptionHelper.GetRandomHexString(32);
+            var encrypted = await newCred.Encrypt(testText);
+            var decrypted = await newCred.Decrypt(encrypted);
+
+            if (testText != decrypted)
+            {
+                throw new Exception($"Cred type: {type} test failed");
+            }
+
             if (oldCred == null)
             {
                 this.CurrentCredType = type;
@@ -96,11 +105,12 @@ namespace XIVLauncher.Accounts
                         Log.Error(ex, $"Failed to change {item.Id}.TestSID");
                     }
                 }
-                Save();
             }
 
             this.CurrentCredType = type;
             this.CredProvider = newCred;
+            Log.Information($"Changed cred type from {this.CurrentCredType} to {type} successfully");
+            Save();
         }
 
         private ICredProvider GetCredProvider(CredType type)
@@ -200,7 +210,6 @@ namespace XIVLauncher.Accounts
             {
                 this.Save(item);
             }
-            ChangeCredType(this.CurrentCredType);
         }
 
         public void SetupDb()
