@@ -1,4 +1,5 @@
 using FfxivArgLauncher;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +25,7 @@ public class WindowsGameRunner : IGameRunner
 
     public Process Start(string path, string workingDirectory, string arguments, IDictionary<string, string> environment, DpiAwareness dpiAwareness)
     {
+        Log.Information($"Game Exe:{path}");
         if (dalamudOk)
         {
             var compat = "RunAsInvoker ";
