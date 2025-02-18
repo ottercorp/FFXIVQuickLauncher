@@ -401,8 +401,6 @@
                                                             <Separator/>
                                                             <MenuItem Header="{Binding LoginNoStartLoc}"
                                                                       Command="{Binding Path=LoginNoStartCommand}" />
-                                                            <MenuItem Header="扫码登陆"
-                                                                      Command="{Binding Path=LoginForceQRCommand}" />
 
                                                         </Menu>
                                                     </materialDesign:PopupBox.PopupContent>
