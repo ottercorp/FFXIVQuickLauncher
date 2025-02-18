@@ -368,7 +368,9 @@ namespace XIVLauncher.Windows.ViewModel
                     if (autologinkey != null)
                         autologinkey = await AccountManager.CredProvider.Decrypt(autologinkey);
                     if (password.IsNullOrEmpty() && autologinkey.IsNullOrEmpty())
-                        throw new Exception("Failed to decrypt password");
+                    {
+                        Log.Information("密钥为空,无法自动登录");
+                    }
                 }
                 catch (Exception ex)
                 {
