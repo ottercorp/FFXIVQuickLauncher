@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Product>XIVLauncher.Common</Product>
         <AssemblyTitle>XIVLauncher.Common</AssemblyTitle>
@@ -34,7 +34,7 @@
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net8.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <Deterministic>true</Deterministic>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

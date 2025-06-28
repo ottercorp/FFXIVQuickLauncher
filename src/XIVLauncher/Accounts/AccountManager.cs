@@ -157,6 +157,19 @@ namespace XIVLauncher.Accounts
                         Log.Error(ex, $"Failed to change {item.Id}.TestSID");
                     }
                 }
+
+                if (item.NSessionId != null)
+                {
+                    try
+                    {
+                        var nSessionId = await oldCred.Decrypt(item.NSessionId);
+                        item.NSessionId = await newCred.Encrypt(nSessionId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, $"Failed to change {item.Id}.NSessionId");
+                    }
+                }
             }
 
             this.CurrentCredType = type;
@@ -204,6 +217,7 @@ namespace XIVLauncher.Accounts
                 existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey;
                 existingAccount.TestSID = account.TestSID;
                 existingAccount.AreaName = account.AreaName;
+                existingAccount.NSessionId = account.NSessionId;
                 return;
             }
             else
