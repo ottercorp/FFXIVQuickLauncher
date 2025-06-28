@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Web;
 using XIVLauncher.Common.Addon;
-using static XIVLauncher.Common.Game.DcTraveler;
+using XIVLauncher.Common.Http;
 
 namespace XIVLauncher.Common.Game
 {
@@ -78,11 +78,13 @@ namespace XIVLauncher.Common.Game
             }
         }
 
+        [HttpRpc]
         public async Task<string> RefreshGameSessionId()
         {
             return await this.refreshGameSessionIdFunc();
         }
 
+        #region 初始化 认证
         public async Task GetValidCookie()
         {
             if (await this.InitTravelPage())
@@ -109,6 +111,29 @@ namespace XIVLauncher.Common.Game
             var nSessionId = cookies.First(x => x.Name == "nsessionid").Value;
             return nSessionId;
         }
+
+        public async Task<bool> InitTravelPage()
+        {
+            //https://ff14bjz.sdo.com/api/orderserivce/pageInit?migrationType=4
+            try
+            {
+                _ = await GetRequestData("api/orderserivce/pageInit", ApiType.TravelWithTicket, new Dictionary<string, string>() { { "migrationType", "4" } }, true);
+                return true;
+            }
+            catch (DcTraveleApiException ex)
+            {
+                Log.Error(ex, "Failed to initialize travel page");
+                return false;
+            }
+        }
+        public async Task ValidateTicket()
+        {
+            //https://ff14bjz.sdo.com/api/gmallinter/validateTicket?ticket=ULS21-000000000000000000000000
+            _ = await GetRequestData("api/gmallinter/validateTicket", ApiType.TravelWithTicket, new Dictionary<string, string>() { { "ticket", this.ticket } }, true);
+        }
+        #endregion
+
+        #region 公共请求
         private void EnsureReturnCode(JsonNode node)
         {
             var returnCode = 0;
@@ -117,6 +142,7 @@ namespace XIVLauncher.Common.Game
                 throw new DcTraveleApiException($"API call failed with return code: {node?["return_code"]?.GetValue<int>()}, message: {node?["return_message"]?.GetValue<string>()}", returnCode == -10339000);
             }
         }
+
 
         private enum ApiType
         {
@@ -187,28 +213,9 @@ namespace XIVLauncher.Common.Game
             }
             throw new DcTraveleApiException("Failed to get request data after multiple attempts.");
         }
+        #endregion
 
         #region 查询传送页面
-        public async Task<bool> InitTravelPage()
-        {
-            //https://ff14bjz.sdo.com/api/orderserivce/pageInit?migrationType=4
-            try
-            {
-                _ = await GetRequestData("api/orderserivce/pageInit", ApiType.TravelWithTicket, new Dictionary<string, string>() { { "migrationType", "4" } }, true);
-                return true;
-            }
-            catch (DcTraveleApiException ex)
-            {
-                Log.Error(ex, "Failed to initialize travel page");
-                return false;
-            }
-        }
-        public async Task ValidateTicket()
-        {
-            //https://ff14bjz.sdo.com/api/gmallinter/validateTicket?ticket=ULS21-000000000000000000000000
-            _ = await GetRequestData("api/gmallinter/validateTicket", ApiType.TravelWithTicket, new Dictionary<string, string>() { { "ticket", this.ticket } }, true);
-        }
-
         public class Area
         {
             [JsonPropertyName("areaId")]
@@ -240,6 +247,7 @@ namespace XIVLauncher.Common.Game
             [JsonPropertyName("groupCode")]
             public string GroupCode { get; set; }
         }
+        [HttpRpc]
         public async Task<List<Area>> QueryGroupListTravelSource()
         {
             //https://ff14bjz.sdo.com/api/orderserivce/queryGroupListTravelSource?appId=100001900
@@ -254,6 +262,7 @@ namespace XIVLauncher.Common.Game
             return areaList;
         }
 
+        [HttpRpc]
         public async Task<List<Area>> QueryGroupListTravelTarget(int areaId, int groupId)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/queryGroupListTravelTarget?appId=100001900&areaId=7&groupId=5
@@ -282,10 +291,11 @@ namespace XIVLauncher.Common.Game
                 return $"{{\"roleId\":\"{ContentId}\",\"roleName\":\"{Name}\",\"key\":0}}";
             }
         }
+        [HttpRpc]
         public async Task<List<Character>> QueryRoleList(int areaId, int groupId)
         {
             //https://ff14bjz.sdo.com/api/gmallgateway/queryRoleList4Migration?appId=100001900&areaId=7&groupId=5
-            var data = await GetRequestData("api/gmallgateway/queryRoleList4Migration", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "areaId", $"{areaId}" }, { "groupId", $"{"groupId"}" } });
+            var data = await GetRequestData("api/gmallgateway/queryRoleList4Migration", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "areaId", $"{areaId}" }, { "groupId", $"{groupId}" } });
             if (data["resultCode"].GetValue<int>() != 0)
                 throw new DcTraveleApiException($"Failed to query role list, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
             var characterList = JsonSerializer.Deserialize<List<Character>>(JsonNode.Parse(data["roleList"].GetValue<string>()));
@@ -296,6 +306,7 @@ namespace XIVLauncher.Common.Game
             }
             return characterList;
         }
+        [HttpRpc]
         public async Task<int> QueryTravelQueueTime(int areaId, int groupId)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/travelQueueTime?appId=100001900&migrationType=4&targetArea=8&targetGroupId=1
@@ -304,6 +315,7 @@ namespace XIVLauncher.Common.Game
                 throw new DcTraveleApiException($"Failed to query travel queue time, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
             return data["minutes"].GetValue<int>();
         }
+        [HttpRpc]
         public async Task<string> TravelOrder(Group targetGroup, Group sourceGroup, Character character)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/travelOrder?appId=100001900&areaId=7&areaName=%E7%8C%AB%E5%B0%8F%E8%83%96&groupId=5&groupCode=HaiMaoChaWu&groupName=%E6%B5%B7%E7%8C%AB%E8%8C%B6%E5%B1%8B&productId=1&productNum=1&migrationType=4&targetArea=8&targetAreaName=%E8%B1%86%E8%B1%86%E6%9F%B4&targetGroupId=1&targetGroupCode=ShuiJingTa2&targetGroupName=%E6%B0%B4%E6%99%B6%E5%A1%94&roleList=%5b%7b%22roleId%22%3a%22114514%22%2c%22roleName%22%3a%22%e4%b8%9d%e7%93%9c%e5%8d%a1%e5%a4%ab%e5%8d%a1%22%2c%22key%22%3a0%7d%5d&isMigrationTimes=0
@@ -331,6 +343,7 @@ namespace XIVLauncher.Common.Game
             InQueue = 4,
             Completed = 5,
         }
+        [HttpRpc]
         public async Task<MigrationStatus> QueryOrderStatus(string orderId)
         {
             //https://ff14bjz.sdo.com/api/gmallgateway/queryOrderStatus?orderId=GM017624122025062800161000001006
@@ -341,6 +354,7 @@ namespace XIVLauncher.Common.Game
         #endregion
 
         #region 订单页面
+        [HttpRpc]
         public async Task<bool> InitOrderPage()
         {
             //https://ff14bjz.sdo.com/api/orderserivce/pageInit?migrationType=0
@@ -382,7 +396,7 @@ namespace XIVLauncher.Common.Game
             public string CreateTime { get; set; }
         }
 
-
+        [HttpRpc]
         public async Task<List<MigrationOrder>> QueryMigrationOrders(int pageIndex = 1)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/queryMigrationOrders?appId=100001900&pageIndex=1&pageNum=10
@@ -446,6 +460,7 @@ namespace XIVLauncher.Common.Game
             }
             return orderList;
         }
+        [HttpRpc]
         public async Task TravelBack(MigrationOrder order)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/travelBack?travelOrderId=GM017624122025062800161000001006&groupId=23&groupCode=ShenYiZhiDi&groupName=%E7%A5%9E%E6%84%8F%E4%B9%8B%E5%9C%B0

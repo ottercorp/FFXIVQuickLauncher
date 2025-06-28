@@ -30,6 +30,7 @@ using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.Game.Patch;
 using XIVLauncher.Common.Game.Patch.Acquisition;
 using XIVLauncher.Common.Game.Patch.PatchList;
+using XIVLauncher.Common.Http;
 using XIVLauncher.Common.PlatformAbstractions;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Common.Windows;
@@ -283,6 +284,7 @@ namespace XIVLauncher.Windows.ViewModel
             });
         }
 
+        public DcTravelListener dcTravelListener { get; private set; } = null;
         public const string PresudoPassword = "********假的密码********";
         private async Task Login(LoginType loginType, string username, string inputPassword, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
         {
@@ -473,8 +475,8 @@ namespace XIVLauncher.Windows.ViewModel
                 }
             }
 
-            var dc = new DcTraveler(nSessionId, null, null);
-            await dc.GetValidCookie();
+            //var dc = new DcTraveler(nSessionId, null, null);
+            //await dc.GetValidCookie();
             //var groupList = await dc.QueryGroupListTravelSource();
             //var orders = await dc.QueryMigrationOrders();
             var loginResult = await TryLoginToGame(finalLoginType, loginType, username, serect, doingAutoLogin, true, nSessionId, action).ConfigureAwait(false);
@@ -521,7 +523,16 @@ namespace XIVLauncher.Windows.ViewModel
                         await dcTraveler.GetValidCookie();
                         nSessionId = dcTraveler.GetNSessionIdFromCookie();
                         accountToSave.NSessionId = nSessionId;
-
+#if !DEBUG
+                        var port = ApiHelpers.GetAvailablePort();
+                        var encrypt = false;
+#else
+                        var port = 12345;
+                        var encrypt = false;
+#endif
+                        this.dcTravelListener = new DcTravelListener(dcTraveler, port, encrypt);
+                        Log.Information($"[DcTravel] use port:{port}");
+                        this.dcTravelListener.StartAsync();
                         accountToSave.AutoLoginSessionKey = await AccountManager.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
                         if (finalLoginType == LoginType.SdoStatic)
                         {
@@ -1807,7 +1818,7 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 Log.Error(ex, "Could not shut down Steam");
             }
-
+            this.dcTravelListener?.Stop();
             return gameProcess;
         }
 

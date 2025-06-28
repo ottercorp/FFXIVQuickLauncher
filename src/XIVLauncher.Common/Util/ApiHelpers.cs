@@ -1,11 +1,21 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 
 namespace XIVLauncher.Common.Util;
 
 public static class ApiHelpers
 {
+    public static int GetAvailablePort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
+    }
     public static long GetUnixMillis()
     {
         return (long)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalMilliseconds;
