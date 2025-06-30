@@ -115,6 +115,7 @@ public partial class Launcher
         public OauthLoginResult? OauthLogin { get; set; }
         public string? UniqueId { get; set; }
         public SdoArea? Area { get; set; }
+        public int DcTravelPort { get; set; } = 0;
     }
 
     public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial)

@@ -523,15 +523,14 @@ namespace XIVLauncher.Windows.ViewModel
                         await dcTraveler.GetValidCookie();
                         nSessionId = dcTraveler.GetNSessionIdFromCookie();
                         accountToSave.NSessionId = nSessionId;
+                        loginResult.DcTravelPort = ApiHelpers.GetAvailablePort();
 #if !DEBUG
-                        var port = ApiHelpers.GetAvailablePort();
                         var encrypt = false;
 #else
-                        var port = 12345;
                         var encrypt = false;
 #endif
-                        this.dcTravelListener = new DcTravelListener(dcTraveler, port, encrypt);
-                        Log.Information($"[DcTravel] use port:{port}");
+                        this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt);
+                        Log.Information($"[DcTravel] use port:{loginResult.DcTravelPort}");
                         this.dcTravelListener.StartAsync();
                         accountToSave.AutoLoginSessionKey = await AccountManager.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
                         if (finalLoginType == LoginType.SdoStatic)
@@ -1747,6 +1746,7 @@ namespace XIVLauncher.Windows.ViewModel
             var launched = this.Launcher.LaunchGameSdo(gameRunner,
                                                        loginResult.OauthLogin.SessionId,
                                                        loginResult.OauthLogin.SndaId,
+                                                       loginResult.DcTravelPort,
                                                        Area.Areaid,
                                                        Area.AreaLobby,
                                                        Area.AreaGm,

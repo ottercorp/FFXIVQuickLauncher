@@ -674,7 +674,7 @@ namespace XIVLauncher.Common.Game
             return result;
         }
 
-        public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, string areaId, string lobbyHost, string gmHost, string dbHost,
+        public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, int dcTravelPort, string areaId, string lobbyHost, string gmHost, string dbHost,
                                       string additionalArguments, DirectoryInfo gamePath, bool encryptArguments, DpiAwareness dpiAwareness)
         {
             Log.Information(
@@ -693,7 +693,8 @@ namespace XIVLauncher.Common.Game
                                   .Append("resetConfig", "0")
                                   .Append("DEV.MaxEntitledExpansionID", "1")
                                   .Append("DEV.TestSID", sessionId)
-                                  .Append("XL.SndaId", sndaId);
+                                  .Append("XL.SndaId", sndaId)
+                                  .Append("XL.DcTraveler", $"{dcTravelPort}");
 
             // This is a bit of a hack; ideally additionalArguments would be a dictionary or some KeyValue structure
             if (!string.IsNullOrEmpty(additionalArguments))

@@ -21,9 +21,15 @@ namespace XIVLauncher.Common.Game
     public class DcTraveleApiException : Exception
     {
         public bool IsNetworkTimeout { get; set; } = false;
-        public DcTraveleApiException(string message, bool isNetworkTimeout = false) : base(message)
+        public bool RetryAfter1Min { get; set; } = false;
+        public DcTraveleApiException(string message, int errorCode = 0) : base(message)
         {
-            this.IsNetworkTimeout = isNetworkTimeout;
+            //{ "return_code":-10339325,"return_message":"请求过于频繁，请稍等1分钟后再试。","data":{ } }
+            //{"return_code":-10339000,"return_message":"网络超时，请稍后重试！","data":{}}
+            if (errorCode == -10339000)
+                this.IsNetworkTimeout = true;
+            if (errorCode == -10339325)
+                this.RetryAfter1Min = true;
         }
     }
     public class DcTraveler
@@ -139,7 +145,7 @@ namespace XIVLauncher.Common.Game
             var returnCode = 0;
             if (node == null || (returnCode = node["return_code"].GetValue<int>()) != 0)
             {
-                throw new DcTraveleApiException($"API call failed with return code: {node?["return_code"]?.GetValue<int>()}, message: {node?["return_message"]?.GetValue<string>()}", returnCode == -10339000);
+                throw new DcTraveleApiException($"API call failed with return code: {node?["return_code"]?.GetValue<int>()}, message: {node?["return_message"]?.GetValue<string>()}",returnCode);
             }
         }
 
@@ -157,7 +163,6 @@ namespace XIVLauncher.Common.Game
             {
                 throw new DcTraveleApiException("DcTraveler is not initialized. Please call GetValidCookie() first.");
             }
-            //{"return_code":-10339000,"return_message":"网络超时，请稍后重试！","data":{}}
             var requestUri = new Uri($"https://{BaseUrl}/{api}");
             var uriBuilder = new UriBuilder(requestUri);
             var queryParams = HttpUtility.ParseQueryString(uriBuilder.Query);
@@ -165,7 +170,7 @@ namespace XIVLauncher.Common.Game
             {
                 foreach (var item in parameters)
                 {
-                    queryParams.Add(item.Key, HttpUtility.UrlEncode(item.Value));
+                    queryParams.Add(item.Key, HttpUtility.UrlEncode(item.Value, Encoding.UTF8));
                 }
             }
             uriBuilder.Query = queryParams.ToString();
@@ -199,9 +204,13 @@ namespace XIVLauncher.Common.Game
                     }
                     catch (Exception ex)
                     {
-                        if (ex is DcTraveleApiException dcEx && dcEx.IsNetworkTimeout)
+                        if (ex is DcTraveleApiException dcEx)
                         {
-                            await Task.Delay(5000);
+                            if (dcEx.IsNetworkTimeout)
+                                await Task.Delay(5);
+                            else if (dcEx.RetryAfter1Min)
+                                throw;
+                                //await Task.Delay(60 * 1000);
                             continue;
                         }
                         else
@@ -247,6 +256,7 @@ namespace XIVLauncher.Common.Game
             [JsonPropertyName("groupCode")]
             public string GroupCode { get; set; }
         }
+
         [HttpRpc]
         public async Task<List<Area>> QueryGroupListTravelSource()
         {
@@ -257,7 +267,7 @@ namespace XIVLauncher.Common.Game
             var areaList = JsonSerializer.Deserialize<List<Area>>(JsonNode.Parse(data["groupList"].GetValue<string>()));
             foreach (var item in areaList)
             {
-                item.SetAreaForGroup(); 
+                item.SetAreaForGroup();
             }
             return areaList;
         }
@@ -378,6 +388,12 @@ namespace XIVLauncher.Common.Game
             Backed,
             Unknown
         }
+        public class MigrationOrders
+        {
+            public int TotalCount { get; set; }
+            public int TotalPageNum { get; set; }
+            public MigrationOrder[] Orders { get; set; }
+        }
         public class MigrationOrder
         {
             [JsonPropertyName("orderId")]
@@ -390,14 +406,14 @@ namespace XIVLauncher.Common.Game
             public string GroupCode { get; set; }
             [JsonPropertyName("groupName")]
             public string GroupName { get; set; }
-            [JsonIgnore]
+            [JsonPropertyName("status")]
             public OrderStatus Status { get; set; }
             [JsonPropertyName("createTime")]
             public string CreateTime { get; set; }
         }
 
         [HttpRpc]
-        public async Task<List<MigrationOrder>> QueryMigrationOrders(int pageIndex = 1)
+        public async Task<MigrationOrders> QueryMigrationOrders(int pageIndex = 1)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/queryMigrationOrders?appId=100001900&pageIndex=1&pageNum=10
             var data = await GetRequestData("api/orderserivce/queryMigrationOrders", ApiType.Order, new Dictionary<string, string>() { { "appId", "100001900" }, { "pageIndex", $"{pageIndex}" }, { "pageNum", $"10" } });
@@ -458,15 +474,16 @@ namespace XIVLauncher.Common.Game
                     CreateTime = createTime
                 });
             }
-            return orderList;
+            return new MigrationOrders() { Orders = orderList.ToArray(), TotalCount = data["totalCount"].GetValue<int>(), TotalPageNum = data["totalPageNum"].GetValue<int>() };
         }
         [HttpRpc]
-        public async Task TravelBack(MigrationOrder order)
+        public async Task<string> TravelBack(string orderId, int currentGroupId, string currentGroupCode, string currentGroupName)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/travelBack?travelOrderId=GM017624122025062800161000001006&groupId=23&groupCode=ShenYiZhiDi&groupName=%E7%A5%9E%E6%84%8F%E4%B9%8B%E5%9C%B0
-            var data = await GetRequestData("api/orderserivce/travelBack", ApiType.Order, new Dictionary<string, string>() { { "travelOrderId", order.OrderId }, { "groupId", $"{order.GroupId}" }, { "groupCode", $"{order.GroupCode}" }, { "groupName", $"{order.GroupName}" } });
+            var data = await GetRequestData("api/orderserivce/travelBack", ApiType.Order, new Dictionary<string, string>() { { "travelOrderId", orderId }, { "groupId", $"{currentGroupId}" }, { "groupCode", currentGroupCode }, { "groupName", currentGroupName } });
             if (data["resultCode"].GetValue<int>() != 0)
                 throw new DcTraveleApiException($"Failed to travel back, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
+            return data["orderId"].GetValue<string>();
         }
         #endregion
     }
