@@ -8,6 +8,7 @@ concurrency:
 jobs:
   build-release:
     name: Build Release on Windows
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: windows-2022
     permissions:
       id-token: write
