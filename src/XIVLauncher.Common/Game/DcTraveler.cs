@@ -145,7 +145,7 @@ namespace XIVLauncher.Common.Game
             var returnCode = 0;
             if (node == null || (returnCode = node["return_code"].GetValue<int>()) != 0)
             {
-                throw new DcTraveleApiException($"API call failed with return code: {node?["return_code"]?.GetValue<int>()}, message: {node?["return_message"]?.GetValue<string>()}",returnCode);
+                throw new DcTraveleApiException($"API call failed with return code: {node?["return_code"]?.GetValue<int>()}, message: {node?["return_message"]?.GetValue<string>()}", returnCode);
             }
         }
 
@@ -170,7 +170,7 @@ namespace XIVLauncher.Common.Game
             {
                 foreach (var item in parameters)
                 {
-                    queryParams.Add(item.Key, HttpUtility.UrlEncode(item.Value, Encoding.UTF8));
+                    queryParams.Add(item.Key, item.Value);
                 }
             }
             uriBuilder.Query = queryParams.ToString();
@@ -207,11 +207,11 @@ namespace XIVLauncher.Common.Game
                         if (ex is DcTraveleApiException dcEx)
                         {
                             if (dcEx.IsNetworkTimeout)
+                            {
                                 await Task.Delay(5);
-                            else if (dcEx.RetryAfter1Min)
-                                throw;
-                                //await Task.Delay(60 * 1000);
-                            continue;
+                                continue;
+                            }
+                            throw;
                         }
                         else
                         {
@@ -237,14 +237,15 @@ namespace XIVLauncher.Common.Game
             {
                 foreach (var group in GroupList)
                 {
-                    group.Area = this;
+                    group.AreaId = this.AreaId;
+                    group.AreaName = this.AreaName;
                 }
             }
         }
         public class Group
         {
-            [JsonIgnore]
-            public Area Area { get; set; }
+            public int AreaId { get; set; }
+            public string AreaName { get; set; }
             [JsonPropertyName("groupId")]
             public int GroupId { get; set; }
             [JsonPropertyName("amount")]
@@ -276,7 +277,7 @@ namespace XIVLauncher.Common.Game
         public async Task<List<Area>> QueryGroupListTravelTarget(int areaId, int groupId)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/queryGroupListTravelTarget?appId=100001900&areaId=7&groupId=5
-            var data = await GetRequestData("api/orderserivce/queryGroupListTravelTarget", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "areaId", $"{areaId}" }, { "groupId", $"{"groupId"}" } });
+            var data = await GetRequestData("api/orderserivce/queryGroupListTravelTarget", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "areaId", $"{areaId}" }, { "groupId", $"{groupId}" } });
             if (data["resultCode"].GetValue<int>() != 0)
                 throw new DcTraveleApiException($"Failed to query group list travel target, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
             var areaList = JsonSerializer.Deserialize<List<Area>>(JsonNode.Parse(data["groupList"].GetValue<string>()));
@@ -320,7 +321,7 @@ namespace XIVLauncher.Common.Game
         public async Task<int> QueryTravelQueueTime(int areaId, int groupId)
         {
             //https://ff14bjz.sdo.com/api/orderserivce/travelQueueTime?appId=100001900&migrationType=4&targetArea=8&targetGroupId=1
-            var data = await GetRequestData("api/gmallgateway/queryRoleList4Migration", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "migrationType", "4" }, { "areaId", $"{areaId}" }, { "groupId", $"{"groupId"}" } });
+            var data = await GetRequestData("api/orderserivce/travelQueueTime", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "migrationType", "4" }, { "targetArea", $"{areaId}" }, { "targetGroupId", $"{groupId}" } });
             if (data["resultCode"].GetValue<int>() != 0)
                 throw new DcTraveleApiException($"Failed to query travel queue time, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
             return data["minutes"].GetValue<int>();
@@ -335,12 +336,12 @@ namespace XIVLauncher.Common.Game
             //targetArea=8&targetAreaName=豆豆柴&targetGroupId=1&targetGroupCode=ShuiJingTa2&targetGroupName=水晶塔&
             //roleList=[{"roleId":"114514","roleName":"丝瓜卡夫卡","key":0}]&
             var data = await GetRequestData(
-                "api/gmallgateway/queryRoleList4Migration",
+                "api/orderserivce/travelOrder",
                 ApiType.Travel,
                 new Dictionary<string, string>() {
                     { "appId", "100001900" },{ "migrationType", "4" },{ "isMigrationTimes", "1" },{ "productId", "1"} ,
-                    { "areaId", $"{sourceGroup.Area.AreaId}" },{ "areaName", $"{sourceGroup.Area.AreaName}" },{ "groupId", $"{sourceGroup.GroupId}" },{ "groupCode", $"{sourceGroup.GroupCode}" },{ "groupName", $"{sourceGroup.GroupName}" },
-                    { "targetArea", $"{targetGroup.Area.AreaId}" },{ "targetAreaName", $"{targetGroup.Area.AreaName}" },{ "targetGroupId", $"{targetGroup.GroupId}" },{ "targetGroupCode", $"{targetGroup.GroupCode}" },{ "targetGroupName", $"{targetGroup.GroupName}" },
+                    { "areaId", $"{sourceGroup.AreaId}" },{ "areaName", $"{sourceGroup.AreaName}" },{ "groupId", $"{sourceGroup.GroupId}" },{ "groupCode", $"{sourceGroup.GroupCode}" },{ "groupName", $"{sourceGroup.GroupName}" },
+                    { "targetArea", $"{targetGroup.AreaId}" },{ "targetAreaName", $"{targetGroup.AreaName}" },{ "targetGroupId", $"{targetGroup.GroupId}" },{ "targetGroupCode", $"{targetGroup.GroupCode}" },{ "targetGroupName", $"{targetGroup.GroupName}" },
                     { "roleList", $"[{character.ToQueryString()}]"}
                 });
             return data["orderId"].GetValue<string>();
@@ -350,6 +351,7 @@ namespace XIVLauncher.Common.Game
         {
             Failed = -1,
             InPrepare = 0,
+            UnkownCompleted = 3,
             InQueue = 4,
             Completed = 5,
         }

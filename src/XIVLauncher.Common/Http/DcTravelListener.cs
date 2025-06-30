@@ -209,7 +209,7 @@ namespace XIVLauncher.Common.Http
 
                 var buffer = Encoding.UTF8.GetBytes(responseJson);
                 context.Response.ContentType = "application/json";
-                context.Response.StatusCode = 500;
+                //context.Response.StatusCode = 200;
                 await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                 context.Response.Close();
             }
