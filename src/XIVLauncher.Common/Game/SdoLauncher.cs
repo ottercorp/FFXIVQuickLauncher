@@ -488,7 +488,7 @@ namespace XIVLauncher.Common.Game
 
             Log.Information($"thirdPartyLogin:{result.Data.SndaId}:{result.Data.Tgt}");
 
-            return (result.Data.SndaId, result.Data.Tgt, result.Data.AutoLoginSessionKey);
+            return (result.Data.SndaId, result.Data.Tgt, token);
 
         }
 
