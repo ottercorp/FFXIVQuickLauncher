@@ -91,6 +91,7 @@ namespace XIVLauncher.Common.Http
 
         public void Stop()
         {
+            this.dcTraveler?.Logout().Wait();
             if (listener != null)
             {
                 listener.Stop();

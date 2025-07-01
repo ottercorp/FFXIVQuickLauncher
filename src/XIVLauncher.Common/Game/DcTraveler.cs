@@ -137,6 +137,12 @@ namespace XIVLauncher.Common.Game
             //https://ff14bjz.sdo.com/api/gmallinter/validateTicket?ticket=ULS21-000000000000000000000000
             _ = await GetRequestData("api/gmallinter/validateTicket", ApiType.TravelWithTicket, new Dictionary<string, string>() { { "ticket", this.ticket } }, true);
         }
+
+        public async Task Logout()
+        {
+            //https://ff14bjz.sdo.com/api/gmallinter/logout?
+            _ = await GetRequestData("api/gmallinter/logout?", ApiType.Order, new Dictionary<string, string>() {}, false);
+        }
         #endregion
 
         #region 公共请求

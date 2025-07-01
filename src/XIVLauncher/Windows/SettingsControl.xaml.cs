@@ -135,6 +135,8 @@ namespace XIVLauncher.Windows
             else
                 App.Settings.InGameAddonLoadMethod = DalamudLoadMethod.EntryPoint;
 
+            App.Settings.EnableDcTravel = EnableDcTravelCheckBox.IsChecked == true;
+
             App.Settings.OtpServerEnabled = OtpServerCheckBox.IsChecked == true;
 
             App.Settings.AdditionalLaunchArgs = LaunchArgsTextBox.Text;

@@ -431,7 +431,7 @@ namespace XIVLauncher.Windows.ViewModel
                         if (inputPassword.IsNullOrEmpty())
                         {
                             serect = await AccountManager.CredProvider.Decrypt(savedAccount.AutoLoginSessionKey);
-                            nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
+                            //nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
                             finalLoginType = LoginType.AutoLoginSession;
                         }
                         if (serect.IsNullOrEmpty())
@@ -522,16 +522,21 @@ namespace XIVLauncher.Windows.ViewModel
                         dcTraveler = Launcher.CreateDcTraveler(nSessionId);
                         await dcTraveler.GetValidCookie();
                         nSessionId = dcTraveler.GetNSessionIdFromCookie();
-                        accountToSave.NSessionId = nSessionId;
-                        loginResult.DcTravelPort = ApiHelpers.GetAvailablePort();
+                        //accountToSave.NSessionId = nSessionId;
+                        
+                        if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled)
+                        {
 #if !DEBUG
-                        var encrypt = false;
+                            var encrypt = false;
 #else
-                        var encrypt = false;
+                            var encrypt = false;
 #endif
-                        this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt);
-                        Log.Information($"[DcTravel] use port:{loginResult.DcTravelPort}");
-                        this.dcTravelListener.StartAsync();
+                            loginResult.DcTravelPort = ApiHelpers.GetAvailablePort();
+                            this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt);
+                            Log.Information($"[DcTravel] use port:{loginResult.DcTravelPort}");
+                            this.dcTravelListener.StartAsync();
+                        }
+
                         accountToSave.AutoLoginSessionKey = await AccountManager.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
                         if (finalLoginType == LoginType.SdoStatic)
                         {

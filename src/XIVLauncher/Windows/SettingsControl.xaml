@@ -202,6 +202,18 @@
                                              Foreground="{DynamicResource MaterialDesignBody}"
                                              Content="{Binding InGameAddonLoadMethodDllInjectLoc}" ToolTip="{Binding InGameAddonLoadMethodDllInjectDescriptionLoc}" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                                <CheckBox x:Name="EnableDcTravelCheckBox"
+                                          Content="启用跨域传送"
+                                          HorizontalAlignment="Left" VerticalAlignment="Center"
+                                          Foreground="{DynamicResource MaterialDesignBody}" />
+
+                                <TextBlock Foreground="DarkGray" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,2,0,0">
+                                    <Run Text="启用跨域传送,可以在登录大厅右键角色进行返回和传送。" />
+                                    <LineBreak />
+                                    <Run Text="需要同时启用Dalamud,并在中安装DcTravel插件。" />
+                                </TextBlock>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>

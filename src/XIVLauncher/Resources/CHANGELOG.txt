@@ -1,5 +1,1 @@
-* 增加Beta开关（设置-关于-高级设置-接收Beta版更新）
-* 增加日志打包（报错对话框-打包日志）
-* 增加Verbose日志级别开关（设置-关于-高级设置-将Log级别调整为Verbose）
-* 修复读取WeGame信息时，拒绝访问报错
-* 增加注入模式进程选择功能(和旧版Dalamud.Updater类似)
+* 新增游戏内跨大区功能，需要启用Dalamud和该功能后，在Dalamud插件管理中安装DcTraveler插件。

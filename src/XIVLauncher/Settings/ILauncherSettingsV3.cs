@@ -59,6 +59,8 @@ namespace XIVLauncher.Settings
         CredType? CredType { get; set; }
 
         bool? EnableVerboseLog { get; set; }
+
+        bool EnableDcTravel { get; set; }
         #endregion
     }
 }
