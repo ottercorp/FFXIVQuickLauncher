@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -15,6 +16,7 @@ using System.Threading.Tasks;
 using System.Web;
 using XIVLauncher.Common.Addon;
 using XIVLauncher.Common.Http;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace XIVLauncher.Common.Game
 {
@@ -361,13 +363,25 @@ namespace XIVLauncher.Common.Game
             InQueue = 4,
             Completed = 5,
         }
+        public class OrderSatus
+        {
+            public MigrationStatus Status { get; set; }
+            public string CheckMessage { get; set; }
+        }
         [HttpRpc]
-        public async Task<MigrationStatus> QueryOrderStatus(string orderId)
+        public async Task<OrderSatus> QueryOrderStatus(string orderId)
         {
             //https://ff14bjz.sdo.com/api/gmallgateway/queryOrderStatus?orderId=GM017624122025062800161000001006
             var data = await GetRequestData("api/gmallgateway/queryOrderStatus", ApiType.Travel, new Dictionary<string, string>() { { "orderId", orderId } });
             var migrationStatus = (MigrationStatus)data["migrationStatus"].GetValue<int>();
-            return migrationStatus;
+            var messageStr = data["migrationMsg"].GetValue<string>();
+            var messages = JsonNode.Parse(messageStr) as JsonArray;
+            var checkMessage = string.Empty;
+            if (messages.Count > 0)
+            {
+                checkMessage = messages[0]["checkMsg"]?.GetValue<string>();
+            }
+            return new OrderSatus() { Status = migrationStatus, CheckMessage = checkMessage };
         }
         #endregion
 
@@ -387,7 +401,7 @@ namespace XIVLauncher.Common.Game
                 return false;
             }
         }
-        public enum OrderStatus
+        public enum TravelStatus
         {
             Failed,
             Arrival,
@@ -415,7 +429,7 @@ namespace XIVLauncher.Common.Game
             [JsonPropertyName("groupName")]
             public string GroupName { get; set; }
             [JsonPropertyName("status")]
-            public OrderStatus Status { get; set; }
+            public TravelStatus Status { get; set; }
             [JsonPropertyName("createTime")]
             public string CreateTime { get; set; }
         }
@@ -433,7 +447,6 @@ namespace XIVLauncher.Common.Game
             foreach (var order in orderListArray)
             {
                 var migrationDetailList = order["migrationDetailList"] as JsonArray;
-                var roleId = string.Empty;
                 if (migrationDetailList == null || migrationDetailList.Count == 0)
                 {
                     continue;
@@ -442,35 +455,31 @@ namespace XIVLauncher.Common.Game
                 var groupId = order["groupId"].GetValue<int>();
                 var groupCode = order["groupCode"]?.GetValue<string>();
                 var groupName = order["groupName"]?.GetValue<string>();
-                if (groupId == 0 || groupCode == null || groupName == null)
-                {
-                    continue;
-                }
-
+                var roleId = migrationDetailList[0]["roleId"]?.GetValue<string>();
                 var migrationStatus = (MigrationStatus)order["migrationStatus"].GetValue<int>();
                 var migrationType = order["migrationType"].GetValue<int>();
                 var travelStatus = order["travelStatus"].GetValue<int>();
                 var createTime = order["createTime"].GetValue<string>();
-                var orderStatus = OrderStatus.Unknown;
+                var orderStatus = TravelStatus.Unknown;
                 if (migrationStatus == MigrationStatus.Failed)
                 {
-                    orderStatus = OrderStatus.Failed;
+                    orderStatus = TravelStatus.Failed;
                 }
                 else if (migrationType == 5 && travelStatus == 1 && migrationStatus == MigrationStatus.Completed)
                 {
-                    orderStatus = OrderStatus.Backed;
+                    orderStatus = TravelStatus.Backed;
                 }
                 else if (migrationType == 4 && travelStatus == 1 && migrationStatus == MigrationStatus.Completed)
                 {
-                    orderStatus = OrderStatus.Arrival;
+                    orderStatus = TravelStatus.Arrival;
                 }
                 else if (migrationType == 4 && travelStatus == 3 && migrationStatus == MigrationStatus.Completed)
                 {
-                    orderStatus = OrderStatus.Completed;
+                    orderStatus = TravelStatus.Completed;
                 }
                 else if (migrationType == 5 && travelStatus == 1 && migrationStatus == MigrationStatus.InPrepare)
                 {
-                    orderStatus = OrderStatus.Backing;
+                    orderStatus = TravelStatus.Backing;
                 }
                 else
                 {
