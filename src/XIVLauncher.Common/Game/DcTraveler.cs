@@ -432,21 +432,20 @@ namespace XIVLauncher.Common.Game
 
             foreach (var order in orderListArray)
             {
-                var orderId = order["orderId"].GetValue<string>();
-                var groupId = order["groupId"].GetValue<int>();
-                var groupCode = order["groupCode"].GetValue<string>();
-                var groupName = order["groupName"].GetValue<string>();
-                if (groupId==0 || groupCode==null || groupName == null)
-                {
-                    continue;
-                }
                 var migrationDetailList = order["migrationDetailList"] as JsonArray;
                 var roleId = string.Empty;
                 if (migrationDetailList == null || migrationDetailList.Count == 0)
                 {
                     continue;
                 }
-                roleId = migrationDetailList[0]["roleId"].GetValue<string>();
+                var orderId = order["orderId"]?.GetValue<string>();
+                var groupId = order["groupId"].GetValue<int>();
+                var groupCode = order["groupCode"]?.GetValue<string>();
+                var groupName = order["groupName"]?.GetValue<string>();
+                if (groupId == 0 || groupCode == null || groupName == null)
+                {
+                    continue;
+                }
 
                 var migrationStatus = (MigrationStatus)order["migrationStatus"].GetValue<int>();
                 var migrationType = order["migrationType"].GetValue<int>();
