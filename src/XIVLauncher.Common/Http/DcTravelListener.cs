@@ -205,7 +205,7 @@ namespace XIVLauncher.Common.Http
             }
             catch (Exception ex)
             {
-                var response = new RpcResponse { Result = null, Error = ex.Message };
+                var response = new RpcResponse { Result = null, Error = ex.ToString() };
                 var responseJson = JsonSerializer.Serialize(response);
 
                 var buffer = Encoding.UTF8.GetBytes(responseJson);
