@@ -84,6 +84,8 @@ namespace XIVLauncher.Windows
             EnableHooksCheckBox.IsChecked = App.Settings.InGameAddonEnabled;
             this.EnableHooksCheckBox.Checked += this.EnableHooksCheckBox_OnChecked;
 
+            this.EnableDcTravelCheckBox.IsChecked = App.Settings.EnableDcTravel;
+
             OtpServerCheckBox.IsChecked = App.Settings.OtpServerEnabled;
 
             LaunchArgsTextBox.Text = App.Settings.AdditionalLaunchArgs;
