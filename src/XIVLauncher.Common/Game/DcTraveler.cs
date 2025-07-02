@@ -355,33 +355,46 @@ namespace XIVLauncher.Common.Game
             return data["orderId"].GetValue<string>();
         }
 
-        public enum MigrationStatus
-        {
-            Failed = -1,
-            InPrepare = 0,
-            UnkownCompleted = 3,
-            InQueue = 4,
-            Completed = 5,
-        }
+        //public enum MigrationStatus
+        //{
+        //    Failed = -1,
+        //    InPrepare = 0,
+        //    UnkownCompleted = 3,
+        //    InQueue = 4,
+        //    Completed = 5,
+        //}
         public class OrderSatus
         {
-            public MigrationStatus Status { get; set; }
+            // 5 成功
+            // 2 需要确认
+            // 0,1 检查中
+            // 3,4 处理中
+            // -1 预检查失败
+            // -5 传送失败
+            public int Status { get; set; }
             public string CheckMessage { get; set; }
+            public string MigrationMessage { get; set; }
         }
         [HttpRpc]
         public async Task<OrderSatus> QueryOrderStatus(string orderId)
         {
             //https://ff14bjz.sdo.com/api/gmallgateway/queryOrderStatus?orderId=GM017624122025062800161000001006
             var data = await GetRequestData("api/gmallgateway/queryOrderStatus", ApiType.Travel, new Dictionary<string, string>() { { "orderId", orderId } });
-            var migrationStatus = (MigrationStatus)data["migrationStatus"].GetValue<int>();
+            var migrationStatus = data["migrationStatus"].GetValue<int>();
             var messageStr = data["migrationMsg"].GetValue<string>();
             var messages = JsonNode.Parse(messageStr) as JsonArray;
-            var checkMessage = string.Empty;
+            string checkMessage = null;
+            string migrationMessage = null;
             if (messages.Count > 0)
             {
                 checkMessage = messages[0]["checkMsg"]?.GetValue<string>();
+                migrationMessage = messages[0]["migrationMsg"]?.GetValue<string>();
             }
-            return new OrderSatus() { Status = migrationStatus, CheckMessage = checkMessage };
+            return new OrderSatus() { Status = migrationStatus, CheckMessage = checkMessage, MigrationMessage = migrationMessage };
+        }
+        public async Task MigrationConfirmOrder(string orderId, bool confirmed)
+        {
+            _ = await GetRequestData("api/gmallgateway/migrationConfirmOrder", ApiType.Order, new Dictionary<string, string>() { { "orderId", orderId }, { "confirmType", confirmed ? "1" : "0" } });
         }
         #endregion
 
@@ -428,8 +441,7 @@ namespace XIVLauncher.Common.Game
             public string GroupCode { get; set; }
             [JsonPropertyName("groupName")]
             public string GroupName { get; set; }
-            [JsonPropertyName("status")]
-            public TravelStatus Status { get; set; }
+
             [JsonPropertyName("createTime")]
             public string CreateTime { get; set; }
         }
@@ -456,40 +468,22 @@ namespace XIVLauncher.Common.Game
                 var groupCode = order["groupCode"]?.GetValue<string>();
                 var groupName = order["groupName"]?.GetValue<string>();
                 var roleId = migrationDetailList[0]["roleId"]?.GetValue<string>();
-                var migrationStatus = (MigrationStatus)order["migrationStatus"].GetValue<int>();
+                var migrationStatus = order["migrationStatus"].GetValue<int>();
                 var migrationType = order["migrationType"].GetValue<int>();
                 var travelStatus = order["travelStatus"].GetValue<int>();
                 var createTime = order["createTime"].GetValue<string>();
-                var orderStatus = TravelStatus.Unknown;
-                if (migrationStatus == MigrationStatus.Failed)
+
+                //if (4 === parseInt(e.migrationType))
+                //    return 5 === parseInt(e.migrationStatus) && 1 === parseInt(e.travelStatus) ? C.default.createElement("div", null, C.default.createElement(h.default, {
+                //type: "primary",
+                //            className: "blueButton",
+                //            onClick: this.showBackTravelOrder.bind(this, e, !1)
+                //        }, "返回原始服")) : null;
+                if (!(migrationType == 4 && travelStatus == 1 && migrationStatus == 5))
                 {
-                    orderStatus = TravelStatus.Failed;
+                    continue;
                 }
-                else if (migrationType == 5 && travelStatus == 1 && migrationStatus == MigrationStatus.Completed)
-                {
-                    orderStatus = TravelStatus.Backed;
-                }
-                else if (migrationType == 4 && travelStatus == 1 && migrationStatus == MigrationStatus.Completed)
-                {
-                    orderStatus = TravelStatus.Arrival;
-                }
-                else if (migrationType == 4 && travelStatus == 3 && migrationStatus == MigrationStatus.Completed)
-                {
-                    orderStatus = TravelStatus.Completed;
-                }
-                else if (migrationType == 5 && travelStatus == 1 && migrationStatus == MigrationStatus.InPrepare)
-                {
-                    orderStatus = TravelStatus.Backing;
-                }
-                else
-                {
-                    var jsonText = order.ToJsonString(new JsonSerializerOptions
-                    {
-                        WriteIndented = true,
-                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                    });
-                    Log.Error($"[DcTravel] Unknown order statue:\n{jsonText}");
-                }
+
                 orderList.Add(new MigrationOrder
                 {
                     OrderId = orderId,
@@ -497,7 +491,6 @@ namespace XIVLauncher.Common.Game
                     GroupId = groupId,
                     GroupCode = groupCode,
                     GroupName = groupName,
-                    Status = orderStatus,
                     CreateTime = createTime
                 });
             }
