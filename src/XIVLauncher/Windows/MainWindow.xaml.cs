@@ -626,6 +626,7 @@ namespace XIVLauncher.Windows
                     break;
                 case XivAccountType.WeGame:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
+                    LoginPassword.Password = MainWindowViewModel.PresudoPassword;
                     break;
                 case XivAccountType.WeGameSid:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameSid;
