@@ -1,4 +1,5 @@
 using Serilog;
+using Serilog.Core;
 using System;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using XIVLauncher.Common.Addon;
@@ -44,11 +46,12 @@ namespace XIVLauncher.Common.Game
         private readonly Func<Task<string>> refreshGameSessionIdFunc;
         private readonly Func<Task<string>> refreshDcTravelSessionIdFunc;
         private bool isInitialized = false;
+        public readonly CancellationTokenSource KeepAliveCts;
         public DcTraveler(string nSessionId, Func<Task<string>> refreshGameSessionIdFunc, Func<Task<string>> refreshDcTravelSessionIdFunc)
         {
             this.refreshDcTravelSessionIdFunc = refreshDcTravelSessionIdFunc;
             this.refreshGameSessionIdFunc = refreshGameSessionIdFunc;
-
+            this.KeepAliveCts = new CancellationTokenSource();
             this.cookieContainer = new CookieContainer();
             if (!string.IsNullOrEmpty(nSessionId))
             {
@@ -110,6 +113,36 @@ namespace XIVLauncher.Common.Game
                     Log.Information("[DcTravel] Successfully initialized travel page.");
                     isInitialized = true;
                 }
+            }
+        }
+
+        public async Task KeepCookieAlive()
+        {
+            while (!KeepAliveCts.Token.IsCancellationRequested)
+            {
+                if (!isInitialized)
+                {
+                    await Task.Delay(1000, KeepAliveCts.Token);
+                    continue;
+                }
+
+                try
+                {
+                    Log.Information($"Cookie保活中...");
+                    await QueryGroupListTravelSource();
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "保活Cookie时出错");
+                }
+                var random = new Random();
+                var randomDelay = TimeSpan.FromMinutes(random.Next(30, 91));
+                Log.Information($"下次Cookie保活将在 {randomDelay:mm\\:ss} 后进行");
+                await Task.Delay(TimeSpan.FromMinutes(5), KeepAliveCts.Token); // 定期执行
             }
         }
 
@@ -182,25 +215,25 @@ namespace XIVLauncher.Common.Game
                 }
             }
             uriBuilder.Query = queryParams.ToString();
-            using (var request = new HttpRequestMessage(HttpMethod.Get, uriBuilder.Uri))
+            var tryNum = 3;
+            while (tryNum-- > 0)
             {
-                switch (type)
+                try
                 {
-                    case ApiType.Travel:
-                        request.Headers.Add("Refer", "https://ff14bjz.sdo.com/RegionKanTelepo");
-                        break;
-                    case ApiType.TravelWithTicket:
-                        request.Headers.Add("Refer", $"https://ff14bjz.sdo.com/RegionKanTelepo?ticket={this.ticket}");
-                        break;
-                    case ApiType.Order:
-                        request.Headers.Add("Refer", "https://ff14bjz.sdo.com/orderList");
-                        break;
-                }
-                var tryNum = 3;
-                while (tryNum-- > 0)
-                {
-                    try
+                    using (var request = new HttpRequestMessage(HttpMethod.Get, uriBuilder.Uri))
                     {
+                        switch (type)
+                        {
+                            case ApiType.Travel:
+                                request.Headers.Add("Refer", "https://ff14bjz.sdo.com/RegionKanTelepo");
+                                break;
+                            case ApiType.TravelWithTicket:
+                                request.Headers.Add("Refer", $"https://ff14bjz.sdo.com/RegionKanTelepo?ticket={this.ticket}");
+                                break;
+                            case ApiType.Order:
+                                request.Headers.Add("Refer", "https://ff14bjz.sdo.com/orderList");
+                                break;
+                        }
                         Log.Debug($"[DcTravel] request: {uriBuilder.Uri}");
                         var response = await this.httpClient.SendAsync(request);
                         response.EnsureSuccessStatusCode();
@@ -210,21 +243,21 @@ namespace XIVLauncher.Common.Game
                         EnsureReturnCode(node);
                         return node["data"];
                     }
-                    catch (Exception ex)
+                }
+                catch (Exception ex)
+                {
+                    if (ex is DcTraveleApiException dcEx)
                     {
-                        if (ex is DcTraveleApiException dcEx)
+                        if (dcEx.IsNetworkTimeout)
                         {
-                            if (dcEx.IsNetworkTimeout)
-                            {
-                                await Task.Delay(5);
-                                continue;
-                            }
-                            throw;
+                            await Task.Delay(5);
+                            continue;
                         }
-                        else
-                        {
-                            throw;
-                        }
+                        throw;
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
             }

@@ -115,6 +115,7 @@ public partial class Launcher
         public OauthLoginResult? OauthLogin { get; set; }
         public string? UniqueId { get; set; }
         public SdoArea? Area { get; set; }
+        public SdoArea[]? Areas { get; set; }
         public int DcTravelPort { get; set; } = 0;
     }
 

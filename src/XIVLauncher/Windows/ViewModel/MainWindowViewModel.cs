@@ -1,3 +1,7 @@
+using Castle.Core.Internal;
+using CheapLoc;
+using FfxivArgLauncher;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,6 +13,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,10 +24,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Castle.Core.Internal;
-using CheapLoc;
-using FfxivArgLauncher;
-using Serilog;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Addon;
@@ -338,7 +341,7 @@ namespace XIVLauncher.Windows.ViewModel
             // TODO: 太jb乱了，得重构
             var finalLoginType = loginType;
             var serect = string.Empty;
-            var nSessionId = string.Empty;
+            //var nSessionId = string.Empty;
             inputPassword = (inputPassword == PresudoPassword) ? string.Empty : inputPassword?.Trim();
 
             var accountType = loginType switch
@@ -361,7 +364,7 @@ namespace XIVLauncher.Windows.ViewModel
                         else if (savedAccount != null)
                         {
                             serect = await AccountManager.Decrypt(savedAccount.Password);
-                            nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
+                            //nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
                         }
                         ArgumentException.ThrowIfNullOrEmpty(username, "静态登录用户名");
                         ArgumentException.ThrowIfNullOrEmpty(serect, "静态登录密码");
@@ -445,7 +448,7 @@ namespace XIVLauncher.Windows.ViewModel
                         if (savedAccount != null && doingAutoLogin)
                         {
                             serect = await AccountManager.Decrypt(savedAccount.AutoLoginSessionKey);
-                            nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
+                            //nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
                             finalLoginType = LoginType.AutoLoginSession;
                         }
                         if (serect.IsNullOrEmpty())
@@ -479,11 +482,12 @@ namespace XIVLauncher.Windows.ViewModel
             //await dc.GetValidCookie();
             //var groupList = await dc.QueryGroupListTravelSource();
             //var orders = await dc.QueryMigrationOrders();
-            var loginResult = await TryLoginToGame(finalLoginType, loginType, username, serect, doingAutoLogin, true, nSessionId, action).ConfigureAwait(false);
+            var loginResult = await TryLoginToGame(finalLoginType, loginType, username, serect, doingAutoLogin, true, action).ConfigureAwait(false);
 
             if (loginResult == null)
                 return;
             loginResult.Area = Area;
+            loginResult.Areas = SdoAreas;
             if (loginResult.State == Launcher.LoginState.NeedsPatchGame && action != AfterLoginAction.Repair)
             {
                 // 如果需要打补丁且登陆异常，登陆异常状态会覆盖掉NeedsPatchGame，除非和国际服一样，登陆成功才能获取到补丁信息
@@ -501,6 +505,23 @@ namespace XIVLauncher.Windows.ViewModel
                 if (loginResult.State == Launcher.LoginState.Ok)
                 //if (true)
                 {
+                    if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled && loginType != LoginType.WeGameSid)
+                    {
+                        dcTraveler = Launcher.CreateDcTraveler(null);
+                        await dcTraveler.GetValidCookie();
+                        dcTraveler.KeepCookieAlive();
+                        //var nSessionId = dcTraveler.GetNSessionIdFromCookie();
+#if !DEBUG
+                            var encrypt = false;
+#else
+                        var encrypt = false;
+#endif
+                        loginResult.DcTravelPort = ApiHelpers.GetAvailablePort();
+                        this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt);
+                        Log.Information($"[DcTravel] use port:{loginResult.DcTravelPort}");
+                        this.dcTravelListener.StartAsync();
+                    }
+
                     var accountToSave = new XivAccount()
                     {
                         AutoLogin = loginType == LoginType.WeGameSid || doingAutoLogin,
@@ -519,23 +540,7 @@ namespace XIVLauncher.Windows.ViewModel
 
                     if (doingAutoLogin && accountToSave.AccountType != XivAccountType.WeGameSid)
                     {
-                        dcTraveler = Launcher.CreateDcTraveler(nSessionId);
-                        await dcTraveler.GetValidCookie();
-                        nSessionId = dcTraveler.GetNSessionIdFromCookie();
                         //accountToSave.NSessionId = nSessionId;
-                        
-                        if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled)
-                        {
-#if !DEBUG
-                            var encrypt = false;
-#else
-                            var encrypt = false;
-#endif
-                            loginResult.DcTravelPort = ApiHelpers.GetAvailablePort();
-                            this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt);
-                            Log.Information($"[DcTravel] use port:{loginResult.DcTravelPort}");
-                            this.dcTravelListener.StartAsync();
-                        }
 
                         accountToSave.AutoLoginSessionKey = await AccountManager.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
                         if (finalLoginType == LoginType.SdoStatic)
@@ -663,7 +668,6 @@ namespace XIVLauncher.Windows.ViewModel
             string serect,
             bool autoLogin,
             bool useDcTraveler,
-            string nSessionId,
             AfterLoginAction action
             )
         {
@@ -1754,8 +1758,9 @@ namespace XIVLauncher.Windows.ViewModel
                                                        loginResult.DcTravelPort,
                                                        Area.Areaid,
                                                        Area.AreaLobby,
-                                                       Area.AreaGm,
+                                                       Area.AreaGm, 
                                                        Area.AreaConfigUpload,
+                                                       Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(loginResult.Areas))),
                                                        App.Settings.AdditionalLaunchArgs,
                                                        App.Settings.GamePath,
                                                        App.Settings.EncryptArgumentsV2.GetValueOrDefault(true),
