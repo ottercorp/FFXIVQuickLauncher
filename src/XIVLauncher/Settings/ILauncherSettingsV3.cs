@@ -61,6 +61,8 @@ namespace XIVLauncher.Settings
         bool? EnableVerboseLog { get; set; }
 
         bool EnableDcTravel { get; set; }
+
+        bool? HasAgreeDcTravelUsage { get; set; }
         #endregion
     }
 }
