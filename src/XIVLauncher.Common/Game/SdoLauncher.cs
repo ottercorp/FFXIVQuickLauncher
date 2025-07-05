@@ -90,7 +90,7 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginBySdoStatic(string account, string password)
+        public async Task<LoginResult> LoginBySdoStatic(string account, string password, DcTraveler dcTraveler)
         {
             var guid = await this.GetGuid();
             var macAddress = SdoUtils.GetMacAddress();
@@ -115,7 +115,12 @@ namespace XIVLauncher.Common.Game
 
             var sndaId = result.Data.SndaId;
             var tgt = result.Data.Tgt;
-            this.CreateDcTraveler = (nSessionId) => { return new DcTraveler(nSessionId, () => this.GetSessionId(tgt, guid), () => this.GetDcTravelSessionId(tgt, guid)); };
+            if (dcTraveler != null)
+            {
+                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
+                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
+            }
+
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new OauthLoginResult
@@ -136,11 +141,15 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginByWeGameToken(string account, string token, bool autoLogin)
+        public async Task<LoginResult> LoginByWeGameToken(string account, string token, bool autoLogin, DcTraveler dcTraveler)
         {
             var guid = await this.GetGuid();
             var (sndaId, tgt, autoLoginSessionKey) = await ThirdPartyLogin(account, token, autoLogin, AutoLoginKeepDays);
-            this.CreateDcTraveler = (nSessionId) => { return new DcTraveler(nSessionId, () => this.GetSessionId(tgt, guid), () => this.GetDcTravelSessionId(tgt, guid)); };
+            if (dcTraveler != null)
+            {
+                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
+                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
+            }
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new OauthLoginResult
@@ -160,7 +169,7 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginByScanQrCode(bool autoLogin, CancellationTokenSource cts, Action<byte[]> showQrCode)
+        public async Task<LoginResult> LoginByScanQrCode(bool autoLogin, CancellationTokenSource cts, Action<byte[]> showQrCode, DcTraveler dcTraveler)
         {
             var guid = await this.GetGuid();
             // Wait for Scan QrCode
@@ -183,7 +192,11 @@ namespace XIVLauncher.Common.Game
             if (autoLogin)
                 (tgt, autoLoginSessionKey) = await AccountGroupLogin(tgt, sndaId, AutoLoginKeepDays);
 
-            this.CreateDcTraveler = (nSessionId) => { return new DcTraveler(nSessionId, () => this.GetSessionId(tgt, guid), () => this.GetDcTravelSessionId(tgt, guid)); };
+            if (dcTraveler != null)
+            {
+                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
+                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
+            }
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new OauthLoginResult
@@ -203,7 +216,7 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginBySlide(string account, bool autoLogin, CancellationTokenSource cts, Action<string> showVerificationCode)
+        public async Task<LoginResult> LoginBySlide(string account, bool autoLogin, CancellationTokenSource cts, Action<string> showVerificationCode, DcTraveler dcTraveler)
         {
             var guid = await this.GetGuid();
             // Wait for Slide
@@ -211,7 +224,11 @@ namespace XIVLauncher.Common.Game
             var (pushMsgSerialNum, pushMsgSessionKey, expiration) = await SendPushMessage(account);
             showVerificationCode?.Invoke(pushMsgSerialNum);
             var (sndaId, tgt, autoLoginSessionKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, expiration, cts, autoLogin, AutoLoginKeepDays);
-            this.CreateDcTraveler = (nSessionId) => { return new DcTraveler(nSessionId, () => this.GetSessionId(tgt, guid), () => this.GetDcTravelSessionId(tgt, guid)); };
+            if (dcTraveler != null)
+            {
+                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
+                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
+            }
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new OauthLoginResult
@@ -231,7 +248,7 @@ namespace XIVLauncher.Common.Game
             };
         }
 
-        public async Task<LoginResult> LoginBySessionKey(string account, string autoLoginSessionKey)
+        public async Task<LoginResult> LoginBySessionKey(string account, string autoLoginSessionKey, DcTraveler dcTraveler)
         {
             var guid = await this.GetGuid();
             //快速登录,刷新SessionKey
@@ -250,7 +267,11 @@ namespace XIVLauncher.Common.Game
 
             try
             {
-                this.CreateDcTraveler = (nSessionId) => { return new DcTraveler(nSessionId, () => this.GetSessionId(tgt, guid), () => this.GetDcTravelSessionId(tgt, guid)); };
+                if (dcTraveler != null)
+                {
+                    dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
+                    dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
+                }
                 var sessionId = await GetSessionId(tgt, guid);
                 var oath = new OauthLoginResult
                 {

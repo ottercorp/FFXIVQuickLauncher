@@ -23,7 +23,7 @@ namespace XIVLauncher.Common.Http
     {
         private volatile HttpListener listener;
         private Dictionary<string, MethodInfo> rpcMethodCache = new();
-        private DcTraveler dcTraveler;
+        public DcTraveler DcTraveler;
 
         private readonly byte[] kev;
         private readonly byte[] iv;
@@ -39,7 +39,7 @@ namespace XIVLauncher.Common.Http
                 iv = derive.GetBytes(16);
             }
             this.useEncrypt = useEncrypt;
-            this.dcTraveler = dcTraveler ?? throw new ArgumentNullException(nameof(dcTraveler));
+            this.DcTraveler = dcTraveler ?? throw new ArgumentNullException(nameof(dcTraveler));
             CacheRpcMethods();
             this.listener = new HttpListener();
             this.listener.Prefixes.Add($"http://127.0.0.1:{port}/dctravel/");
@@ -91,8 +91,8 @@ namespace XIVLauncher.Common.Http
 
         public void Stop()
         {
-            this.dcTraveler.KeepAliveCts.Cancel();
-            this.dcTraveler?.Logout().Wait();
+            this.DcTraveler.KeepAliveCts.Cancel();
+            this.DcTraveler?.Logout().Wait();
             if (listener != null)
             {
                 listener.Stop();
@@ -181,19 +181,19 @@ namespace XIVLauncher.Common.Http
                 object result;
                 if (method.ReturnType == typeof(Task))
                 {
-                    var task = (Task)method.Invoke(this.dcTraveler, callParams);
+                    var task = (Task)method.Invoke(this.DcTraveler, callParams);
                     await task;
                     result = null;
                 }
                 else if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
-                    dynamic task = method.Invoke(this.dcTraveler, callParams);
+                    dynamic task = method.Invoke(this.DcTraveler, callParams);
                     await task;
                     result = task.Result;
                 }
                 else
                 {
-                    result = method.Invoke(this.dcTraveler, callParams);
+                    result = method.Invoke(this.DcTraveler, callParams);
                 }
 
                 var response = new RpcResponse { Result = result, Error = null };

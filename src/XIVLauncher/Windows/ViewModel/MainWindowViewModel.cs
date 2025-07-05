@@ -482,7 +482,8 @@ namespace XIVLauncher.Windows.ViewModel
             //await dc.GetValidCookie();
             //var groupList = await dc.QueryGroupListTravelSource();
             //var orders = await dc.QueryMigrationOrders();
-            var loginResult = await TryLoginToGame(finalLoginType, loginType, username, serect, doingAutoLogin, true, action).ConfigureAwait(false);
+            var dcTraveler = new DcTraveler(string.Empty);
+            var loginResult = await TryLoginToGame(finalLoginType, loginType, username, serect, doingAutoLogin, dcTraveler, action).ConfigureAwait(false);
 
             if (loginResult == null)
                 return;
@@ -499,7 +500,6 @@ namespace XIVLauncher.Windows.ViewModel
                 action = AfterLoginAction.UpdateOnly;
             }
 
-            DcTraveler dcTraveler = null;
             if (action != AfterLoginAction.UpdateOnly)
             {
                 if (loginResult.State == Launcher.LoginState.Ok)
@@ -507,7 +507,7 @@ namespace XIVLauncher.Windows.ViewModel
                 {
                     if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled && loginType != LoginType.WeGameSid)
                     {
-                        if (!App.Settings.HasAgreeWeGameUsage.GetValueOrDefault(false))
+                        if (!App.Settings.HasAgreeDcTravelUsage.GetValueOrDefault(false))
                         {
                             var readDcTravelUsageAsk = CustomMessageBox.Builder
                                 .NewFrom(
@@ -520,12 +520,13 @@ namespace XIVLauncher.Windows.ViewModel
                                 本工具的操作不会超出官方超域传送网站的范畴，一切操作皆遵循用户行为。
                                 但是由于程序的不稳定性和官方API的变更可能，因此存在传送失败的可能性。
                                 如传送失败，请登录官方超域传送服务网站进行人工操作。一切角色状态和操作结果以官方网站为准。
+                                在刷新切换大区过程中，若开启了本工具的自动登录功能，那么可能会因为自动登录而在叨鱼App中产生新的登录记录，这属于正常现象。
                                 ⚠️ 声明:
                                 本工具不会将Cookie写入本地硬盘或其他永久性存储设备。所有Cookie信息仅临时存储于内存中，并在程序关闭时自动注销Cookie。
                                 使用本工具即表示您同意授权工具访问您的账号。请确保仅在可信任环境下使用，并使用手机叨鱼App开启相关安全设置。
                                 尽管采取加密措施，Cookie 数据在传输过程中仍存在被拦截的理论风险。建议仅在安全网络环境和信任设备下使用本工具。
                         
-                                点击【确认使用】即表示您已理解本内容以及盛趣《超域传送服务须知》。
+                                点击【确认使用】即表示您已理解本内容以及盛趣《超域传送服务须知》并知晓当传送失败时应该怎么做。
                                 """)
                             .WithImage(MessageBoxImage.Warning)
                             .WithButtons(MessageBoxButton.YesNo)
@@ -539,7 +540,6 @@ namespace XIVLauncher.Windows.ViewModel
                         if (App.Settings.HasAgreeDcTravelUsage.GetValueOrDefault(false))
                         {
                             Log.Information($"[DcTravel] 正在开启......");
-                            dcTraveler = Launcher.CreateDcTraveler(null);
                             await dcTraveler.GetValidCookie();
                             dcTraveler.KeepCookieAlive();
                             //var nSessionId = dcTraveler.GetNSessionIdFromCookie();
@@ -576,6 +576,14 @@ namespace XIVLauncher.Windows.ViewModel
                         //accountToSave.NSessionId = nSessionId;
 
                         accountToSave.AutoLoginSessionKey = await AccountManager.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
+                        if (this.dcTravelListener != null)
+                        {
+                            this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
+                            {
+                                var newLoginResult = await this.Launcher.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
+                                return newLoginResult.OauthLogin.SessionId;
+                            };
+                        }
                         if (finalLoginType == LoginType.SdoStatic)
                         {
                             accountToSave.Password = await AccountManager.Encrypt(serect);
@@ -700,7 +708,7 @@ namespace XIVLauncher.Windows.ViewModel
             string username,
             string serect,
             bool autoLogin,
-            bool useDcTraveler,
+            DcTraveler dcTraveler,
             AfterLoginAction action
             )
         {
@@ -723,7 +731,7 @@ namespace XIVLauncher.Windows.ViewModel
                 {
                     try
                     {
-                        return await this.Launcher.LoginBySessionKey(username, autoLoginSessionKey: serect).ConfigureAwait(false);
+                        return await this.Launcher.LoginBySessionKey(username, autoLoginSessionKey: serect, dcTraveler).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -735,25 +743,27 @@ namespace XIVLauncher.Windows.ViewModel
                 switch (type)
                 {
                     case LoginType.SdoStatic:
-                        return await Launcher.LoginBySdoStatic(username, password: serect).ConfigureAwait(false);
+                        return await Launcher.LoginBySdoStatic(username, password: serect, dcTraveler).ConfigureAwait(false);
 
                     case LoginType.SdoSlide:
                         return await Launcher.LoginBySlide(username, autoLogin, this.loginCts, (code) =>
                         {
                             Log.Information($"叨鱼确认码:{code}");
                             this.LoginMessage = $"确认码: {code}";
-                        }
+                        },
+                        dcTraveler
                         ).ConfigureAwait(false);
 
                     case LoginType.SdoQrCode:
                         return await Launcher.LoginByScanQrCode(autoLogin, this.loginCts, (qrBytes) =>
                         {
                             this.QrCodeBitmapImage = ConvertByteArrayToBitmapImage(qrBytes);
-                        }
+                        },
+                        dcTraveler
                         ).ConfigureAwait(false);
 
                     case LoginType.WeGameToken:
-                        return await Launcher.LoginByWeGameToken(username, token: serect, autoLogin).ConfigureAwait(false);
+                        return await Launcher.LoginByWeGameToken(username, token: serect, autoLogin, dcTraveler).ConfigureAwait(false);
 
                     case LoginType.WeGameSid:
                         return await Launcher.LoginBySid(username, sid: serect).ConfigureAwait(false);

@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using XIVLauncher.Common.Addon;
+using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.Http;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -43,14 +44,15 @@ namespace XIVLauncher.Common.Game
         private const string BaseUrl = "ff14bjz.sdo.com";
         private const string Domain = "sdo.com";
         private string ticket = string.Empty;
-        private readonly Func<Task<string>> refreshGameSessionIdFunc;
-        private readonly Func<Task<string>> refreshDcTravelSessionIdFunc;
+        public Func<Task<string>> RefreshGameSessionByGuidFunc;
+        public Func<Task<string>> RefreshDcTravelSessionIdFunc;
+        public Func<Task<string>> RefreshGameSessionIdByAutoLoginFunc;
         private bool isInitialized = false;
         public readonly CancellationTokenSource KeepAliveCts;
-        public DcTraveler(string nSessionId, Func<Task<string>> refreshGameSessionIdFunc, Func<Task<string>> refreshDcTravelSessionIdFunc)
+        public DcTraveler(string nSessionId)
         {
-            this.refreshDcTravelSessionIdFunc = refreshDcTravelSessionIdFunc;
-            this.refreshGameSessionIdFunc = refreshGameSessionIdFunc;
+            //this.RefreshDcTravelSessionIdFunc = refreshDcTravelSessionIdFunc;
+            //this.RefreshGameSessionByGuidFunc = refreshGameSessionIdFunc;
             this.KeepAliveCts = new CancellationTokenSource();
             this.cookieContainer = new CookieContainer();
             if (!string.IsNullOrEmpty(nSessionId))
@@ -92,7 +94,28 @@ namespace XIVLauncher.Common.Game
         [HttpRpc]
         public async Task<string> RefreshGameSessionId()
         {
-            return await this.refreshGameSessionIdFunc();
+            try
+            {
+                var newSid = await this.RefreshGameSessionByGuidFunc();
+                //throw new SdoLoginException(-10515004 ,"TTT");
+                return newSid;
+            }
+            catch (SdoLoginException ex)
+            {
+                // 登录态过期
+                if (ex.ErrorCode == -10515004)
+                {
+                    if (this.RefreshGameSessionIdByAutoLoginFunc != null)
+                    {
+                        return await this.RefreshGameSessionIdByAutoLoginFunc();
+                    } else
+                    {
+                        throw new Exception("登录过期且未开启自动登录，请重新使用XL登录游戏");
+                    }
+                }
+                    throw;
+            }
+            throw new Exception("获取新游戏登录凭据失败");
         }
 
         #region 初始化 认证
@@ -106,7 +129,7 @@ namespace XIVLauncher.Common.Game
             else
             {
                 Log.Error("[DcTravel] Failed to initialize travel page. Need valid ticket");
-                this.ticket = await this.refreshDcTravelSessionIdFunc!.Invoke();
+                this.ticket = await this.RefreshDcTravelSessionIdFunc!.Invoke();
                 await ValidateTicket();
                 if (await this.InitTravelPage())
                 {
