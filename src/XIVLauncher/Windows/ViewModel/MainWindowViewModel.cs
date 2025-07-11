@@ -1871,7 +1871,15 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 Log.Error(ex, "Could not shut down Steam");
             }
-            this.dcTravelListener?.Stop();
+            try
+            {
+                this.dcTravelListener?.Stop();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not shut down DcTraveler");
+            }
+
             return gameProcess;
         }
 

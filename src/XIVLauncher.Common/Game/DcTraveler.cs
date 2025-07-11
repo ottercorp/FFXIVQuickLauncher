@@ -198,8 +198,11 @@ namespace XIVLauncher.Common.Game
 
         public async Task Logout()
         {
-            //https://ff14bjz.sdo.com/api/gmallinter/logout?
-            _ = await GetRequestData("api/gmallinter/logout?", ApiType.Order, new Dictionary<string, string>() { }, false);
+            if (isInitialized)
+            {
+                //https://ff14bjz.sdo.com/api/gmallinter/logout?
+                _ = await GetRequestData("api/gmallinter/logout?", ApiType.Order, new Dictionary<string, string>() { }, false);
+            }
         }
         #endregion
 
