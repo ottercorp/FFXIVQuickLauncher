@@ -557,12 +557,12 @@ namespace XIVLauncher.Common.Dalamud
             if (File.Exists(downloadPath))
                 File.Delete(downloadPath);
             var dotnetVersion = version.Split('.')[0];
-            await this.DownloadNuget(dotnetUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
+            await this.DownloadNupkg(dotnetUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
             ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.NETCore.App", version), "runtimes/win-x64/native/");
             ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.NETCore.App", version), $"runtimes/win-x64/lib/net{dotnetVersion}.0/");
             //ZipFile.ExtractToDirectory(downloadPath, runtimePath.FullName);
 
-            await this.DownloadNuget(desktopUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
+            await this.DownloadNupkg(desktopUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
             ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.WindowsDesktop.App", version), "runtimes/win-x64/native/");
             ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.WindowsDesktop.App", version), $"runtimes/win-x64/lib/net{dotnetVersion}.0/");
 
@@ -587,7 +587,7 @@ namespace XIVLauncher.Common.Dalamud
             await downloader.Download(timeout, false).ConfigureAwait(false);
         }
 
-        public async Task DownloadNuget(string url, string path, TimeSpan timeout)
+        public async Task DownloadNupkg(string url, string path, TimeSpan timeout)
         {
             using var downloader = new HttpClientDownloadWithProgress(url, path);
             downloader.ProgressChanged += this.ReportOverlayProgress;
