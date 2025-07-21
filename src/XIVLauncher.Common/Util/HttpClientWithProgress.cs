@@ -23,7 +23,7 @@ public class HttpClientDownloadWithProgress : IDisposable
         this.destinationFilePath = destinationFilePath;
     }
 
-    public async Task Download(TimeSpan? timeout = null)
+    public async Task Download(TimeSpan? timeout = null, bool isNuget = false)
     {
         timeout ??= TimeSpan.FromMinutes(10);
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -32,8 +32,24 @@ public class HttpClientDownloadWithProgress : IDisposable
         this.httpClient.DefaultRequestHeaders.Add("User-Agent", PlatformHelpers.GetVersion());
         this.httpClient.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate, br");
         var request = new HttpRequestMessage(HttpMethod.Get, this.downloadUrl);
-        if (!downloadUrl.Contains(ServerAddress.MainAddress))
+        if (isNuget)
+        {
+            // GET /artifactory/api/nuget/v3/nuget-remote/microsoft.windowsdesktop.app.runtime.win-x64/9.0.3/microsoft.windowsdesktop.app.runtime.win-x64.9.0.3.nupkg HTTP/1.1
+            // X-NuGet-Session-Id: 39bb13e5-0167-45e0-8196-82d141b14fb8
+            // user-agent: NuGet VS VSIX/6.14.0 (WINDOWS, Community/17.0)
+            // X-NuGet-Client-Version: 6.14.0
+            // Accept-Language: zh-CN
+            // Host: repo.huaweicloud.com
+            // Accept-Encoding: gzip, deflate
+            request.Headers.Add("User-Agent", "NuGet VS VSIX/6.14.0 (WINDOWS, Community/17.0)");
+            request.Headers.Add("X-NuGet-Client-Version", "6.14.0");
+            request.Headers.Add("X-NuGet-Session-Id", Guid.NewGuid().ToString("D"));
+        }
+        else if (!downloadUrl.Contains(ServerAddress.MainAddress))
+        {
             request.Headers.Add("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36 Edg/130.0.0.0");
+
+        }
         using var response = await this.httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
         await this.DownloadFileFromHttpResponseMessage(response).ConfigureAwait(false);
     }

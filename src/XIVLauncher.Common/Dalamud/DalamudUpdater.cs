@@ -460,7 +460,8 @@ namespace XIVLauncher.Common.Dalamud
             if (version.DownloadUrl.EndsWith(".7z"))
             {
                 PlatformHelpers.Un7za(downloadPath, addonPath.FullName);
-            } else
+            }
+            else
             {
                 ZipFile.ExtractToDirectory(downloadPath, addonPath.FullName);
             }
@@ -542,20 +543,33 @@ namespace XIVLauncher.Common.Dalamud
                 runtimePath.Delete(true);
                 runtimePath.Create();
             }
+            // 华为不卡
+            var packageBaseAddress = await IsGoogleReachableAsync()? "https://api.nuget.org/v3-flatcontainer":"https://repo.huaweicloud.com/artifactory/api/nuget/v3/nuget-remote";
 
-            var dotnetUrl = ServerAddress.MainAddress + $"/Dalamud/Release/Runtime/DotNet/{version}";
-            var desktopUrl = ServerAddress.MainAddress + $"/Dalamud/Release/Runtime/WindowsDesktop/{version}";
-
+            var dotnetUrl = $"{packageBaseAddress}/microsoft.netcore.app.runtime.win-x64/{version}/microsoft.netcore.app.runtime.win-x64.{version}.nupkg";
+            // runtimes\win-x64\native -> runtime\shared\Microsoft.NETCore.App\9.0.3
+            // runtimes\win-x64\lib\net9.0 -> runtime\shared\Microsoft.NETCore.App\9.0.3
+            var desktopUrl = $"{packageBaseAddress}/microsoft.windowsdesktop.app.runtime.win-x64/{version}/microsoft.windowsdesktop.app.runtime.win-x64.{version}.nupkg";
+            // runtimes\win-x64\native -> runtime\shared\Microsoft.WindowsDesktop.App\9.0.3
+            // runtimes\win-x64\lib\net9.0 -> runtime\shared\Microsoft.WindowsDesktop.App\9.0.3
             var downloadPath = PlatformHelpers.GetTempFileName();
 
             if (File.Exists(downloadPath))
                 File.Delete(downloadPath);
+            var dotnetVersion = version.Split('.')[0];
+            await this.DownloadNuget(dotnetUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
+            ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.NETCore.App", version), "runtimes/win-x64/native/");
+            ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.NETCore.App", version), $"runtimes/win-x64/lib/net{dotnetVersion}.0/");
+            //ZipFile.ExtractToDirectory(downloadPath, runtimePath.FullName);
 
-            await this.DownloadFile(dotnetUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
-            ZipFile.ExtractToDirectory(downloadPath, runtimePath.FullName);
+            await this.DownloadNuget(desktopUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
+            ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.WindowsDesktop.App", version), "runtimes/win-x64/native/");
+            ExtractSpecificDirectory(downloadPath, Path.Combine(runtimePath.FullName, "shared", "Microsoft.WindowsDesktop.App", version), $"runtimes/win-x64/lib/net{dotnetVersion}.0/");
 
-            await this.DownloadFile(desktopUrl, downloadPath, this.defaultTimeout).ConfigureAwait(false);
-            ZipFile.ExtractToDirectory(downloadPath, runtimePath.FullName);
+            Directory.CreateDirectory(Path.Combine(runtimePath.FullName, "host", "fxr", version));
+            File.Move(Path.Combine(runtimePath.FullName, "shared", "Microsoft.NETCore.App", version, "hostfxr.dll"), Path.Combine(runtimePath.FullName, "host", "fxr", version, "hostfxr.dll"));
+            //ZipFile.ExtractToDirectory(downloadPath, runtimePath.FullName);
+
 
             File.Delete(downloadPath);
         }
@@ -570,7 +584,53 @@ namespace XIVLauncher.Common.Dalamud
             using var downloader = new HttpClientDownloadWithProgress(url, path);
             downloader.ProgressChanged += this.ReportOverlayProgress;
 
-            await downloader.Download(timeout).ConfigureAwait(false);
+            await downloader.Download(timeout, false).ConfigureAwait(false);
+        }
+
+        public async Task DownloadNuget(string url, string path, TimeSpan timeout)
+        {
+            using var downloader = new HttpClientDownloadWithProgress(url, path);
+            downloader.ProgressChanged += this.ReportOverlayProgress;
+
+            await downloader.Download(timeout, true).ConfigureAwait(false);
+        }
+
+        public static void ExtractSpecificDirectory(string zipPath, string extractPath, string directoryToExtract)
+        {
+            using (var archive = ZipFile.OpenRead(zipPath))
+            {
+                foreach (var entry in archive.Entries)
+                {
+                    if (entry.FullName.StartsWith(directoryToExtract, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var destinationPath = Path.Combine(extractPath, entry.FullName[directoryToExtract.Length..]);
+                        var destinationDirectory = Path.GetDirectoryName(destinationPath);
+                        if (!string.IsNullOrEmpty(destinationDirectory))
+                        {
+                            Directory.CreateDirectory(destinationDirectory);
+                        }
+                        if (!string.IsNullOrEmpty(entry.Name))
+                        {
+                            entry.ExtractToFile(destinationPath, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        static async Task<bool> IsGoogleReachableAsync()
+        {
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                using var response = await client.GetAsync("https://www.google.com");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("无法访问Google");
+                return false;
+            }
         }
     }
 
