@@ -34,6 +34,7 @@ public partial class Launcher
     private readonly IUniqueIdCache uniqueIdCache;
     private readonly ISettings settings;
     private readonly HttpClient client;
+    private readonly HttpClient loginClient;
     private readonly string frontierUrlTemplate;
 
     public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings, string frontierUrl)
@@ -69,14 +70,24 @@ public partial class Launcher
             UseCookies = false,
             SslOptions = sslOptions,
         };
+        var loginHandler = new SocketsHttpHandler
+        {
+            UseCookies = false,
+            SslOptions = sslOptions,
+        };
 #else
         var handler = new HttpClientHandler
+        {
+            UseCookies = false,
+        };
+        var loginHandler = new HttpClientHandler
         {
             UseCookies = false,
         };
 #endif
 
         this.client = new HttpClient(handler);
+        this.loginClient = new HttpClient(loginHandler);
     }
 
     public Launcher(byte[] overriddenSteamTicket, IUniqueIdCache uniqueIdCache, ISettings settings, string frontierUrl)
