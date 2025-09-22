@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Product>XIVLauncher Patcher</Product>
         <AssemblyTitle>XIVLauncher Patcher</AssemblyTitle>
@@ -13,7 +13,7 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
-        <LangVersion>latest</LangVersion>
+        <LangVersion>12</LangVersion>
         <Deterministic>true</Deterministic>
         <OutputPath>..\bin\</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>

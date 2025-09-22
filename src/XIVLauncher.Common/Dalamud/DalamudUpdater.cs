@@ -378,7 +378,7 @@ namespace XIVLauncher.Common.Dalamud
             }
         }
 
-        private static bool CheckIntegrity(DirectoryInfo directory, string hashesJson)
+        private static bool CheckIntegrity(DirectoryInfo directory, string hashesJson,bool allowNotExists=false)
         {
             try
             {
@@ -389,6 +389,11 @@ namespace XIVLauncher.Common.Dalamud
                 foreach (var hash in hashes)
                 {
                     var file = Path.Combine(directory.FullName, hash.Key.Replace("\\", "/"));
+                    if (!File.Exists(file) && allowNotExists)
+                    {
+                        Log.Error($"[DUPDATE] Integrity check: {file} not found, but ignored");
+                        continue;
+                    }
                     using var fileStream = File.OpenRead(file);
                     using var md5 = MD5.Create();
 
@@ -528,7 +533,7 @@ namespace XIVLauncher.Common.Dalamud
                 runtimeHashes = File.ReadAllText(hashesFile.FullName);
             }
 
-            return CheckIntegrity(runtimePath, runtimeHashes);
+            return CheckIntegrity(runtimePath, runtimeHashes,true);
         }
 
         private async Task DownloadRuntime(DirectoryInfo runtimePath, string version)
@@ -544,7 +549,7 @@ namespace XIVLauncher.Common.Dalamud
                 runtimePath.Create();
             }
             // 华为不卡
-            var packageBaseAddress = await IsGoogleReachableAsync()? "https://api.nuget.org/v3-flatcontainer":"https://repo.huaweicloud.com/artifactory/api/nuget/v3/nuget-remote";
+            var packageBaseAddress = await IsGoogleReachableAsync() ? "https://api.nuget.org/v3-flatcontainer" : "https://repo.huaweicloud.com/artifactory/api/nuget/v3/nuget-remote";
 
             var dotnetUrl = $"{packageBaseAddress}/microsoft.netcore.app.runtime.win-x64/{version}/microsoft.netcore.app.runtime.win-x64.{version}.nupkg";
             // runtimes\win-x64\native -> runtime\shared\Microsoft.NETCore.App\9.0.3
