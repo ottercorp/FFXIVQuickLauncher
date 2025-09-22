@@ -1,5 +1,2 @@
-* 新增游戏内跨大区功能，需要启用Dalamud和该功能后，在Dalamud插件管理中安装DcTraveler插件。
-* 修复因为鸟包雇员等订单导致返回出错的Bug
-* 修复一些订单状态代码的处理
-* 新增第一次使用跨大区时的使用说明
-* 修复长时间游戏后，跨大区登录凭据失效的问题
+* 尝试修复登录时出现HTTP 421 Misdirected Request
+* 通过Nuget源下载DotNet Runtime,减轻服务器负荷
