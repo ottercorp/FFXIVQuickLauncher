@@ -675,7 +675,6 @@ namespace XIVLauncher.Common.Game
             var response = await this.loginClient.SendAsync(request);
             var reply = await response.Content.ReadAsStringAsync();
             var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
-
             if (cookies != null)
             {
                 CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
@@ -687,11 +686,17 @@ namespace XIVLauncher.Common.Game
                     CODEKEY_COUNT = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY_COUNT=")).Split(';')[0];
                 }
             }
-
-            var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
-            Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
-            Log.Debug($"GetJsonAsSdoClient({endPoint}):\n{result.ToLog()}");
-            return result;
+            try
+            {
+                var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
+                Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
+                Log.Debug($"GetJsonAsSdoClient({endPoint}):\n{result.ToLog()}");
+                return result;
+            }
+            catch (JsonReaderException ex)
+            {
+                throw new JsonReaderException($"{ex.Message}\n {reply}");
+            }
         }
 
         public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, int dcTravelPort, string areaId, string lobbyHost, string gmHost, string dbHost, string areasInfo,
