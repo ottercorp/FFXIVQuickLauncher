@@ -20,7 +20,7 @@ using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.PlatformAbstractions;
 using System.Threading;
 using XIVLauncher.Common.Util;
-using System.Security.Principal;
+using System.Text;
 
 namespace XIVLauncher.Common.Game
 {
@@ -640,52 +640,36 @@ namespace XIVLauncher.Common.Game
             commonParas.Add("customSecurityLevel=2");
             commonParas.Add($"deviceId={SdoUtils.GetDeviceId()}");
             commonParas.Add($"thirdLoginExtern=0");
-            commonParas.Add($"productVersion=2%2e0%2e1%2e13");
+            commonParas.Add($"productVersion=1.9.7.10");
             commonParas.Add($"macId={mac}");
             commonParas.Add($"tag=0");
             para.AddRange(commonParas);
             var request = new HttpRequestMessage(method, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             //Log.Information($"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("Cache-Control", "no-cache");
-            request.Headers.AddWithoutValidation("User-Agent", userAgent);
+            request.Headers.AddWithoutValidation("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; InfoPath.2; .NET CLR 2.0.50727; MS-RTC LM 8; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET CLR 1.1.4322; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
             request.Headers.AddWithoutValidation("Host", "cas.sdo.com");
-
-            if (CASCID != null && SECURE_CASCID != null)
+            if (endPoint is "ssoLogin.json" or "getPromotionInfo.json")
             {
-                if (endPoint is "ssoLogin.json" or "getPromotionInfo.json")
-                {
-                    request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC={tgt}; CAS_LOGIN_STATE=1");
-                    //Log.Information($"Added Cookie:CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC=***; CAS_LOGIN_STATE=1");
-                }
-                else if (CODEKEY != null) request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CODEKEY={CODEKEY}; CODEKEY_COUNT={CODEKEY_COUNT}");
-                else request.Headers.AddWithoutValidation("Cookie", $"CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}");
+                request.Headers.AddWithoutValidation("Cookie", $"CASTGC={tgt}; CAS_LOGIN_STATE=1");
+                //Log.Information($"Added Cookie:CASCID={CASCID}; SECURE_CASCID={SECURE_CASCID}; CASTGC=***; CAS_LOGIN_STATE=1");
             }
-
+            var cookies = this.loginCookies.GetAllCookies();
+            var hasCid = cookies.Cast<Cookie>().Any(cookie => string.Equals(cookie.Name, "CASCID", StringComparison.OrdinalIgnoreCase));
+            if (!hasCid)
+            {
+                var randomCid = $"CID{SdoUtils.GetMD5(ASCIIEncoding.ASCII.GetBytes(mac))}";
+                Log.Information($"Use MD5 of MAC address as CASCID");
+                request.Headers.AddWithoutValidation("Cookie", $"CASCID={randomCid}; SECURE_CASCID={randomCid};");
+            }
             return request;
         }
-
-        private static string CASCID;
-        private static string SECURE_CASCID;
-        private static string CODEKEY;
-        private static string CODEKEY_COUNT;
 
         private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<string> para, string tgt = null)
         {
             var request = this.GetSdoHttpRequestMessage(HttpMethod.Get, endPoint, para, tgt);
             var response = await this.loginClient.SendAsync(request);
             var reply = await response.Content.ReadAsStringAsync();
-            var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
-            if (cookies != null)
-            {
-                CASCID = (CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("CASCID=")).Split(';')[0] : CASCID;
-                SECURE_CASCID = (SECURE_CASCID == null) ? cookies.FirstOrDefault(x => x.StartsWith("SECURE_CASCID=")).Split(';')[0] : SECURE_CASCID;
-
-                if (cookies.Count(x => x.StartsWith("CODEKEY=")) > 0)
-                {
-                    CODEKEY = (CODEKEY != cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0]) ? cookies.FirstOrDefault(x => x.StartsWith("CODEKEY=")).Split(';')[0] : CODEKEY;
-                    CODEKEY_COUNT = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY_COUNT=")).Split(';')[0];
-                }
-            }
             try
             {
                 var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);

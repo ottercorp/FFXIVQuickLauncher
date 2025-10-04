@@ -35,6 +35,7 @@ public partial class Launcher
     private readonly ISettings settings;
     private readonly HttpClient client;
     private readonly HttpClient loginClient;
+    private readonly CookieContainer loginCookies;
     private readonly string frontierUrlTemplate;
 
     public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings, string frontierUrl)
@@ -42,7 +43,7 @@ public partial class Launcher
         this.steam = steam;
         this.uniqueIdCache = uniqueIdCache;
         this.settings = settings;
-
+        this.loginCookies = new CookieContainer();
         //this.frontierUrlTemplate = frontierUrl ?? throw new Exception("Frontier URL template is null, this is now required");
 
         ServicePointManager.Expect100Continue = false;
@@ -67,22 +68,26 @@ public partial class Launcher
 
         var handler = new SocketsHttpHandler
         {
-            UseCookies = false,
+            UseCookies = true,
+            CookieContainer = loginCookies,
             SslOptions = sslOptions,
         };
         var loginHandler = new SocketsHttpHandler
         {
-            UseCookies = false,
+            UseCookies = true,
+            CookieContainer = loginCookies,
             SslOptions = sslOptions,
         };
 #else
         var handler = new HttpClientHandler
         {
-            UseCookies = false,
+            UseCookies = true,
+            CookieContainer = loginCookies,
         };
         var loginHandler = new HttpClientHandler
         {
-            UseCookies = false,
+            UseCookies = true,
+            CookieContainer = loginCookies,
         };
 #endif
 
