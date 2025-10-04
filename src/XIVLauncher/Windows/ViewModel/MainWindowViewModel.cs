@@ -194,7 +194,13 @@ namespace XIVLauncher.Windows.ViewModel
 
             var pidList = AppUtil.GetGameProcessIds();
             var argReader = new RemoteArgReader();
-            await argReader.Start();
+            try { 
+                await argReader.Start(); 
+            }
+            catch (Win32Exception ex)
+            {
+                throw new Win32Exception($"{ex.Message}\n 请尝试手动打开{Path.Combine(AppContext.BaseDirectory, "XIVLauncher.ArgReader.exe")},如系统弹窗 Microsoft Defender SmartScreen 阻止了无法识别的应用启动。请选择仍要运行后，重新使用XIVLauncherCN。");
+            }
             while (true)
             {
                 if (loginCts.IsCancellationRequested)
