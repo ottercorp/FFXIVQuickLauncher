@@ -21,6 +21,8 @@ using XIVLauncher.Common.PlatformAbstractions;
 using System.Threading;
 using XIVLauncher.Common.Util;
 using System.Text;
+using Downloader;
+using System.Security.Cryptography;
 
 namespace XIVLauncher.Common.Game
 {
@@ -421,8 +423,7 @@ namespace XIVLauncher.Common.Game
             var qrCodeExpiration = new CancellationTokenSource();
             qrCodeExpiration.CancelAfter(QRCodeExpirationTime);
 
-            var request = this.GetSdoHttpRequestMessage(HttpMethod.Get, "getCodeKey.json", new List<string>() { $"maxsize=89" });
-            var response = await this.loginClient.SendAsync(request);
+            var response = await this.SendSdoHttpRequestAsync(HttpMethod.Get, "getCodeKey.json", new List<string>() { $"maxsize=89" });
             var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
             var codeKey = cookies.FirstOrDefault(x => x.StartsWith("CODEKEY="))?.Split(';')[0];
             codeKey = codeKey?.Split('=')[1];
@@ -624,6 +625,15 @@ namespace XIVLauncher.Common.Game
             }
         }
 
+        private bool useGlobalDomain = true;
+
+        private Task<HttpResponseMessage> SendSdoHttpRequestAsync(HttpMethod method, string endPoint, List<string> para, string tgt = null)
+        {
+            var request = this.GetSdoHttpRequestMessage(method, endPoint, para, tgt);
+            var response = this.loginClient.SendAsync(request);
+            return response;
+        }
+
         private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<string> para, string tgt = null)
         {
             var mac = SdoUtils.GetMac();
@@ -644,7 +654,8 @@ namespace XIVLauncher.Common.Game
             commonParas.Add($"macId={mac}");
             commonParas.Add($"tag=0");
             para.AddRange(commonParas);
-            var request = new HttpRequestMessage(method, $"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
+            var casDomain = useGlobalDomain ? "cas.sdo.com" : "n1.cas.sdo.com";
+            var request = new HttpRequestMessage(method, $"https://{casDomain}/authen/{endPoint}?{string.Join("&", para)}");
             //Log.Information($"https://cas.sdo.com/authen/{endPoint}?{string.Join("&", para)}");
             request.Headers.AddWithoutValidation("Cache-Control", "no-cache");
             request.Headers.AddWithoutValidation("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1) ; InfoPath.2; .NET CLR 2.0.50727; MS-RTC LM 8; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET CLR 1.1.4322; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
@@ -665,21 +676,37 @@ namespace XIVLauncher.Common.Game
             return request;
         }
 
+
         private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<string> para, string tgt = null)
         {
-            var request = this.GetSdoHttpRequestMessage(HttpMethod.Get, endPoint, para, tgt);
-            var response = await this.loginClient.SendAsync(request);
-            var reply = await response.Content.ReadAsStringAsync();
-            try
-            {
-                var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
-                Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
-                Log.Debug($"GetJsonAsSdoClient({endPoint}):\n{result.ToLog()}");
-                return result;
+            try {
+                var response = await this.SendSdoHttpRequestAsync(HttpMethod.Get, endPoint, para, tgt);
+                var reply = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    var result = JsonConvert.DeserializeObject<SdoLoginResult>(reply);
+                    Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
+                    Log.Debug($"GetJsonAsSdoClient({endPoint}):\n{result.ToLog()}");
+                    return result;
+                }
+                catch (JsonReaderException ex)
+                {
+                    throw new JsonReaderException($"{ex.Message}\n {reply}");
+                }
             }
-            catch (JsonReaderException ex)
+            catch (Exception ex)
             {
-                throw new JsonReaderException($"{ex.Message}\n {reply}");
+                if (this.useGlobalDomain)
+                {
+                    Log.Error(ex, "GetJsonAsSdoClient");
+                    Log.Error("Switch to n1.cas.sdo.com");
+                    this.useGlobalDomain = false;
+                    return await this.GetJsonAsSdoClient(endPoint, para, tgt);
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 
