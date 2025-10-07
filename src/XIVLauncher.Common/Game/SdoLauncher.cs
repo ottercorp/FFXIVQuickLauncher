@@ -650,8 +650,8 @@ namespace XIVLauncher.Common.Game
             commonParas.Add("customSecurityLevel=2");
             commonParas.Add($"deviceId={SdoUtils.GetDeviceId()}");
             commonParas.Add($"thirdLoginExtern=0");
-            commonParas.Add($"productVersion=1.9.7.10");
             commonParas.Add($"macId={mac}");
+            commonParas.Add($"productVersion=1%2e9%2e7%2e10");
             commonParas.Add($"tag=0");
             para.AddRange(commonParas);
             var casDomain = useGlobalDomain ? "cas.sdo.com" : "n1.cas.sdo.com";
