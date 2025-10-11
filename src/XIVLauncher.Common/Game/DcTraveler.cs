@@ -384,15 +384,15 @@ namespace XIVLauncher.Common.Game
             }
             return characterList;
         }
-        [HttpRpc]
-        public async Task<int> QueryTravelQueueTime(int areaId, int groupId)
-        {
-            //https://ff14bjz.sdo.com/api/orderserivce/travelQueueTime?appId=100001900&migrationType=4&targetArea=8&targetGroupId=1
-            var data = await GetRequestData("api/orderserivce/travelQueueTime", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "migrationType", "4" }, { "targetArea", $"{areaId}" }, { "targetGroupId", $"{groupId}" } });
-            if (data["resultCode"].GetValue<int>() != 0)
-                throw new DcTraveleApiException($"Failed to query travel queue time, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
-            return data["minutes"].GetValue<int>();
-        }
+        //[HttpRpc]
+        //public async Task<int> QueryTravelQueueTime(int areaId, int groupId)
+        //{
+        //    //https://ff14bjz.sdo.com/api/orderserivce/travelQueueTime?appId=100001900&migrationType=4&targetArea=8&targetGroupId=1
+        //    var data = await GetRequestData("api/orderserivce/travelQueueTime", ApiType.Travel, new Dictionary<string, string>() { { "appId", "100001900" }, { "migrationType", "4" }, { "targetArea", $"{areaId}" }, { "targetGroupId", $"{groupId}" } });
+        //    if (data["resultCode"].GetValue<int>() != 0)
+        //        throw new DcTraveleApiException($"Failed to query travel queue time, resultCode: {data["resultCode"].GetValue<int>()}, message: {data["resultMessage"].GetValue<string>()}");
+        //    return data["minutes"].GetValue<int>();
+        //}
         [HttpRpc]
         public async Task<string> TravelOrder(Group targetGroup, Group sourceGroup, Character character)
         {
