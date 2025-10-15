@@ -1,4 +1,5 @@
 using AriaNet.Attributes;
+using Serilog;
 using SharedMemory;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using XIVLauncher.Common.Game;
 
@@ -21,6 +23,7 @@ namespace XIVLauncher.Common.Http
     }
     public class DcTravelListener
     {
+        private readonly CancellationTokenSource _listenerCts = new();
         private volatile HttpListener listener;
         private Dictionary<string, MethodInfo> rpcMethodCache = new();
         public DcTraveler DcTraveler;
@@ -91,6 +94,7 @@ namespace XIVLauncher.Common.Http
 
         public void Stop()
         {
+            _listenerCts.Cancel();
             this.DcTraveler.KeepAliveCts.Cancel();
             this.DcTraveler?.Logout().Wait();
             if (listener != null)
@@ -114,10 +118,38 @@ namespace XIVLauncher.Common.Http
         }
         public async Task StartAsync()
         {
-            while (true)
+            while (!_listenerCts.Token.IsCancellationRequested)
             {
-                var context = await listener.GetContextAsync();
-                _ = Task.Run(() => ProcessRequest(context));
+                try
+                {
+                    var getContextTask = listener.GetContextAsync();
+                    var completedTask = await Task.WhenAny(getContextTask, Task.Delay(-1, _listenerCts.Token));
+
+                    if (completedTask == getContextTask)
+                    {
+                        var context = await getContextTask;
+                        _ = Task.Run(() => ProcessRequest(context));
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    Log.Information("dc listener is disposed.");
+                    break;
+                }
+                catch (HttpListenerException ex) when (ex.ErrorCode == 50 || ex.ErrorCode == 995)
+                {
+                    Log.Error(ex,"dc listener stop.");
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    Log.Information("dc listener canceled.");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "dc listener occured an exception.");
+                }
             }
         }
         public class RpcRequest
