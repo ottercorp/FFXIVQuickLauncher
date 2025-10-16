@@ -1,25 +1,17 @@
 using Serilog;
-using Serilog.Core;
-using System;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.NetworkInformation;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using XIVLauncher.Common.Addon;
 using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.Http;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace XIVLauncher.Common.Game
 {
