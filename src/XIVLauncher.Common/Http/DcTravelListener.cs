@@ -1,257 +1,252 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+using AriaNet.Attributes;
 using Serilog;
+using SharedMemory;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using XIVLauncher.Common.Game;
 
-namespace XIVLauncher.Common.Http;
-
-[AttributeUsage(AttributeTargets.Method)]
-public class HttpRpcAttribute : Attribute
+namespace XIVLauncher.Common.Http
 {
-}
-
-public class DcTravelListener : IAsyncDisposable
-{
-    private readonly WebApplication _app;
-    public readonly DcTraveler DcTraveler;
-    private readonly byte[]? _key;
-    private readonly byte[]? _iv;
-    private readonly bool _useEncrypt;
-
-    private static readonly ConcurrentDictionary<string, MethodInfo> RpcMethodCache = new();
-
-    public DcTravelListener(DcTraveler dcTraveler, int port, bool useEncrypt = true)
+    [AttributeUsage(AttributeTargets.Method)]
+    public class HttpRpcAttribute : Attribute
     {
-        DcTraveler = dcTraveler ?? throw new ArgumentNullException(nameof(dcTraveler));
-        _useEncrypt = useEncrypt;
+    }
+    public class DcTravelListener
+    {
+        private readonly CancellationTokenSource _listenerCts = new();
+        private volatile HttpListener listener;
+        private Dictionary<string, MethodInfo> rpcMethodCache = new();
+        public DcTraveler DcTraveler;
 
-        if (useEncrypt)
+        private readonly byte[] kev;
+        private readonly byte[] iv;
+        private readonly bool useEncrypt;
+        public DcTravelListener(DcTraveler dcTraveler, int port, bool useEncrypt = true)
         {
-            var password = GenerateRandomBase64(32);
-            var salt = GenerateRandomBase64(16);
-            using var derive = new Rfc2898DeriveBytes(password, Encoding.UTF8.GetBytes(salt), 100_000, HashAlgorithmName.SHA256);
-            _key = derive.GetBytes(32);
-            _iv = derive.GetBytes(16);
+            if (useEncrypt)
+            {
+                var password = GenerateRandomBase64(32);
+                var salt = GenerateRandomBase64(16);
+                using var derive = new Rfc2898DeriveBytes(password, Encoding.UTF8.GetBytes(salt), 100_000, HashAlgorithmName.SHA256);
+                kev = derive.GetBytes(32);
+                iv = derive.GetBytes(16);
+            }
+            this.useEncrypt = useEncrypt;
+            this.DcTraveler = dcTraveler ?? throw new ArgumentNullException(nameof(dcTraveler));
+            CacheRpcMethods();
+            this.listener = new HttpListener();
+            this.listener.Prefixes.Add($"http://127.0.0.1:{port}/dctravel/");
+            this.listener.Start();
+        }
+        private static string GenerateRandomBase64(int length)
+        {
+            var bytes = new byte[length];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(bytes);
+            return Convert.ToBase64String(bytes);
         }
 
-        // 构建 Minimal API 应用
-        var builder = WebApplication.CreateBuilder();
-        builder.WebHost.UseUrls($"http://127.0.0.1:{port}");
-        // 可选：禁用日志（或集成 Serilog）
-        builder.Logging.ClearProviders();
-        builder.Host.UseSerilog();
-        var app = builder.Build();
-
-        // 注册 POST /dctravel
-        app.MapPost("/dctravel", async (HttpContext context) =>
+        private string Encrypt(string plainText)
         {
-            // 拒绝 CORS
-            if (!string.IsNullOrEmpty(context.Request.Headers["Origin"]))
-                return Results.Text("CORS Forbidden", contentType: "text/plain", statusCode: 403);
-
-            // 读取并解密请求体
-            string body;
-            try
+            if (!this.useEncrypt)
             {
-                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
-                var encryptedBody = await reader.ReadToEndAsync();
-                body = Decrypt(encryptedBody);
+                return plainText;
             }
-            catch (Exception ex)
+            using var aes = Aes.Create();
+            aes.Key = kev;
+            aes.IV = iv;
+            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            using var ms = new MemoryStream();
+            using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+            using (var sw = new StreamWriter(cs, Encoding.UTF8))
             {
-                Log.Warning(ex, "Failed to decrypt request body");
-                return Results.Json(new RpcResponse { Error = "Decryption failed" });
+                sw.Write(plainText);
             }
+            return Convert.ToBase64String(ms.ToArray());
+        }
 
-            // 反序列化 RPC 请求
-            RpcRequest? rpcRequest;
-            try
+        private string Decrypt(string cipherText)
+        {
+            if (!this.useEncrypt)
             {
-                rpcRequest = JsonSerializer.Deserialize<RpcRequest>(body,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return cipherText;
             }
-            catch (Exception ex)
+            var buffer = Convert.FromBase64String(cipherText);
+            using var aes = Aes.Create();
+            aes.Key = kev;
+            aes.IV = iv;
+            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            using var ms = new MemoryStream(buffer);
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var sr = new StreamReader(cs, Encoding.UTF8);
+            return sr.ReadToEnd();
+        }
+
+        public void Stop()
+        {
+            _listenerCts.Cancel();
+            this.DcTraveler.KeepAliveCts.Cancel();
+            this.DcTraveler?.Logout().Wait();
+            if (listener != null)
             {
-                Log.Warning(ex, "Invalid JSON in RPC request");
-                return Results.Json(new RpcResponse { Error = "Invalid JSON" });
+                listener.Stop();
+                listener.Close();
+                listener = null;
             }
+        }
 
-            if (rpcRequest?.Method == null)
-                return Results.Json(new RpcResponse { Error = "Missing method" });
+        private void CacheRpcMethods()
+        {
+            var methods = typeof(DcTraveler)
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(m => m.GetCustomAttribute<HttpRpcAttribute>() != null);
 
-            // 查找方法
-            var method = GetRpcMethod(rpcRequest.Method);
-            if (method == null)
-                return Results.Json(new RpcResponse { Error = "Unknown or unauthorized method" });
-
-            // 准备参数
-            var parameters = method.GetParameters();
-            var paramValues = rpcRequest.Params ?? Array.Empty<object>();
-            if (parameters.Length != paramValues.Length)
-                return Results.Json(new RpcResponse { Error = "Parameter count mismatch" });
-
-            var callParams = new object[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
+            foreach (var method in methods)
             {
-                var paramType = parameters[i].ParameterType;
-                var paramValue = paramValues[i];
-
+                rpcMethodCache[method.Name] = method;
+            }
+        }
+        public async Task StartAsync()
+        {
+            while (!_listenerCts.Token.IsCancellationRequested)
+            {
                 try
                 {
-                    if (paramValue is JsonElement je)
-                        callParams[i] = je.Deserialize(paramType,
-                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    else
-                        callParams[i] = Convert.ChangeType(paramValue, paramType);
+                    var getContextTask = listener.GetContextAsync();
+                    var completedTask = await Task.WhenAny(getContextTask, Task.Delay(-1, _listenerCts.Token));
+
+                    if (completedTask == getContextTask)
+                    {
+                        var context = await getContextTask;
+                        _ = Task.Run(() => ProcessRequest(context));
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    Log.Information("dc listener is disposed.");
+                    break;
+                }
+                catch (HttpListenerException ex) when (ex.ErrorCode == 50 || ex.ErrorCode == 995)
+                {
+                    Log.Error(ex,"dc listener stop.");
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    Log.Information("dc listener canceled.");
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning(ex, "Failed to convert parameter {Index} to {Type}", i, paramType);
-                    return Results.Json(new RpcResponse { Error = $"Parameter {i} conversion failed" });
+                    Log.Error(ex, "dc listener occured an exception.");
                 }
             }
+        }
+        public class RpcRequest
+        {
+            public string Method { get; set; }
+            public object[] Params { get; set; }
+        }
 
-            // 调用方法
+        public class RpcResponse
+        {
+            public object Result { get; set; }
+            public string Error { get; set; }
+        }
+        private async Task ProcessRequest(HttpListenerContext context)
+        {
             try
             {
-                object? result;
-                var returnType = method.ReturnType;
-
-                if (returnType == typeof(Task))
+                string origin = context.Request.Headers["Origin"];
+                if (!string.IsNullOrEmpty(origin))
                 {
-                    var task = (Task)method.Invoke(DcTraveler, callParams)!;
+                    context.Response.StatusCode = 403;
+                    await context.Response.OutputStream.WriteAsync(
+                        Encoding.UTF8.GetBytes("CORS Forbidden"), 0, "CORS Forbidden".Length);
+                    context.Response.Close();
+                    return;
+                }
+
+                if (context.Request.HttpMethod != "POST")
+                {
+                    context.Response.StatusCode = 405;
+                    context.Response.Close();
+                    return;
+                }
+
+                using var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding);
+                var body = await reader.ReadToEndAsync();
+                body = this.Decrypt(body);
+                var rpcRequest = JsonSerializer.Deserialize<RpcRequest>(body);
+
+                if (!rpcMethodCache.TryGetValue(rpcRequest.Method, out MethodInfo method))
+                    throw new Exception("Unknown or unauthorized method");
+
+                var parameters = method.GetParameters();
+                if (parameters.Length != rpcRequest.Params.Length)
+                    throw new Exception("Parameter count mismatch");
+
+                object[] callParams = new object[parameters.Length];
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var paramType = parameters[i].ParameterType;
+                    if (rpcRequest.Params[i] is JsonElement je)
+                    {
+                        callParams[i] = je.Deserialize(paramType, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    }
+                    else
+                    {
+                        callParams[i] = Convert.ChangeType(rpcRequest.Params[i], paramType);
+                    }
+                }
+
+                object result;
+                if (method.ReturnType == typeof(Task))
+                {
+                    var task = (Task)method.Invoke(this.DcTraveler, callParams);
                     await task;
                     result = null;
                 }
-                else if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+                else if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
-                    dynamic task = method.Invoke(DcTraveler, callParams)!;
+                    dynamic task = method.Invoke(this.DcTraveler, callParams);
                     await task;
                     result = task.Result;
                 }
                 else
                 {
-                    result = method.Invoke(DcTraveler, callParams);
+                    result = method.Invoke(this.DcTraveler, callParams);
                 }
 
-                var response = new RpcResponse { Result = result };
-                var jsonResponse = JsonSerializer.Serialize(response);
-                var encryptedResponse = Encrypt(jsonResponse);
-                return Results.Text(encryptedResponse, "application/json");
+                var response = new RpcResponse { Result = result, Error = null };
+                var responseJson = JsonSerializer.Serialize(response);
+                responseJson = this.Encrypt(responseJson);
+                var buffer = Encoding.UTF8.GetBytes(responseJson);
+                context.Response.ContentType = "application/json";
+                await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                context.Response.Close();
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error invoking RPC method {Method}", rpcRequest.Method);
-                return Results.Json(new RpcResponse { Error = ex.ToString() });
+                var response = new RpcResponse { Result = null, Error = ex.ToString() };
+                var responseJson = JsonSerializer.Serialize(response);
+
+                var buffer = Encoding.UTF8.GetBytes(responseJson);
+                context.Response.ContentType = "application/json";
+                //context.Response.StatusCode = 200;
+                await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                context.Response.Close();
             }
-        });
-
-        _app = app;
-    }
-
-    private static string GenerateRandomBase64(int length)
-    {
-        var bytes = new byte[length];
-        RandomNumberGenerator.Fill(bytes);
-        return Convert.ToBase64String(bytes);
-    }
-
-    private string Encrypt(string plainText)
-    {
-        if (!_useEncrypt) return plainText;
-        if (_key == null || _iv == null) throw new InvalidOperationException("Key not initialized");
-
-        using var aes = Aes.Create();
-        aes.Key = _key;
-        aes.IV = _iv;
-        using var ms = new MemoryStream();
-        using (var cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
-        using (var sw = new StreamWriter(cs, Encoding.UTF8))
-        {
-            sw.Write(plainText);
         }
-        return Convert.ToBase64String(ms.ToArray());
-    }
-
-    private string Decrypt(string cipherText)
-    {
-        if (!_useEncrypt) return cipherText;
-        if (_key == null || _iv == null) throw new InvalidOperationException("Key not initialized");
-
-        var buffer = Convert.FromBase64String(cipherText);
-        using var aes = Aes.Create();
-        aes.Key = _key;
-        aes.IV = _iv;
-        using var ms = new MemoryStream(buffer);
-        using var cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Read);
-        using var sr = new StreamReader(cs, Encoding.UTF8);
-        return sr.ReadToEnd();
-    }
-
-    private static MethodInfo? GetRpcMethod(string methodName)
-    {
-        return RpcMethodCache.GetOrAdd(methodName, name =>
-        {
-            var method = typeof(DcTraveler)
-                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .FirstOrDefault(m => m.Name == name && m.GetCustomAttribute<HttpRpcAttribute>() != null);
-
-            return method ?? throw new KeyNotFoundException();
-        });
-    }
-
-    public async Task StartAsync()
-    {
-        await _app.StartAsync();
-        Log.Information("DcTravelListener started on http://127.0.0.1:{Port}/dctravel", _app.Urls.FirstOrDefault()?.Split(':').Last());
-    }
-
-    public async Task StopAsync()
-    {
-        DcTraveler.KeepAliveCts.Cancel();
-        try
-        {
-            await (DcTraveler.Logout() ?? Task.CompletedTask);
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Error during DcTraveler logout");
-        }
-
-        await _app.StopAsync();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await StopAsync();
-        if (_app is IAsyncDisposable asyncDisposable)
-            await asyncDisposable.DisposeAsync();
-        else
-            await _app.DisposeAsync();
-    }
-
-    // DTOs
-    public class RpcRequest
-    {
-        public string? Method { get; set; }
-        public object[]? Params { get; set; }
-    }
-
-    public class RpcResponse
-    {
-        public object? Result { get; set; }
-        public string? Error { get; set; }
     }
 }
