@@ -292,8 +292,11 @@ namespace XIVLauncher.Common.Game
         #endregion
 
         #region 查询传送页面
+
         public class Area
         {
+            [JsonPropertyName("state")]
+            public int State { get; set; }
             [JsonPropertyName("areaId")]
             public int AreaId { get; set; }
             [JsonPropertyName("areaName")]
