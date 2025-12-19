@@ -56,11 +56,10 @@ namespace XIVLauncher.Common.Game
         [JsonProperty("Title")]
         public string Title { get; set; }
 
-        [JsonProperty("Author")]
-        public string Url { get; set; }
-
         [JsonProperty("Id")]
         public string Id { get; set; }
+
+        public string Url => $"https://ff.web.sdo.com/web8/index.html#/newstab/newscont/{Id}";
 
         [JsonProperty("tag", NullValueHandling = NullValueHandling.Ignore)]
         public string Tag { get; set; }

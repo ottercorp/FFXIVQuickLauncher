@@ -100,7 +100,9 @@
                                 Margin="0 10 0 0"
                                 Height="94"
                                 HorizontalAlignment="Left" Width="{DynamicResource BannerCardWidth}">
-                                <ListView x:Name="NewsListView" MouseUp="NewsListView_OnMouseUp">
+                                <ListView x:Name="NewsListView" 
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          MouseUp="NewsListView_OnMouseUp">
                                     <ListView.ItemTemplate>
                                         <DataTemplate x:Name="SingleLineDataTemplate"
                                                       DataType="game:News">
