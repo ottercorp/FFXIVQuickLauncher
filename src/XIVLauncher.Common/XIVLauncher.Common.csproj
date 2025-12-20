@@ -57,7 +57,6 @@
         <PackageReference Include="SharedMemory" Version="2.3.2" />
         <PackageReference Include="SharpCompress" Version="0.38.0" />
         <PackageReference Include="System.Management" Version="10.0.1" />
-        <PackageReference Include="System.Text.Json" Version="10.0.1" />
         <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     </ItemGroup>
 </Project>
