@@ -1,1 +1,2 @@
-* 修复跨域报错：System.Net.HttpListenerException (50): 不支持该请求
+* 修复新闻列表点不开的问题
+* 更新到.NET 10
