@@ -84,7 +84,6 @@
         <PackageReference Include="Dragablz" Version="0.0.3.223" />
         <PackageReference Include="Extended.Wpf.Toolkit" Version="5.0.0" />
         <PackageReference Include="MaterialDesignThemes" Version="4.3.0" />
-        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.WindowsAPICodePack-Shell" Version="1.1.0" />
         <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
         <PackageReference Include="Serilog" Version="4.0.2" />
@@ -93,9 +92,6 @@
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="SharedMemory" Version="2.3.2" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-        <PackageReference Include="System.Collections.Immutable" Version="10.0.1" />
-        <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.1" />
         <PackageReference Include="Velopack" Version="0.0.1053" />
         <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     </ItemGroup>
