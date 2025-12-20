@@ -72,7 +72,7 @@ jobs:
           mkdir Releases
           dotnet tool install -g vpk
           vpk download s3 --channel $channel --bucket $env:S3Bucket --endpoint $env:S3Endpoint --keyId $env:S3AccessKeyID --secret $env:S3AccessKeySecret
-          vpk pack -u XIVLauncherCN -v $refver -p .\bin\win-x64 -o .\Releases -e XIVLauncherCN.exe --channel $channel --packAuthors OtterCorp --releaseNotes .\XIVLauncher\Resources\CHANGELOG.txt --icon .\XIVLauncher\Resources\dalamud_icon.ico --splashImage .\XIVLauncher\Resources\logo.png --framework net8.0-x64-desktop
+          vpk pack -u XIVLauncherCN -v $refver -p .\bin\win-x64 -o .\Releases -e XIVLauncherCN.exe --channel $channel --packAuthors OtterCorp --releaseNotes .\XIVLauncher\Resources\CHANGELOG.txt --icon .\XIVLauncher\Resources\dalamud_icon.ico --splashImage .\XIVLauncher\Resources\logo.png --framework net10.0-x64-desktop
 
           Expand-Archive -Path ".\Releases\XIVLauncherCN-$channel-Portable.zip" -DestinationPath .\Releases\scratch -Force
           7z a .\Releases\XIVLauncherCN-$channel-Portable.7z .\Releases\scratch\* -t7z -mx=9
