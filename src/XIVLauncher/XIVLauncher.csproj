@@ -8,7 +8,7 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows10.0.22000.0</TargetFramework>
+        <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
         <UseWPF>true</UseWPF>
@@ -77,14 +77,13 @@
 
     <ItemGroup>
         <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
-        <PackageReference Include="AdysTech.CredentialManager" Version="1.8.0" />
+        <PackageReference Include="AdysTech.CredentialManager" Version="2.6.0" />
         <PackageReference Include="CheapLoc" Version="1.1.6" />
         <PackageReference Include="Config.Net.Json" Version="4.14.23" />
         <PackageReference Include="Downloader" Version="2.2.8" />
         <PackageReference Include="Dragablz" Version="0.0.3.223" />
-        <PackageReference Include="Extended.Wpf.Toolkit" Version="3.5.0" />
+        <PackageReference Include="Extended.Wpf.Toolkit" Version="5.0.0" />
         <PackageReference Include="MaterialDesignThemes" Version="4.3.0" />
-        <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
         <PackageReference Include="Microsoft.WindowsAPICodePack-Shell" Version="1.1.0" />
         <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
         <PackageReference Include="Serilog" Version="4.0.2" />
@@ -93,9 +92,6 @@
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="SharedMemory" Version="2.3.2" />
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-        <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
-        <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
         <PackageReference Include="Velopack" Version="0.0.1053" />
         <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     </ItemGroup>

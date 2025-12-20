@@ -11,7 +11,7 @@
     </PropertyGroup>
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <UseWPF>true</UseWPF>
         <LangVersion>12</LangVersion>
         <Deterministic>true</Deterministic>
@@ -25,14 +25,13 @@
         <ApplicationIcon>Resources/icon.ico</ApplicationIcon>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Serilog" Version="4.0.2" />
         <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
         <PackageReference Include="SharedMemory" Version="2.3.2" />
         <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-        <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
         <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     </ItemGroup>
     <ItemGroup>
