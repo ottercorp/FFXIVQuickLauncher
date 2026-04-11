@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Interop;
+using Avalonia.Controls;
 
 namespace XIVLauncher.Xaml
 {
@@ -9,27 +8,25 @@ namespace XIVLauncher.Xaml
     {
         public static void Hide(Window window)
         {
-            var wndHelper = new WindowInteropHelper(window);
+            var handle = window.TryGetPlatformHandle();
+            if (handle == null)
+                return;
 
-            var exStyle = (int) GetWindowLong(wndHelper.Handle, (int) GetWindowLongFields.GWL_EXSTYLE);
+            var exStyle = (int) GetWindowLong(handle.Handle, (int) GetWindowLongFields.GWL_EXSTYLE);
 
             exStyle |= (int) ExtendedWindowStyles.WS_EX_TOOLWINDOW;
-            SetWindowLong(wndHelper.Handle, (int) GetWindowLongFields.GWL_EXSTYLE, (IntPtr) exStyle);
+            SetWindowLong(handle.Handle, (int) GetWindowLongFields.GWL_EXSTYLE, (IntPtr) exStyle);
         }
 
         [Flags]
         private enum ExtendedWindowStyles
         {
-            // ...
             WS_EX_TOOLWINDOW = 0x00000080,
-            // ...
         }
 
         private enum GetWindowLongFields
         {
-            // ...
             GWL_EXSTYLE = (-20),
-            // ...
         }
 
         [DllImport("user32.dll")]
@@ -39,19 +36,16 @@ namespace XIVLauncher.Xaml
         {
             int error = 0;
             IntPtr result = IntPtr.Zero;
-            // Win32 SetWindowLong doesn't clear error on success
             SetLastError(0);
 
             if (IntPtr.Size == 4)
             {
-                // use SetWindowLong
                 Int32 tempResult = IntSetWindowLong(hWnd, nIndex, IntPtrToInt32(dwNewLong));
                 error = Marshal.GetLastWin32Error();
                 result = new IntPtr(tempResult);
             }
             else
             {
-                // use SetWindowLongPtr
                 result = IntSetWindowLongPtr(hWnd, nIndex, dwNewLong);
                 error = Marshal.GetLastWin32Error();
             }

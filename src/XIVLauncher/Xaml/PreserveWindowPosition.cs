@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Interop;
+using Avalonia.Controls;
 
 namespace XIVLauncher.Xaml;
 
@@ -70,15 +69,18 @@ public static class PreserveWindowPosition
         placement.flags = 0;
         placement.showCmd = (placement.showCmd == SW_SHOWMINIMIZED ? SW_SHOWNORMAL : placement.showCmd);
 
-        var hwnd = new WindowInteropHelper(window).Handle;
-        SetWindowPlacement(hwnd, ref placement);
+        var handle = window.TryGetPlatformHandle();
+        if (handle != null)
+            SetWindowPlacement(handle.Handle, ref placement);
     }
 
     public static void SaveWindowPosition(Window window)
     {
-        WindowPlacement wp;
-        var hwnd = new WindowInteropHelper(window).Handle;
-        GetWindowPlacement(hwnd, out wp);
+        var handle = window.TryGetPlatformHandle();
+        if (handle == null)
+            return;
+
+        GetWindowPlacement(handle.Handle, out var wp);
         App.Settings.MainWindowPlacement = wp;
     }
 }
