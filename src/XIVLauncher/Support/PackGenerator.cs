@@ -3,8 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using System.Windows;
 using XIVLauncher.Common;
+using XIVLauncher.Windows;
+using XIVLauncher.Xaml;
 using ZipArchive = System.IO.Compression.ZipArchive;
 
 namespace XIVLauncher.Support
@@ -58,7 +59,7 @@ namespace XIVLauncher.Support
             // Use "explorer.exe" to open the folder and select the file
             Process.Start("explorer.exe", $"/select,\"{Path.GetFullPath(packFullName)}\"");
             var message = $"日志文件已打包: {packFullName}";
-            MessageBox.Show(message, "Troubleshooting", MessageBoxButton.OK, MessageBoxImage.Information);
+            CustomMessageBox.Show(message, "Troubleshooting", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

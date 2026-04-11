@@ -26,7 +26,7 @@ namespace XIVLauncher.Windows
         {
             InitializeComponent();
 
-            this.DataContext = new OtpInputDialogViewModel();
+            this.DataContext = new QRDialogViewModel();
 
             PointerPressed += QRDialog_OnPointerPressed;
             Activated += (_, _) => QRImage.Focus();

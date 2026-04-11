@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Windows;
+using Avalonia.Interactivity;
 
 namespace XIVLauncher.Support
 {

@@ -12,8 +12,8 @@ using XIVLauncher.Accounts.Cred;
 using XIVLauncher.Accounts.Cred.CredProviders;
 using Castle.Core.Internal;
 using System.Threading.Tasks;
-using System.Windows;
 using XIVLauncher.Windows;
+using XIVLauncher.Xaml;
 namespace XIVLauncher.Accounts
 {
     public class AccountManager
