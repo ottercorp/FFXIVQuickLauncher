@@ -31,7 +31,7 @@ namespace XIVLauncher.Windows
 
         private readonly AccountManager _accountManager;
 
-        private Point? _dragStart;
+        private Avalonia.Point? _dragStart;
         private ListBoxItem? _draggedItem;
         private bool _isDragging;
         private bool _listReorderDragStarted;
@@ -118,7 +118,7 @@ namespace XIVLauncher.Windows
                 Close();
         }
 
-        private static System.Drawing.Bitmap AvaloniaBitmapToDrawingBitmap(Bitmap bitmap)
+        private static System.Drawing.Bitmap AvaloniaBitmapToDrawingBitmap(Avalonia.Media.Imaging.Bitmap bitmap)
         {
             using var outStream = new MemoryStream();
             bitmap.Save(outStream);
@@ -181,7 +181,7 @@ namespace XIVLauncher.Windows
             if (thumbnailPath == null)
                 return;
 
-            if (!string.IsNullOrEmpty(selectedEntry.Account.ThumbnailUrl) && selectedEntry.ProfileImage is Bitmap avaBitmap)
+            if (!string.IsNullOrEmpty(selectedEntry.Account.ThumbnailUrl) && selectedEntry.ProfileImage is Avalonia.Media.Imaging.Bitmap avaBitmap)
             {
                 var thumbnailDirectory = Path.Combine(Paths.RoamingPath, "profileIcons");
                 Directory.CreateDirectory(thumbnailDirectory);

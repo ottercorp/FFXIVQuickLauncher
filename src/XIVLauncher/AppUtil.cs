@@ -7,6 +7,7 @@ using System.Management;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Avalonia.Controls;
 using CheapLoc;
 using XIVLauncher.Xaml;
 using Microsoft.Win32;
