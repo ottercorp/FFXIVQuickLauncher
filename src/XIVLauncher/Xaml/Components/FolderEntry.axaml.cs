@@ -1,32 +1,28 @@
-﻿using System.Windows;
-using System.Windows.Controls;
-using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using System.Linq;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 
 namespace XIVLauncher.Xaml.Components
 {
-    /// <summary>
-    ///     Interaction logic for FolderEntry.xaml
-    /// </summary>
-    public partial class FolderEntry
+    public partial class FolderEntry : UserControl
     {
-        public static DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string),
-            typeof(FolderEntry),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public static readonly StyledProperty<string> TextProperty =
+            AvaloniaProperty.Register<FolderEntry, string>(nameof(Text), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-        public static DependencyProperty DescriptionProperty = DependencyProperty.Register("Description",
-            typeof(string), typeof(FolderEntry), new PropertyMetadata(null));
-
-        public event TextChangedEventHandler TextChanged;
+        public static readonly StyledProperty<string> DescriptionProperty =
+            AvaloniaProperty.Register<FolderEntry, string>(nameof(Description));
 
         public string Text
         {
-            get => GetValue(TextProperty) as string;
+            get => GetValue(TextProperty);
             set => SetValue(TextProperty, value);
         }
 
         public string Description
         {
-            get => GetValue(DescriptionProperty) as string;
+            get => GetValue(DescriptionProperty);
             set => SetValue(DescriptionProperty, value);
         }
 
@@ -35,29 +31,21 @@ namespace XIVLauncher.Xaml.Components
             InitializeComponent();
         }
 
-        private void BrowseFolder(object sender, RoutedEventArgs e)
+        private async void BrowseFolder(object sender, RoutedEventArgs e)
         {
-            using (var dlg = new CommonOpenFileDialog())
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel == null) return;
+
+            var folders = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                dlg.Multiselect = false;
-                dlg.IsFolderPicker = true;
-                dlg.EnsurePathExists = true;
-                dlg.Title = Description;
-                var result = dlg.ShowDialog();
+                Title = Description,
+                AllowMultiple = false,
+            });
 
-                if (result == CommonFileDialogResult.Ok)
-                {
-                    Text = dlg.FileName;
-                    var be = GetBindingExpression(TextProperty);
-                    if (be != null)
-                        be.UpdateSource();
-                }
+            if (folders.Any())
+            {
+                Text = folders[0].TryGetLocalPath() ?? folders[0].Path.LocalPath;
             }
-        }
-
-        private void TextBoxBase_OnTextChanged(object sender, TextChangedEventArgs e)
-        {
-            TextChanged?.Invoke(sender, e);
         }
     }
 }

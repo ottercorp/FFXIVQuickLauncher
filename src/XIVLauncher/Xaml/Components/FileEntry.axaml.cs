@@ -1,40 +1,39 @@
-﻿using System.Windows;
-using System.Windows.Data;
-using Microsoft.WindowsAPICodePack.Dialogs;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 
 namespace XIVLauncher.Xaml.Components
 {
-    /// <summary>
-    /// Interaction logic for FolderEntry.xaml
-    /// </summary>
-    public partial class FileEntry
+    public partial class FileEntry : UserControl
     {
-        public static DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string),
-            typeof(FileEntry),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public static readonly StyledProperty<string> TextProperty =
+            AvaloniaProperty.Register<FileEntry, string>(nameof(Text), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
-        public static DependencyProperty DescriptionProperty = DependencyProperty.Register("Description",
-            typeof(string), typeof(FileEntry), new PropertyMetadata(null));
+        public static readonly StyledProperty<string> DescriptionProperty =
+            AvaloniaProperty.Register<FileEntry, string>(nameof(Description));
 
-        public static DependencyProperty FiltersProperty = DependencyProperty.Register("Filters",
-            typeof(string), typeof(FileEntry), new PropertyMetadata(null));
+        public static readonly StyledProperty<string> FiltersProperty =
+            AvaloniaProperty.Register<FileEntry, string>(nameof(Filters));
 
         public string Text
         {
-            get { return GetValue(TextProperty) as string; }
-            set { SetValue(TextProperty, value); }
+            get => GetValue(TextProperty);
+            set => SetValue(TextProperty, value);
         }
 
         public string Description
         {
-            get { return GetValue(DescriptionProperty) as string; }
-            set { SetValue(DescriptionProperty, value); }
+            get => GetValue(DescriptionProperty);
+            set => SetValue(DescriptionProperty, value);
         }
 
         public string Filters
         {
-            get { return GetValue(FiltersProperty) as string; }
-            set { SetValue(FiltersProperty, value); }
+            get => GetValue(FiltersProperty);
+            set => SetValue(FiltersProperty, value);
         }
 
         public FileEntry()
@@ -42,34 +41,38 @@ namespace XIVLauncher.Xaml.Components
             InitializeComponent();
         }
 
-        private void BrowseFolder(object sender, RoutedEventArgs e)
+        private async void BrowseFile(object sender, RoutedEventArgs e)
         {
-            using (var dlg = new CommonOpenFileDialog())
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel == null) return;
+
+            var fileTypeFilters = new List<FilePickerFileType>();
+            if (!string.IsNullOrEmpty(Filters))
             {
-                var parent = Window.GetWindow(this);
-
-                dlg.Multiselect = false;
-                dlg.IsFolderPicker = false;
-                dlg.EnsurePathExists = true;
-                dlg.Title = Description;
-
                 var filterSets = Filters.Split(';');
-
                 foreach (var filterSet in filterSets)
                 {
                     var filterOptions = filterSet.Split(',');
-                    dlg.Filters.Add(new CommonFileDialogFilter(filterOptions[0], filterOptions[1]));
+                    if (filterOptions.Length >= 2)
+                    {
+                        fileTypeFilters.Add(new FilePickerFileType(filterOptions[0])
+                        {
+                            Patterns = filterOptions[1].Split(',').Select(p => p.Trim()).ToList()
+                        });
+                    }
                 }
+            }
 
-                var result = dlg.ShowDialog(parent);
+            var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = Description,
+                AllowMultiple = false,
+                FileTypeFilter = fileTypeFilters.Count > 0 ? fileTypeFilters : null,
+            });
 
-                if (result == CommonFileDialogResult.Ok)
-                {
-                    Text = dlg.FileName;
-                    BindingExpression be = GetBindingExpression(TextProperty);
-                    if (be != null)
-                        be.UpdateSource();
-                }
+            if (files.Any())
+            {
+                Text = files[0].TryGetLocalPath() ?? files[0].Path.LocalPath;
             }
         }
     }
