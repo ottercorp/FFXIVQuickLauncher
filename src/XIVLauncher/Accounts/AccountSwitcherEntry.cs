@@ -2,18 +2,19 @@
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using XIVLauncher.Common;
 
 namespace XIVLauncher.Accounts
 {
     class AccountSwitcherEntry
     {
-        private static readonly ImageSource DefaultImage = new BitmapImage(new Uri("pack://application:,,,/Resources/defaultprofile.png", UriKind.Absolute));
+        private static readonly IImage DefaultImage = new Bitmap(AssetLoader.Open(new Uri("avares://XIVLauncherCN/Resources/defaultprofile.png")));
 
         public XivAccount Account { get; set; }
-        public ImageSource ProfileImage { get; set; } = DefaultImage;
+        public IImage ProfileImage { get; set; } = DefaultImage;
 
         public void UpdateProfileImage()
         {
@@ -43,14 +44,7 @@ namespace XIVLauncher.Accounts
             }
 
             using var stream = new MemoryStream(imageBytes);
-            var bitmapImage = new BitmapImage();
-            bitmapImage.BeginInit();
-            bitmapImage.StreamSource = stream;
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.EndInit();
-            bitmapImage.Freeze();
-
-            ProfileImage = bitmapImage;
+            ProfileImage = new Bitmap(stream);
         }
     }
 }

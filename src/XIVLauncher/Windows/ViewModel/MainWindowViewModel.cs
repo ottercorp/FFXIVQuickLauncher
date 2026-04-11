@@ -91,6 +91,7 @@ namespace XIVLauncher.Windows.ViewModel
             LoginForceQRCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.ForceQR));
             InjectModeSwitchCommand = new SyncCommand(obj => { this.SwitchMode(); });
             InjectGameCommand = new SyncCommand(obj => { this.TryInjectGame(); });
+            ShowShellSettingsCommand = new SyncCommand(_ => ShellPageIndex = 0);
             var frontierUrl = Updates.UpdateLease?.FrontierUrl;
 #if DEBUG || RELEASENOUPDATE
             // FALLBACK
@@ -2128,6 +2129,8 @@ namespace XIVLauncher.Windows.ViewModel
         public ICommand InjectModeSwitchCommand { get; set; }
         public ICommand InjectGameCommand { get; set; }
 
+        public ICommand ShowShellSettingsCommand { get; set; }
+
         #endregion
 
         #region Bindings
@@ -2240,6 +2243,17 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 _loginCardTransitionerIndex = value;
                 OnPropertyChanged(nameof(LoginCardTransitionerIndex));
+            }
+        }
+
+        private int _shellPageIndex = 1;
+        public int ShellPageIndex
+        {
+            get => _shellPageIndex;
+            set
+            {
+                _shellPageIndex = value;
+                OnPropertyChanged(nameof(ShellPageIndex));
             }
         }
 

@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
 using IWshRuntimeLibrary;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
@@ -18,16 +20,23 @@ using XIVLauncher.Windows.ViewModel;
 namespace XIVLauncher.Windows
 {
     /// <summary>
-    /// Interaction logic for AccountSwitcher.xaml
+    /// Interaction logic for AccountSwitcher.axaml
     /// </summary>
     public partial class AccountSwitcher : Window
     {
+        private static readonly DataFormat<string> AccountSwitcherDragIndexFormat =
+            DataFormat.CreateStringApplicationFormat("xivlauncher/account-switcher-index");
+
+        private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
+
         private readonly AccountManager _accountManager;
 
-        private System.Windows.Point startPoint;
-        private ListViewItem draggedItem;
+        private Point? _dragStart;
+        private ListBoxItem? _draggedItem;
+        private bool _isDragging;
+        private bool _listReorderDragStarted;
 
-        public EventHandler<XivAccount> OnAccountSwitchedEventHandler;
+        public EventHandler<XivAccount>? OnAccountSwitchedEventHandler;
 
         public AccountSwitcher(AccountManager accountManager)
         {
@@ -36,6 +45,9 @@ namespace XIVLauncher.Windows
             DataContext = new AccountSwitcherViewModel();
 
             _accountManager = accountManager;
+
+            AccountListView.PointerPressed += AccountListView_OnPointerPressed;
+            AccountListView.PointerMoved += AccountListView_OnPointerMoved;
 
             RefreshEntries();
         }
@@ -67,14 +79,23 @@ namespace XIVLauncher.Windows
             AccountListView.ItemsSource = accountEntries;
         }
 
-        private bool _closing = false;
+        private bool _closing;
 
-        private void AccountListView_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void AccountListView_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
-            if (e.ChangedButton != MouseButton.Left)
+            if (e.InitialPressMouseButton != MouseButton.Left)
                 return;
 
+            if (_listReorderDragStarted)
+            {
+                _listReorderDragStarted = false;
+                return;
+            }
+
             var selectedEntry = AccountListView.SelectedItem as AccountSwitcherEntry;
+
+            if (selectedEntry?.Account == null)
+                return;
 
             OnAccountSwitchedEventHandler?.Invoke(this, selectedEntry.Account);
 
@@ -82,35 +103,33 @@ namespace XIVLauncher.Windows
             Close();
         }
 
-        private void AccountListViewContext_Opened(object sender, RoutedEventArgs e)
+        private void AccountListViewContext_Opened(object? sender, RoutedEventArgs e)
         {
             var selectedEntry = AccountListView.SelectedItem as AccountSwitcherEntry;
+            if (selectedEntry == null)
+                return;
+
             AccountEntrySavePasswordCheck.IsChecked = !selectedEntry.Account.AutoLogin;
         }
 
-        private void AccountSwitcher_OnDeactivated(object sender, EventArgs e)
+        private void AccountSwitcher_OnDeactivated(object? sender, EventArgs e)
         {
             if (!_closing)
                 Close();
         }
 
-        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
+        private static System.Drawing.Bitmap AvaloniaBitmapToDrawingBitmap(Bitmap bitmap)
         {
-            using(MemoryStream outStream = new MemoryStream())
-            {
-                BitmapEncoder enc = new BmpBitmapEncoder();
-                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
-                enc.Save(outStream);
-                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
-
-                return new Bitmap(bitmap);
-            }
+            using var outStream = new MemoryStream();
+            bitmap.Save(outStream);
+            outStream.Position = 0;
+            return new System.Drawing.Bitmap(outStream);
         }
 
         // https://stackoverflow.com/questions/11434673/bitmap-save-to-save-an-icon-actually-saves-a-png
-        void SaveAsIcon(Bitmap sourceBitmap, string filePath)
+        private static void SaveAsIcon(System.Drawing.Bitmap sourceBitmap, string filePath)
         {
-            FileStream fs = new FileStream(filePath, FileMode.Create);
+            using var fs = new FileStream(filePath, FileMode.Create);
             // ICO header
             fs.WriteByte(0); fs.WriteByte(0);
             fs.WriteByte(1); fs.WriteByte(0);
@@ -144,31 +163,32 @@ namespace XIVLauncher.Windows
             sourceBitmap.Save(fs, ImageFormat.Png);
 
             // Getting data length (file length minus header)
-            long len = fs.Length - 22;
+            var len = fs.Length - 22;
 
             // Write it in the correct place
             fs.Seek(14, SeekOrigin.Begin);
             fs.WriteByte((byte)len);
             fs.WriteByte((byte)(len >> 8));
-
-            fs.Close();
         }
 
-        private void CreateDesktopShortcut_OnClick(object sender, RoutedEventArgs e)
+        private void CreateDesktopShortcut_OnClick(object? sender, RoutedEventArgs e)
         {
-            if (!(AccountListView.SelectedItem is AccountSwitcherEntry selectedEntry))
+            if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
                 return;
 
-            var thumbnailPath = System.Reflection.Assembly.GetEntryAssembly().Location;
+            var thumbnailPath = System.Reflection.Assembly.GetEntryAssembly()?.Location;
 
-            if (!string.IsNullOrEmpty(selectedEntry.Account.ThumbnailUrl))
+            if (thumbnailPath == null)
+                return;
+
+            if (!string.IsNullOrEmpty(selectedEntry.Account.ThumbnailUrl) && selectedEntry.ProfileImage is Bitmap avaBitmap)
             {
                 var thumbnailDirectory = Path.Combine(Paths.RoamingPath, "profileIcons");
                 Directory.CreateDirectory(thumbnailDirectory);
 
                 thumbnailPath = Path.Combine(thumbnailDirectory, $"{selectedEntry.Account.Id}.ico");
 
-                SaveAsIcon(BitmapImage2Bitmap((BitmapImage) selectedEntry.ProfileImage), thumbnailPath);
+                SaveAsIcon(AvaloniaBitmapToDrawingBitmap(avaBitmap), thumbnailPath);
             }
 
             var shDesktop = (object)"Desktop";
@@ -177,16 +197,16 @@ namespace XIVLauncher.Windows
             var shortcutAddress = (string)shell.SpecialFolders.Item(ref shDesktop) + $@"\XIVLauncherCN - {selectedEntry.Account.UserName}.lnk";
             var shortcut = (IWshShortcut)shell.CreateShortcut(shortcutAddress);
             shortcut.Description = $"Open XIVLauncher with the \"{selectedEntry.Account.UserName}\" Sdo account.";
-            shortcut.TargetPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent.FullName, "XIVLauncherCN.exe");
+            shortcut.TargetPath = Path.Combine(new DirectoryInfo(Environment.CurrentDirectory).Parent!.FullName, "XIVLauncherCN.exe");
             shortcut.Arguments = $"--account={selectedEntry.Account.Id}";
             shortcut.WorkingDirectory = Environment.CurrentDirectory;
             shortcut.IconLocation = thumbnailPath;
             shortcut.Save();
         }
 
-        private void RemoveAccount_OnClick(object sender, RoutedEventArgs e)
+        private void RemoveAccount_OnClick(object? sender, RoutedEventArgs e)
         {
-            if (!(AccountListView.SelectedItem is AccountSwitcherEntry selectedEntry))
+            if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
                 return;
 
             _accountManager.RemoveAccount(selectedEntry.Account);
@@ -194,13 +214,13 @@ namespace XIVLauncher.Windows
             RefreshEntries();
         }
 
-        private void SetProfilePicture_OnClick(object sender, RoutedEventArgs e)
+        private async void SetProfilePicture_OnClick(object? sender, RoutedEventArgs e)
         {
-            if (!(AccountListView.SelectedItem is AccountSwitcherEntry selectedEntry))
+            if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
                 return;
 
             var inputDialog = new ProfilePictureInputWindow(selectedEntry.Account);
-            inputDialog.ShowDialog();
+            await inputDialog.ShowDialog(this);
 
             var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
             account.ChosenCharacterName = inputDialog.ResultName;
@@ -210,9 +230,9 @@ namespace XIVLauncher.Windows
             RefreshEntries();
         }
 
-        private void DontSavePassword_OnChecked(object sender, RoutedEventArgs e)
+        private void DontSavePassword_OnChecked(object? sender, RoutedEventArgs e)
         {
-            if (!(AccountListView.SelectedItem is AccountSwitcherEntry selectedEntry))
+            if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
                 return;
 
             var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
@@ -221,9 +241,9 @@ namespace XIVLauncher.Windows
             _accountManager.Save();
         }
 
-        private void DontSavePassword_OnUnchecked(object sender, RoutedEventArgs e)
+        private void DontSavePassword_OnUnchecked(object? sender, RoutedEventArgs e)
         {
-            if (!(AccountListView.SelectedItem is AccountSwitcherEntry selectedEntry))
+            if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
                 return;
 
             var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
@@ -231,52 +251,85 @@ namespace XIVLauncher.Windows
             _accountManager.Save();
         }
 
-        private void AccountListView_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void AccountListView_OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            this.startPoint = e.GetPosition(null);
-            this.draggedItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
-
-            if (this.draggedItem == null)
+            if (!e.GetCurrentPoint(AccountListView).Properties.IsLeftButtonPressed)
                 return;
 
-            this.draggedItem.IsSelected = true;
+            _listReorderDragStarted = false;
+            _dragStart = e.GetPosition(null);
+            var src = e.Source as Control;
+            _draggedItem = e.Source as ListBoxItem ?? src?.GetVisualAncestors().OfType<ListBoxItem>().FirstOrDefault();
+
+            if (_draggedItem == null)
+                return;
+
+            _draggedItem.IsSelected = true;
         }
 
-        private void AccountListView_OnPreviewMouseMove(object sender, MouseEventArgs e)
+        private async void AccountListView_OnPointerMoved(object? sender, PointerEventArgs e)
         {
-            var mousePos = e.GetPosition(null);
-            var diff = this.startPoint - mousePos;
+            if (_dragStart == null || _draggedItem == null || _isDragging)
+                return;
 
-            if (sender is ListView listView &&
-                FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource) is ListViewItem listViewItem &&
-                listView.ItemContainerGenerator.ItemFromContainer(listViewItem) is AccountSwitcherEntry accountEntry &&
-                e.LeftButton == MouseButtonState.Pressed &&
-                (this.draggedItem != null && (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)))
+            if (!e.GetCurrentPoint(AccountListView).Properties.IsLeftButtonPressed)
+                return;
+
+            var mousePos = e.GetPosition(null);
+            var diff = _dragStart.Value - mousePos;
+
+            if (Math.Abs(diff.X) <= 4 && Math.Abs(diff.Y) <= 4)
+                return;
+
+            var draggedIndex = AccountListView.IndexFromContainer(_draggedItem);
+            if (draggedIndex < 0)
+                return;
+
+            _listReorderDragStarted = true;
+            _isDragging = true;
+            try
             {
-                var data = new DataObject("AccountSwitcherEntry", accountEntry);
-                DragDrop.DoDragDrop(listViewItem, data, DragDropEffects.Move);
+                var dragData = new DataTransfer();
+                dragData.Add(DataTransferItem.Create(
+                    AccountSwitcherDragIndexFormat,
+                    draggedIndex.ToString(InvariantCulture)));
+
+                await DragDrop.DoDragDropAsync(e, dragData, DragDropEffects.Move);
+            }
+            finally
+            {
+                _isDragging = false;
+                _dragStart = null;
+                _draggedItem = null;
             }
         }
 
-        private void AccountListView_OnDrop(object sender, DragEventArgs e)
+        private void AccountListView_OnDragOver(object? sender, DragEventArgs e)
         {
-            if (this.draggedItem == null)
+            if (e.DataTransfer.Contains(AccountSwitcherDragIndexFormat))
+                e.DragEffects = DragDropEffects.Move;
+            else
+                e.DragEffects = DragDropEffects.None;
+        }
+
+        private void AccountListView_OnDrop(object? sender, DragEventArgs e)
+        {
+            if (!e.DataTransfer.TryGetValue(AccountSwitcherDragIndexFormat, out var indexStr) ||
+                !int.TryParse(indexStr, NumberStyles.Integer, InvariantCulture, out var draggedIndex))
                 return;
 
-            var targetItem = FindAncestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            var src = e.Source as Control;
+            var targetItem = e.Source as ListBoxItem ?? src?.GetVisualAncestors().OfType<ListBoxItem>().FirstOrDefault();
 
             if (targetItem == null)
                 return;
 
-            var targetIndex = AccountListView.ItemContainerGenerator.IndexFromContainer(targetItem);
-            var draggedIndex = AccountListView.ItemContainerGenerator.IndexFromContainer(this.draggedItem);
+            var targetIndex = AccountListView.IndexFromContainer(targetItem);
 
             if (targetIndex < 0 || draggedIndex < 0)
                 return;
 
-            var accountEntries = AccountListView.ItemsSource as List<AccountSwitcherEntry>;
-
-            if (accountEntries == null)
+            if (AccountListView.ItemsSource is not List<AccountSwitcherEntry> accountEntries)
                 return;
 
             var draggedEntry = accountEntries[draggedIndex];
@@ -289,20 +342,6 @@ namespace XIVLauncher.Windows
 
             _accountManager.Save();
             RefreshEntries();
-        }
-
-        private static T FindAncestor<T>(DependencyObject current) where T : DependencyObject
-        {
-            do
-            {
-                if (current is T ancestor)
-                    return ancestor;
-
-                current = VisualTreeHelper.GetParent(current);
-            }
-            while (current != null);
-
-            return null;
         }
     }
 }

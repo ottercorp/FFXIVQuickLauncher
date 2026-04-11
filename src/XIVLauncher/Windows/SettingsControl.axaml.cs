@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CheapLoc;
-using MaterialDesignThemes.Wpf.Transitions;
 using Serilog;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Common;
@@ -19,12 +21,13 @@ using XIVLauncher.Common.Util;
 using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
 using XIVLauncher.Accounts.Cred;
-using SharpCompress.Common;
+using XIVLauncher.Xaml;
+using XIVLauncher.Xaml.Components;
 
 namespace XIVLauncher.Windows
 {
     /// <summary>
-    ///     Interaction logic for SettingsControl.xaml
+    ///     Interaction logic for SettingsControl.axaml
     /// </summary>
     public partial class SettingsControl
     {
@@ -36,16 +39,27 @@ namespace XIVLauncher.Windows
         private const int BYTES_TO_MB = 1048576;
 
         private bool _hasTriggeredLogo = false;
-        
-        private MainWindowViewModel MainWindowViewModel;
+
         public SettingsControl()
         {
             InitializeComponent();
 
-            QqButton.Click += SupportLinks.OpenQQChannel;
-            FaqButton.Click += SupportLinks.OpenFaq;
+            GamePathFolderEntry.PropertyChanged += GamePathFolderEntry_OnPropertyChanged;
+
+            QqButton.Click += (_, _) =>
+                Process.Start(new ProcessStartInfo("https://qun.qq.com/qqweb/qunpro/share?inviteCode=CZtWN") { UseShellExecute = true });
+            FaqButton.Click += (_, _) =>
+                Process.Start(new ProcessStartInfo("https://ottercorp.github.io/faq") { UseShellExecute = true });
             DataContext = new SettingsControlViewModel();
             ReloadSettings();
+        }
+
+        private Window GetOwnerWindow() => TopLevel.GetTopLevel(this) as Window;
+
+        private void GamePathFolderEntry_OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == FolderEntry.TextProperty)
+                GamePathEntry_OnTextChanged();
         }
 
         public void ReloadSettings()
@@ -65,7 +79,7 @@ namespace XIVLauncher.Windows
 
             LanguageComboBox.SelectedIndex = (int)App.Settings.Language.GetValueOrDefault(ClientLanguage.English);
             LauncherLanguageComboBox.SelectedIndex = (int)App.Settings.LauncherLanguage.GetValueOrDefault(LauncherLanguage.English);
-            LauncherLanguageNoticeTextBlock.Visibility = Visibility.Hidden;
+            LauncherLanguageNoticeTextBlock.IsVisible = false;
             AddonListView.ItemsSource = App.Settings.AddonList ??= new List<AddonEntry>();
             AskBeforePatchingCheckBox.IsChecked = App.Settings.AskBeforePatchInstall;
             KeepPatchesCheckBox.IsChecked = App.Settings.KeepPatches;
@@ -92,7 +106,7 @@ namespace XIVLauncher.Windows
 
             DpiAwarenessComboBox.SelectedIndex = (int)App.Settings.DpiAwareness.GetValueOrDefault(DpiAwareness.Unaware);
 
-            VersionLabel.Text += " - v" + AppUtil.GetAssemblyVersion() + " - " + AppUtil.GetGitHash() + " - " + Environment.Version;
+            VersionLabel.Text = "XIVLauncher" + " - v" + AppUtil.GetAssemblyVersion() + " - " + AppUtil.GetGitHash() + " - " + Environment.Version;
 
             var val = (decimal)App.Settings.SpeedLimitBytes / BYTES_TO_MB;
 
@@ -103,12 +117,12 @@ namespace XIVLauncher.Windows
             AccountStorageEncryptCombox.SelectedIndex = (int)App.Settings.CredType.GetValueOrDefault(CredType.WindowsCredManager);
         }
 
-        private void AcceptButton_Click(object sender, RoutedEventArgs e)
+        private void AcceptButton_Click(object? sender, RoutedEventArgs e)
         {
             if (ViewModel.GamePath == ViewModel.PatchPath)
             {
                 CustomMessageBox.Show(Loc.Localize("SettingsGamePatchPathError", "Game and patch download paths cannot be the same.\nPlease make sure to choose distinct game and patch download paths."), "XIVLauncher Error", MessageBoxButton.OK,
-                    MessageBoxImage.Error, parentWindow: Window.GetWindow(this));
+                    MessageBoxImage.Error, parentWindow: GetOwnerWindow());
                 return;
             }
 
@@ -118,7 +132,7 @@ namespace XIVLauncher.Windows
             App.Settings.Language = (ClientLanguage)LanguageComboBox.SelectedIndex;
             // Keep the notice visible if LauncherLanguage has changed
             if (App.Settings.LauncherLanguage == (LauncherLanguage)LauncherLanguageComboBox.SelectedIndex)
-                LauncherLanguageNoticeTextBlock.Visibility = Visibility.Hidden;
+                LauncherLanguageNoticeTextBlock.IsVisible = false;
             App.Settings.LauncherLanguage = (LauncherLanguage)LauncherLanguageComboBox.SelectedIndex;
 
             App.Settings.AddonList = (List<AddonEntry>)AddonListView.ItemsSource;
@@ -129,8 +143,7 @@ namespace XIVLauncher.Windows
 
             App.Settings.InGameAddonEnabled = EnableHooksCheckBox.IsChecked == true;
 
-            if (InjectionDelayUpDown.Value.HasValue)
-                App.Settings.DalamudInjectionDelayMs = InjectionDelayUpDown.Value.Value;
+            App.Settings.DalamudInjectionDelayMs = (int)InjectionDelayUpDown.Value;
 
             if (DllInjectDalamudLoadMethodRadioButton.IsChecked == true)
                 App.Settings.InGameAddonLoadMethod = DalamudLoadMethod.DllInject;
@@ -145,7 +158,7 @@ namespace XIVLauncher.Windows
 
             App.Settings.DpiAwareness = (DpiAwareness)DpiAwarenessComboBox.SelectedIndex;
 
-            SettingsDismissed?.Invoke(this, null);
+            SettingsDismissed?.Invoke(this, EventArgs.Empty);
 
             App.Settings.SpeedLimitBytes = (long)(SpeedLimiterUpDown.Value * BYTES_TO_MB);
 
@@ -153,26 +166,41 @@ namespace XIVLauncher.Windows
             App.Settings.CredType = (CredType)AccountStorageEncryptCombox.SelectedIndex;
             App.AccountManager.ChangeCredType(App.Settings.CredType);
 
-            Transitioner.MoveNextCommand.Execute(null, null);
+            NavigateFromSettingsToMain();
         }
 
-        private void GitHubButton_OnClick(object sender, RoutedEventArgs e)
+        /// <summary>
+        ///     Return to the main shell view (replaces Material Design WPF <c>Transitioner.MoveNextCommand</c>).
+        /// </summary>
+        private void NavigateFromSettingsToMain()
+        {
+            for (var p = this.Parent as Control; p != null; p = p.Parent as Control)
+            {
+                if (p is SelectingItemsControl sic && sic.ItemCount >= 2 && sic.SelectedIndex == 0)
+                {
+                    sic.SelectedIndex = 1;
+                    return;
+                }
+            }
+        }
+
+        private void GitHubButton_OnClick(object? sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo("https://github.com/ottercorp/FFXIVQuickLauncher") { UseShellExecute = true });
         }
 
-        private void BackupToolButton_OnClick(object sender, RoutedEventArgs e)
+        private void BackupToolButton_OnClick(object? sender, RoutedEventArgs e)
         {
-            Process.Start(Path.Combine(ViewModel.GamePath, "boot", "ffxivconfig64.exe"));
+            Process.Start(new ProcessStartInfo(Path.Combine(ViewModel.GamePath, "boot", "ffxivconfig64.exe")) { UseShellExecute = true });
         }
 
-        private void OriginalLauncherButton_OnClick(object sender, RoutedEventArgs e)
+        private void OriginalLauncherButton_OnClick(object? sender, RoutedEventArgs e)
         {
             var isSteam = CustomMessageBox.Builder
                                           .NewFrom(Loc.Localize("LaunchAsSteam", "Launch as a steam user?"))
                                           .WithButtons(MessageBoxButton.YesNo)
                                           .WithImage(MessageBoxImage.Question)
-                                          .WithParentWindow(Window.GetWindow(this))
+                                          .WithParentWindow(GetOwnerWindow())
                                           .Show() == MessageBoxResult.Yes;
 
             GameHelpers.StartOfficialLauncher(App.Settings.GamePath, isSteam, App.Settings.IsFt.GetValueOrDefault(false));
@@ -180,10 +208,10 @@ namespace XIVLauncher.Windows
 
         // All of the list handling is very dirty - but i guess it works
 
-        private void AddAddon_OnClick(object sender, RoutedEventArgs e)
+        private void AddAddon_OnClick(object? sender, RoutedEventArgs e)
         {
             var addonSetup = new GenericAddonSetupWindow();
-            addonSetup.ShowDialog();
+            addonSetup.ShowDialog(GetOwnerWindow()).GetAwaiter().GetResult();
 
             if (addonSetup.Result != null && !string.IsNullOrEmpty(addonSetup.Result.Path))
             {
@@ -201,9 +229,9 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void AddonListView_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void AddonListView_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
-            if (e.ChangedButton != MouseButton.Left)
+            if (e.InitialPressMouseButton != MouseButton.Left)
                 return;
 
             if (!(AddonListView.SelectedItem is AddonEntry entry))
@@ -213,7 +241,7 @@ namespace XIVLauncher.Windows
             {
                 var selectedIndex = AddonListView.SelectedIndex;
                 var addonSetup = new GenericAddonSetupWindow(genericAddon);
-                addonSetup.ShowDialog();
+                addonSetup.ShowDialog(GetOwnerWindow()).GetAwaiter().GetResult();
 
                 if (addonSetup.Result != null)
                 {
@@ -232,12 +260,12 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void ToggleButton_OnChecked(object sender, RoutedEventArgs e)
+        private void ToggleButton_OnChecked(object? sender, RoutedEventArgs e)
         {
             App.Settings.AddonList = (List<AddonEntry>)AddonListView.ItemsSource;
         }
 
-        private void RemoveAddonEntry_OnClick(object sender, RoutedEventArgs e)
+        private void RemoveAddonEntry_OnClick(object? sender, RoutedEventArgs e)
         {
             if (AddonListView.SelectedItem is AddonEntry)
             {
@@ -250,7 +278,7 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void RunIntegrityCheck_OnClick(object s, RoutedEventArgs e)
+        private void RunIntegrityCheck_OnClick(object? s, RoutedEventArgs e)
         {
             var window = new IntegrityCheckProgressWindow();
             var progress = new Progress<IntegrityCheck.IntegrityCheckProgress>();
@@ -260,13 +288,13 @@ namespace XIVLauncher.Windows
 
             if (Repository.Ffxiv.IsBaseVer(gamePath))
             {
-                CustomMessageBox.Show(Loc.Localize("IntegrityCheckBase", "The game is not installed to the path you specified.\nPlease install the game before running an integrity check."), "XIVLauncherCN", parentWindow: Window.GetWindow(this));
+                CustomMessageBox.Show(Loc.Localize("IntegrityCheckBase", "The game is not installed to the path you specified.\nPlease install the game before running an integrity check."), "XIVLauncherCN", parentWindow: GetOwnerWindow());
                 return;
             }
 
             Task.Run(async () => await IntegrityCheck.CompareIntegrityAsync(progress, gamePath)).ContinueWith(task =>
             {
-                window.Dispatcher.Invoke(() => window.Close());
+                Dispatcher.UIThread.InvokeAsync(() => window.Close()).GetAwaiter().GetResult();
 
                 string saveIntegrityPath = Path.Combine(Paths.RoamingPath, "integrityreport.txt");
 #if DEBUG
@@ -274,48 +302,48 @@ namespace XIVLauncher.Windows
 #endif
                 File.WriteAllText(saveIntegrityPath, task.Result.report);
 
-                this.Dispatcher.Invoke(() =>
+                Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     switch (task.Result.compareResult)
                     {
                         case IntegrityCheck.CompareResult.ReferenceNotFound:
                             CustomMessageBox.Show(Loc.Localize("IntegrityCheckImpossible",
                                     "There is no reference report yet for this game version. Please try again later."),
-                                "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Asterisk, parentWindow: Window.GetWindow(this));
+                                "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Asterisk, parentWindow: GetOwnerWindow());
                             return;
 
                         case IntegrityCheck.CompareResult.ReferenceFetchFailure:
                             CustomMessageBox.Show(Loc.Localize("IntegrityCheckNetworkError",
                                     "Failed to download reference files for checking integrity. Check your internet connection and try again."),
-                                "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: Window.GetWindow(this));
+                                "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: GetOwnerWindow());
                             return;
 
                         case IntegrityCheck.CompareResult.Invalid:
                             CustomMessageBox.Show(Loc.Localize("IntegrityCheckFailed",
                                     "Some game files seem to be modified or corrupted. \n\nIf you use TexTools mods, this is an expected result.\n\nIf you do not use mods, right click the \"Login\" button on the XIVLauncher start page and choose \"Repair game\"."),
-                                "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Exclamation, showReportLinks: true, parentWindow: Window.GetWindow(this));
+                                "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Exclamation, showReportLinks: true, parentWindow: GetOwnerWindow());
                             break;
 
                         case IntegrityCheck.CompareResult.Valid:
                             CustomMessageBox.Show(Loc.Localize("IntegrityCheckValid", "Your game install seems to be valid."), "XIVLauncherCN", MessageBoxButton.OK,
-                                MessageBoxImage.Asterisk, parentWindow: Window.GetWindow(this));
+                                MessageBoxImage.Asterisk, parentWindow: GetOwnerWindow());
                             break;
                     }
-                });
+                }).GetAwaiter().GetResult();
             });
 
-            window.ShowDialog();
+            window.ShowDialog(GetOwnerWindow()).GetAwaiter().GetResult();
         }
 
-        private void LauncherLanguageCombo_SelectionChanged(object sender, RoutedEventArgs e)
+        private void LauncherLanguageCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (LauncherLanguageNoticeTextBlock != null)
             {
-                LauncherLanguageNoticeTextBlock.Visibility = Visibility.Visible;
+                LauncherLanguageNoticeTextBlock.IsVisible = true;
             }
         }
 
-        private void EnableHooksCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        private void EnableHooksCheckBox_OnChecked(object? sender, RoutedEventArgs e)
         {
             try
             {
@@ -323,19 +351,19 @@ namespace XIVLauncher.Windows
                 {
                     CustomMessageBox.Show(
                         Loc.Localize("DalamudIncompatible", "Dalamud was not yet updated for your current game version.\nThis is common after patches, so please be patient or ask on the Discord for a status update!"),
-                        "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Asterisk, parentWindow: Window.GetWindow(this));
+                        "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Asterisk, parentWindow: GetOwnerWindow());
                 }
             }
             catch (Exception exc)
             {
                 CustomMessageBox.Show(Loc.Localize("DalamudCompatCheckFailed",
-                    "Could not contact the server to get the current compatible game version for Dalamud. This might mean that your .NET installation is too old.\nPlease check the Discord for more information."), "XIVLauncherCN Problem", MessageBoxButton.OK, MessageBoxImage.Hand, parentWindow: Window.GetWindow(this));
+                    "Could not contact the server to get the current compatible game version for Dalamud. This might mean that your .NET installation is too old.\nPlease check the Discord for more information."), "XIVLauncherCN Problem", MessageBoxButton.OK, MessageBoxImage.Hand, parentWindow: GetOwnerWindow());
 
                 Log.Error(exc, "Couldn't check dalamud compatibility.");
             }
         }
 
-        private void PluginsFolderButton_Click(object sender, RoutedEventArgs e)
+        private void PluginsFolderButton_Click(object? sender, RoutedEventArgs e)
         {
             var pluginsPath = Path.Combine(Paths.RoamingPath, "installedPlugins");
 
@@ -348,17 +376,19 @@ namespace XIVLauncher.Windows
             {
                 var error = $"Could not open the plugins folder! {pluginsPath}";
                 CustomMessageBox.Show(error,
-                    "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: Window.GetWindow(this));
+                    "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error, parentWindow: GetOwnerWindow());
                 Log.Error(ex, error);
             }
         }
 
-        private void OpenI18nLabel_OnClick(object sender, MouseButtonEventArgs e)
+        private void OpenI18nLabel_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
+            if (e.InitialPressMouseButton != MouseButton.Left)
+                return;
             PlatformHelpers.OpenBrowser("https://crowdin.com/project/ffxivquicklauncher");
         }
 
-        private void GamePathEntry_OnTextChanged(object sender, TextChangedEventArgs e)
+        private void GamePathEntry_OnTextChanged()
         {
             var isBootOrGame = false;
             var mightBeNonInternationalVersion = false;
@@ -376,28 +406,38 @@ namespace XIVLauncher.Windows
             if (isBootOrGame)
             {
                 GamePathSafeguardText.Text = ViewModel.GamePathSafeguardLoc;
-                GamePathSafeguardText.Visibility = Visibility.Visible;
+                GamePathSafeguardText.IsVisible = true;
             }
             else if (mightBeNonInternationalVersion && App.Settings.Language != ClientLanguage.ChineseSimplified)
             {
                 GamePathSafeguardText.Text = ViewModel.GamePathSafeguardRegionLoc;
-                GamePathSafeguardText.Visibility = Visibility.Visible;
+                GamePathSafeguardText.IsVisible = true;
             }
             else
             {
-                GamePathSafeguardText.Visibility = Visibility.Collapsed;
+                GamePathSafeguardText.IsVisible = false;
             }
         }
 
-        private void LicenseText_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void LicenseText_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
+            if (e.InitialPressMouseButton != MouseButton.Left)
+                return;
             Process.Start(new ProcessStartInfo(Path.Combine(Paths.ResourcesPath, "LICENSE.txt")) { UseShellExecute = true });
         }
 
-        private void Logo_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void Logo_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
+            if (e.InitialPressMouseButton != MouseButton.Left)
+                return;
 #if DEBUG
-            var result = MessageBox.Show("Yes: FTS\nNo: Save troubleshooting\nCancel: Cancel", "XIVLauncher Expert Debugging Interface", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            var result = CustomMessageBox.Builder
+                .NewFrom("Yes: FTS\nNo: Save troubleshooting\nCancel: Cancel")
+                .WithCaption("XIVLauncher Expert Debugging Interface")
+                .WithButtons(MessageBoxButton.YesNoCancel)
+                .WithImage(MessageBoxImage.Question)
+                .WithParentWindow(GetOwnerWindow())
+                .Show();
             switch (result)
             {
                 case MessageBoxResult.Yes:
@@ -418,38 +458,45 @@ namespace XIVLauncher.Windows
             if (_hasTriggeredLogo)
                 return;
 
-            Process.Start("explorer.exe", $"/select, \"{PackGenerator.SavePack()}\"");
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select, \"{PackGenerator.SavePack()}\"",
+                UseShellExecute = true
+            });
             _hasTriggeredLogo = true;
 #endif
         }
 
-        private void VersionLabel_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void VersionLabel_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
         {
+            if (e.InitialPressMouseButton != MouseButton.Left)
+                return;
             var cw = new ChangelogWindow(EnvironmentSettings.IsPreRelease);
             cw.UpdateVersion(AppUtil.GetAssemblyVersion());
-            cw.ShowDialog();
+            ((Avalonia.Controls.Window)cw).ShowDialog(GetOwnerWindow()).GetAwaiter().GetResult();
         }
 
-        private void LearnMoreButton_OnClick(object sender, RoutedEventArgs e)
+        private void LearnMoreButton_OnClick(object? sender, RoutedEventArgs e)
         {
             PlatformHelpers.OpenBrowser("https://goatcorp.github.io/faq/mobile_otp");
         }
 
-        private void IsFreeTrialCheckbox_OnClick(object sender, RoutedEventArgs e)
+        private void IsFreeTrialCheckbox_OnClick(object? sender, RoutedEventArgs e)
         {
             if (App.Steam.AsyncStartTask != null)
             {
                 CustomMessageBox.Show(Loc.Localize("SteamFtToggleAutoStartWarning", "To apply this setting, XIVLauncher needs to restart.\nPlease reopen XIVLauncher."),
-                                      "XIVLauncherCN", image: MessageBoxImage.Information, showDiscordLink: false, showHelpLinks: false);
+                                      "XIVLauncherCN", image: MessageBoxImage.Information, showDiscordLink: false, showHelpLinks: false, parentWindow: GetOwnerWindow());
                 App.Settings.IsFt = IsFreeTrialCheckbox.IsChecked == true;
-                CloseMainWindowGracefully?.Invoke(this, null);
+                CloseMainWindowGracefully?.Invoke(this, EventArgs.Empty);
             }
         }
 
-        private void OpenAdvancedSettings_OnClick(object sender, RoutedEventArgs e)
+        private void OpenAdvancedSettings_OnClick(object? sender, RoutedEventArgs e)
         {
             var asw = new AdvancedSettingsWindow();
-            asw.ShowDialog();
+            asw.ShowDialog(GetOwnerWindow()).GetAwaiter().GetResult();
         }
     }
 }

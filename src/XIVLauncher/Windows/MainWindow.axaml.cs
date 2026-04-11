@@ -7,14 +7,16 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using Castle.Core.Internal;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using CheapLoc;
-using MaterialDesignThemes.Wpf;
+using Material.Icons;
+using Material.Icons.Avalonia;
+using Material.Styles.Assists;
 using Serilog;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
@@ -38,7 +40,7 @@ namespace XIVLauncher.Windows
         private Timer _bannerChangeTimer;
         private Headlines _headlines;
         private IReadOnlyList<Banner> _banners;
-        private BitmapImage[] _bannerBitmaps;
+        private Bitmap[] _bannerBitmaps;
         private int _currentBannerIndex;
         private bool _everShown = false;
 
@@ -67,18 +69,24 @@ namespace XIVLauncher.Windows
             _launcher = Model.Launcher;
 
             Closed += Model.OnWindowClosed;
-            Closing += Model.OnWindowClosing;
+            Closing += (s, e) =>
+            {
+                var args = new CancelEventArgs();
+                Model.OnWindowClosing(s!, args);
+                if (args.Cancel)
+                    e.Cancel = true;
+            };
 
             Model.LoginCardTransitionerIndex = 1;
 
-            Model.Activate += () => this.Dispatcher.Invoke(() =>
+            Model.Activate += () => _ = Dispatcher.UIThread.InvokeAsync(() =>
             {
                 this.Show();
                 this.Activate();
                 this.Focus();
             });
 
-            Model.Hide += () => this.Dispatcher.Invoke(() =>
+            Model.Hide += () => _ = Dispatcher.UIThread.InvokeAsync(() =>
             {
                 this.Hide();
             });
@@ -130,7 +138,7 @@ namespace XIVLauncher.Windows
 
                 throw;
             }
-            Dispatcher.Invoke(() =>
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 Model.SdoAreas = areas.ToArray();
                 ServerSelection.ItemsSource = Model.SdoAreas;
@@ -153,7 +161,7 @@ namespace XIVLauncher.Windows
                                             .ConfigureAwait(false);
                 _banners = this._headlines.Banner;
 
-                _bannerBitmaps = new BitmapImage[_banners.Count];
+                _bannerBitmaps = new Bitmap[_banners.Count];
                 _bannerDotList = new();
 
                 for (var i = 0; i < _banners.Count; i++)
@@ -162,24 +170,18 @@ namespace XIVLauncher.Windows
 
                     using var stream = new MemoryStream(imageBytes);
 
-                    var bitmapImage = new BitmapImage();
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = stream;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                    bitmapImage.Freeze();
+                    _bannerBitmaps[i] = new Bitmap(stream);
 
-                    _bannerBitmaps[i] = bitmapImage;
                     _bannerDotList.Add(new() { Index = i });
                 }
 
                 _bannerDotList[0].Active = true;
 
-                _ = this.Dispatcher.BeginInvoke(new Action(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     this.BannerImage.Source = this._bannerBitmaps[0];
                     this.BannerDot.ItemsSource = this._bannerDotList;
-                }));
+                });
 
                 _bannerChangeTimer = new Timer { Interval = 5000 };
 
@@ -194,25 +196,25 @@ namespace XIVLauncher.Windows
 
                     _bannerDotList[_currentBannerIndex].Active = true;
 
-                    Dispatcher.BeginInvoke(new Action(() =>
+                    _ = Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         BannerImage.Source = _bannerBitmaps[_currentBannerIndex];
                         BannerDot.ItemsSource = _bannerDotList.ToList();
-                    }));
+                    });
                 };
 
                 _bannerChangeTimer.AutoReset = true;
                 _bannerChangeTimer.Start();
 
-                _ = Dispatcher.BeginInvoke(new Action(() => { NewsListView.ItemsSource = _headlines.News; }));
+                await Dispatcher.UIThread.InvokeAsync(() => { NewsListView.ItemsSource = _headlines.News; });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Could not get news");
-                _ = Dispatcher.BeginInvoke(new Action(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     NewsListView.ItemsSource = new List<News> { new News { Title = Loc.Localize("NewsDlFailed", "Could not download news data."), Tag = "DlError" } };
-                }));
+                });
             }
         }
 
@@ -317,7 +319,9 @@ namespace XIVLauncher.Windows
 
             var savedAccount = _accountManager.CurrentAccount;
 
-            if (App.Settings.UniqueIdCacheEnabled && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            var modifiers = Keyboard.Instance?.Modifiers ?? KeyModifiers.None;
+
+            if (App.Settings.UniqueIdCacheEnabled && modifiers.HasFlag(KeyModifiers.Control))
             {
                 App.UniqueIdCache.Reset();
                 Console.Beep(523, 150); // Feedback without popup
@@ -329,7 +333,7 @@ namespace XIVLauncher.Windows
                 App.Settings.AutologinEnabled = false;
             }
 
-            if (App.Settings.AutologinEnabled && savedAccount != null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            if (App.Settings.AutologinEnabled && savedAccount != null && !modifiers.HasFlag(KeyModifiers.Shift))
             {
                 Log.Information("Engaging Autologin...");
                 if (savedAccount.AccountType == XivAccountType.WeGameSid)
@@ -356,7 +360,7 @@ namespace XIVLauncher.Windows
                 }
                 return;
             }
-            else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || bool.Parse(Environment.GetEnvironmentVariable("XL_NOAUTOLOGIN") ?? "false"))
+            else if (modifiers.HasFlag(KeyModifiers.Shift) || bool.Parse(Environment.GetEnvironmentVariable("XL_NOAUTOLOGIN") ?? "false"))
             {
                 App.Settings.AutologinEnabled = false;
                 //AutoLoginCheckBox.IsChecked = false;
@@ -365,7 +369,7 @@ namespace XIVLauncher.Windows
             if (App.Settings.GamePath?.Exists != true)
             {
                 var setup = new FirstTimeSetup();
-                setup.ShowDialog();
+                setup.ShowDialog(this).GetAwaiter().GetResult();
 
                 // If the user didn't reach the end of the setup, we should quit
                 if (!setup.WasCompleted)
@@ -378,8 +382,8 @@ namespace XIVLauncher.Windows
             }
             Task.Run(async () =>
             {
-                SetupServers().Wait();
-                Dispatcher.Invoke(() =>
+                await SetupServers();
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     if (savedAccount != null)
                         SwitchAccount(savedAccount, false); ;
@@ -398,17 +402,17 @@ namespace XIVLauncher.Windows
             _everShown = true;
         }
 
-        private void BannerCard_MouseUp(object sender, MouseButtonEventArgs e)
+        private void BannerCard_MouseUp(object? sender, PointerReleasedEventArgs e)
         {
-            if (e.ChangedButton != MouseButton.Left)
+            if (e.InitialPressMouseButton != MouseButton.Left)
                 return;
 
             if (_headlines != null) Process.Start(new ProcessStartInfo(_banners[_currentBannerIndex].Link.ToString()) { UseShellExecute = true });
         }
 
-        private void NewsListView_OnMouseUp(object sender, MouseButtonEventArgs e)
+        private void NewsListView_OnMouseUp(object? sender, PointerReleasedEventArgs e)
         {
-            if (e.ChangedButton != MouseButton.Left)
+            if (e.InitialPressMouseButton != MouseButton.Left)
                 return;
 
             if (_headlines == null)
@@ -460,13 +464,13 @@ namespace XIVLauncher.Windows
             //}
         }
 
-        private void WorldStatusButton_Click(object sender, RoutedEventArgs e)
+        private void WorldStatusButton_Click(object? sender, RoutedEventArgs e)
         {
             if (App.Settings.Language == ClientLanguage.ChineseSimplified) Process.Start(new ProcessStartInfo("https://ff.web.sdo.com/web8/index.html#/servers") { UseShellExecute = true });
             else Process.Start(new ProcessStartInfo("https://is.xivup.com/") { UseShellExecute = true });
         }
 
-        private void QueueButton_OnClick(object sender, RoutedEventArgs e)
+        private void QueueButton_OnClick(object? sender, RoutedEventArgs e)
         {
             if (_maintenanceQueueTimer == null)
                 SetupMaintenanceQueueTimer();
@@ -521,11 +525,11 @@ namespace XIVLauncher.Windows
                         "A patch for the official launcher was detected.\nThis usually means that there is a patch for the game as well.\n\nYou will now be logged in."), "XIVLauncherCN", parentWindow: this);
                 }
 
-                Dispatcher.Invoke(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     QuitMaintenanceQueueButton_OnClick(null, null);
 
-                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Password, Model.IsFastLogin, Model.IsReadWegameInfo, MainWindowViewModel.AfterLoginAction.Start);
+                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Text, Model.IsFastLogin, Model.IsReadWegameInfo, MainWindowViewModel.AfterLoginAction.Start);
                 });
 
                 Console.Beep(523, 150);
@@ -548,16 +552,16 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void QuitMaintenanceQueueButton_OnClick(object sender, RoutedEventArgs e)
+        private void QuitMaintenanceQueueButton_OnClick(object? sender, RoutedEventArgs e)
         {
             //_maintenanceQueueTimer.Stop();
             //Model.EnableInjector = false;
             Model.IsLoadingDialogOpen = false;
         }
 
-        private void Card_KeyDown(object sender, KeyEventArgs e)
+        private void Card_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Enter && e.Key != Key.Return)
+            if (e.Key != Key.Enter)
                 return;
 
             if (Model.IsLoggingIn)
@@ -566,21 +570,14 @@ namespace XIVLauncher.Windows
             Model.StartLoginCommand.Execute(null);
         }
 
-        private void AccountSwitcherButton_OnClick(object sender, RoutedEventArgs e)
+        private void AccountSwitcherButton_OnClick(object? sender, RoutedEventArgs e)
         {
             var switcher = new AccountSwitcher(_accountManager);
 
-            var locationFromScreen = AccountSwitcherButton.PointToScreen(new Point(0, 0));
-            var source = PresentationSource.FromVisual(this);
+            var screenPoint = AccountSwitcherButton.PointToScreen(new Point(0, 0));
 
-            if (source != null)
-            {
-                var targetPoints = source.CompositionTarget!.TransformFromDevice.Transform(locationFromScreen);
-
-                switcher.WindowStartupLocation = WindowStartupLocation.Manual;
-                switcher.Left = targetPoints.X - 15;
-                switcher.Top = targetPoints.Y - 15;
-            }
+            switcher.WindowStartupLocation = WindowStartupLocation.Manual;
+            switcher.Position = new PixelPoint(screenPoint.X - 15, screenPoint.Y - 15);
 
             switcher.OnAccountSwitchedEventHandler += OnAccountSwitchedEventHandler;
 
@@ -604,7 +601,7 @@ namespace XIVLauncher.Windows
             //Model.IsSteam = account.UseSteamServiceAccount;
             Model.IsFastLogin = account.AutoLogin;
             Model.Area = Model.SdoAreas.Where(x => x.AreaName == account.AreaName).FirstOrDefault();
-            LoginPassword.Password = string.Empty;
+            LoginPassword.Text = string.Empty;
 
             switch (account.AccountType)
             {
@@ -614,7 +611,7 @@ namespace XIVLauncher.Windows
                         LoginTypeSelection.SelectedValue = LoginType.SdoStatic;
 
                         // Make users happy by not showing their password
-                        LoginPassword.Password = MainWindowViewModel.PresudoPassword;
+                        LoginPassword.Text = MainWindowViewModel.PresudoPassword;
                     }
                     else
                     {
@@ -623,7 +620,7 @@ namespace XIVLauncher.Windows
                     break;
                 case XivAccountType.WeGame:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
-                    LoginPassword.Password = MainWindowViewModel.PresudoPassword;
+                    LoginPassword.Text = MainWindowViewModel.PresudoPassword;
                     break;
                 case XivAccountType.WeGameSid:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameSid;
@@ -631,12 +628,12 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void SettingsControl_OnSettingsDismissed(object sender, EventArgs e)
+        private void SettingsControl_OnSettingsDismissed(object? sender, EventArgs e)
         {
             Task.Run(SetupHeadlines);
         }
 
-        private void FakeStart_OnClick(object sender, RoutedEventArgs e)
+        private void FakeStart_OnClick(object? sender, RoutedEventArgs e)
         {
             _ = Model.StartGameAndAddon(new Launcher.LoginResult
             {
@@ -654,32 +651,32 @@ namespace XIVLauncher.Windows
             }, false, false, false, false).ConfigureAwait(false);
         }
 
-        private void LoginPassword_OnPasswordChanged(object sender, RoutedEventArgs e)
+        private void LoginPassword_OnPasswordChanged(object? sender, TextChangedEventArgs e)
         {
             if (this.DataContext != null)
-                ((MainWindowViewModel)this.DataContext).Password = ((PasswordBox)sender).Password;
+                ((MainWindowViewModel)this.DataContext).Password = ((TextBox)sender!).Text;
         }
 
-        private void RadioButton_MouseEnter(object sender, MouseEventArgs e)
+        private void RadioButton_MouseEnter(object? sender, PointerEventArgs e)
         {
-            ((RadioButton)sender).IsChecked = true;
+            ((RadioButton)sender!).IsChecked = true;
             _currentBannerIndex = _bannerDotList.FirstOrDefault(x => x.Active)?.Index ?? _currentBannerIndex;
-            Dispatcher.BeginInvoke(new Action(() => BannerImage.Source = _bannerBitmaps[_currentBannerIndex]));
+            _ = Dispatcher.UIThread.InvokeAsync(() => BannerImage.Source = _bannerBitmaps[_currentBannerIndex]);
 
-            _bannerChangeTimer.Stop();
+            _bannerChangeTimer?.Stop();
         }
 
-        private void RadioButton_MouseLeave(object sender, MouseEventArgs e)
+        private void RadioButton_MouseLeave(object? sender, PointerEventArgs e)
         {
-            _bannerChangeTimer.Start();
+            _bannerChangeTimer?.Start();
         }
 
-        private void SettingsControl_OnCloseMainWindowGracefully(object sender, EventArgs e)
+        private void SettingsControl_OnCloseMainWindowGracefully(object? sender, EventArgs e)
         {
             Close();
         }
 
-        private void MainWindow_OnClosing(object sender, CancelEventArgs e)
+        private void MainWindow_OnClosing(object? sender, WindowClosingEventArgs e)
         {
             if (!_everShown)
                 return;
@@ -694,8 +691,10 @@ namespace XIVLauncher.Windows
             }
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
+        protected override void OnOpened(EventArgs e)
         {
+            base.OnOpened(e);
+
             try
             {
                 PreserveWindowPosition.RestorePosition(this);
@@ -711,29 +710,29 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void ServerSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ServerSelection_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (this.DataContext != null)
-                ((MainWindowViewModel)this.DataContext).Area = (SdoArea)((ComboBox)sender).SelectedItem;
-            App.Settings.SelectedServer = ((ComboBox)sender).SelectedIndex;
+                ((MainWindowViewModel)this.DataContext).Area = (SdoArea)((ComboBox)sender!).SelectedItem;
+            App.Settings.SelectedServer = ((ComboBox)sender!).SelectedIndex;
         }
 
-        private void LoginTypeSelection_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LoginTypeSelection_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            var selectedItem = (GuiLoginType)((ComboBox)sender).SelectedItem;
+            var selectedItem = (GuiLoginType)((ComboBox)sender!).SelectedItem;
             if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).GuiLoginType = selectedItem;
             App.Settings.SelectedLoginType = selectedItem.LoginType;
             // Default
-            LoginUsername.Visibility = Visibility.Visible;
-            LoginPassword.Visibility = Visibility.Collapsed;
+            LoginUsername.IsVisible = true;
+            LoginPassword.IsVisible = false;
 
-            FastLoginCheckBox.Visibility = Visibility.Visible;
-            ReadWeGameInfoCheckBox.Visibility = Visibility.Collapsed;
+            FastLoginCheckBox.IsVisible = true;
+            ReadWeGameInfoCheckBox.IsVisible = false;
             FastLoginCheckBox.Content = "快速登录";
-            LoginPassword.Password = string.Empty;
-            HintAssist.SetHint(this.LoginUsername, "盛趣账号");
-            HintAssist.SetHint(this.LoginPassword, "密码");
+            LoginPassword.Text = string.Empty;
+            TextFieldAssist.SetHint(this.LoginUsername, "盛趣账号");
+            TextFieldAssist.SetHint(this.LoginPassword, "密码");
 
             switch (selectedItem.LoginType)
             {
@@ -741,42 +740,42 @@ namespace XIVLauncher.Windows
                 case LoginType.SdoSlide:
                     break;
                 case LoginType.SdoQrCode:
-                    LoginUsername.Visibility = Visibility.Hidden;
+                    LoginUsername.IsVisible = false;
                     break;
                 case LoginType.SdoStatic:
-                    LoginUsername.Visibility = Visibility.Visible;
-                    LoginPassword.Visibility = Visibility.Visible;
+                    LoginUsername.IsVisible = true;
+                    LoginPassword.IsVisible = true;
                     FastLoginCheckBox.Content = "保存密码";
-                    //FastLoginCheckBox.Visibility = Visibility.Collapsed;
+                    //FastLoginCheckBox.IsVisible = false;
                     break;
                 case LoginType.WeGameToken:
-                    LoginPassword.Visibility = Visibility.Visible;
-                    HintAssist.SetHint(this.LoginUsername, "SndaId");
-                    HintAssist.SetHint(this.LoginPassword, "抓包Token");
+                    LoginPassword.IsVisible = true;
+                    TextFieldAssist.SetHint(this.LoginUsername, "SndaId");
+                    TextFieldAssist.SetHint(this.LoginPassword, "抓包Token");
                     break;
                 case LoginType.WeGameSid:
-                    FastLoginCheckBox.Visibility = Visibility.Collapsed;
-                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
-                    HintAssist.SetHint(this.LoginUsername, "从Wegame自动获取的账号");
+                    FastLoginCheckBox.IsVisible = false;
+                    ReadWeGameInfoCheckBox.IsVisible = true;
+                    TextFieldAssist.SetHint(this.LoginUsername, "从Wegame自动获取的账号");
                     break;
             }
         }
 
-        private void LoginUsername_OnTextChanged(object sender, TextChangedEventArgs e)
+        private void LoginUsername_OnTextChanged(object? sender, TextChangedEventArgs e)
         {
             if (this.DataContext != null)
-                ((MainWindowViewModel)this.DataContext).Username = ((TextBox)sender).Text;
+                ((MainWindowViewModel)this.DataContext).Username = ((TextBox)sender!).Text;
         }
 
-        private void FastLoginCheckBox_OnClick(object sender, RoutedEventArgs e)
+        private void FastLoginCheckBox_OnClick(object? sender, RoutedEventArgs e)
         {
             //if (Model.IsFastLogin)
             //{
-            //    LoginPassword.Password = String.Empty;
+            //    LoginPassword.Text = String.Empty;
             //}
             //else
             //{
-            //    LoginPassword.Password = _accountManager.CurrentAccount?.Password;
+            //    LoginPassword.Text = _accountManager.CurrentAccount?.Password;
             //}
         }
 
@@ -790,22 +789,15 @@ namespace XIVLauncher.Windows
 
         //}
 
-        private void BackToLoginPageButton_OnClick(object sender, RoutedEventArgs e)
+        private void BackToLoginPageButton_OnClick(object? sender, RoutedEventArgs e)
         {
-            Dispatcher.Invoke(() =>
-            {
-                Model.SwitchCard(MainWindowViewModel.LoginCard.MainPage);
-            });
-
+            Model.SwitchCard(MainWindowViewModel.LoginCard.MainPage);
         }
 
-        private void InjectButton_Click(object sender, RoutedEventArgs e)
+        private void InjectButton_Click(object? sender, RoutedEventArgs e)
         {
-            Dispatcher.Invoke(() =>
-            {
-                if (Model.SelectedProcess != null)
-                    AppUtil.BringProcessMainWindowToFront(Model.SelectedProcess.ProcessId);
-            });
+            if (Model.SelectedProcess != null)
+                AppUtil.BringProcessMainWindowToFront(Model.SelectedProcess.ProcessId);
         }
     }
 }

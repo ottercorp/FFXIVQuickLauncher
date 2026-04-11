@@ -1,24 +1,23 @@
 ﻿<Window x:Class="XIVLauncher.Windows.FirstTimeSetup"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:XIVLauncher"
-        xmlns:components="clr-namespace:XIVLauncher.Xaml.Components"
-        mc:Ignorable="d"
-        Title="XIVLauncher Setup" SizeToContent="Height" Width="450" WindowStartupLocation="CenterScreen"
-        Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        xmlns:components="using:XIVLauncher.Xaml.Components"
+        Title="XIVLauncher Setup"
+        SizeToContent="Height"
+        Width="450"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.FontWeight="Medium" >
+        FontWeight="Medium">
     <Grid>
         <TabControl IsEnabled="True" BorderThickness="0" x:Name="SetupTabControl"
                     Background="{DynamicResource MaterialDesignPaper}">
-            <TabControl.ItemContainerStyle>
-                <Style TargetType="{x:Type TabItem}">
-                    <Setter Property="Visibility" Value="Collapsed" />
+            <TabControl.Styles>
+                <Style Selector="TabControl TabStrip">
+                    <Setter Property="IsVisible" Value="False"/>
                 </Style>
-            </TabControl.ItemContainerStyle>
+            </TabControl.Styles>
 
             <TabItem Header="Path">
                 <StackPanel Margin="10, 0, 0, 0">
