@@ -3,13 +3,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using Avalonia.Threading;
 using CheapLoc;
 using CommandLine;
 using Config.Net;
@@ -33,9 +34,6 @@ using XIVLauncher.Xaml;
 
 namespace XIVLauncher
 {
-    /// <summary>
-    ///     Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
         public class CmdLineOptions
@@ -64,7 +62,6 @@ namespace XIVLauncher
             [CommandLine.Option("clientlang", Required = false, HelpText = "Client language to use.")]
             public ClientLanguage? ClientLanguage { get; set; }
 
-            // We don't care about these, just need it so that the parser doesn't error
             [CommandLine.Option("squirrel-updated", Hidden = true)]
             public string SquirrelUpdated { get; set; }
 
@@ -104,25 +101,30 @@ namespace XIVLauncher
         public static byte[] GlobalSteamTicket { get; private set; }
         public static DalamudUpdater DalamudUpdater { get; private set; }
 
-        public static Brush UaBrush = new LinearGradientBrush(new GradientStopCollection()
+        public static IBrush UaBrush = new LinearGradientBrush
         {
-            new(Color.FromArgb(0xFF, 0x00, 0x57, 0xB7), 0.5f),
-            new(Color.FromArgb(0xFF, 0xFF, 0xd7, 0x00), 0.5f),
-        }, 0.7f);
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb(0xFF, 0x00, 0x57, 0xB7), 0.5),
+                new GradientStop(Color.FromArgb(0xFF, 0xFF, 0xd7, 0x00), 0.5),
+            },
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0.7, 0.7, RelativeUnit.Relative),
+        };
 
-        public App()
+        public override void Initialize()
         {
-#if !DEBUG
-            try
+            AvaloniaXamlLoader.Load(this);
+        }
+
+        public override void OnFrameworkInitializationCompleted()
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                AppDomain.CurrentDomain.UnhandledException += EarlyInitExceptionHandler;
-                TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
+                OnStartup(desktop);
             }
-            catch
-            {
-                // ignored
-            }
-#endif
+
+            base.OnFrameworkInitializationCompleted();
         }
 
         private static void OnSerilogLogLine(object sender, (string Line, LogEventLevel Level, DateTimeOffset TimeStamp, Exception Exception) e)
@@ -182,7 +184,7 @@ namespace XIVLauncher
 
         private void OnUpdateCheckFinished(bool finishUp)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 _useFullExceptionHandler = true;
 
@@ -213,13 +215,8 @@ namespace XIVLauncher
 
                     Settings.DalamudRolloutBucket = DalamudUpdater.RolloutBucket;
 
-                    var dalamudWindowThread = new Thread(DalamudOverlayThreadStart);
-                    dalamudWindowThread.SetApartmentState(ApartmentState.STA);
-                    dalamudWindowThread.IsBackground = true;
-                    dalamudWindowThread.Start();
-
-                    while (DalamudUpdater.Overlay == null)
-                        Thread.Yield();
+                    DalamudUpdater.Overlay = new DalamudLoadingOverlay();
+                    ((Window)DalamudUpdater.Overlay).Hide();
 
                     DalamudUpdater.Run(Updates.HaveFeatureFlag(Updates.LeaseFeatureFlags.ForceProxyDalamudAndAssets));
                 }
@@ -234,17 +231,6 @@ namespace XIVLauncher
             });
         }
 
-        // We need this because the main dispatcher is blocked by the main window/login task.
-        private static void DalamudOverlayThreadStart()
-        {
-            var overlay = new DalamudLoadingOverlay();
-            overlay.Hide();
-
-            DalamudUpdater.Overlay = overlay;
-
-            System.Windows.Threading.Dispatcher.Run();
-        }
-
         private static void GenerateIntegrity(string path)
         {
             var result = IntegrityCheck.RunIntegrityCheckAsync(new DirectoryInfo(path), null).GetAwaiter().GetResult();
@@ -252,7 +238,7 @@ namespace XIVLauncher
 
             File.WriteAllText(saveIntegrityPath, JsonConvert.SerializeObject(result));
 
-            MessageBox.Show($"Successfully hashed {result.Hashes.Count} files to {path}.", "Hello Franz", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            ShowSimpleMessage($"Successfully hashed {result.Hashes.Count} files to {path}.", "Hello Franz");
             Environment.Exit(0);
         }
 
@@ -264,10 +250,29 @@ namespace XIVLauncher
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                ShowSimpleMessage(ex.ToString());
             }
 
             Environment.Exit(0);
+        }
+
+        private static void ShowSimpleMessage(string message, string title = "XIVLauncherCN")
+        {
+            var msgWindow = new Window
+            {
+                Title = title,
+                Width = 400,
+                Height = 200,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Content = new TextBlock
+                {
+                    Text = message,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(16),
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                }
+            };
+            msgWindow.ShowDialog(null);
         }
 
         private bool _useFullExceptionHandler = false;
@@ -280,7 +285,7 @@ namespace XIVLauncher
 
         private void EarlyInitExceptionHandler(object sender, UnhandledExceptionEventArgs e)
         {
-            this.Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 Log.Error((Exception)e.ExceptionObject, "Unhandled exception");
 
@@ -293,9 +298,9 @@ namespace XIVLauncher
                 }
                 else
                 {
-                    MessageBox.Show(
+                    ShowSimpleMessage(
                         "Error during early initialization. Please report this error.\n\n" + e.ExceptionObject,
-                        "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        "XIVLauncher Error");
                 }
 
                 Environment.Exit(-1);
@@ -304,18 +309,19 @@ namespace XIVLauncher
 
         private static string GetConfigPath(string prefix) => Path.Combine(Paths.RoamingPath, $"{prefix}ConfigV3.json");
 
-        private void App_OnStartup(object sender, StartupEventArgs e)
+        private void OnStartup(IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // HW rendering commonly causes issues with material design, so we turn it off by default for now
+#if !DEBUG
             try
             {
-                if (!EnvironmentSettings.IsHardwareRendered)
-                    RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+                AppDomain.CurrentDomain.UnhandledException += EarlyInitExceptionHandler;
+                TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
             }
             catch
             {
                 // ignored
             }
+#endif
 
             try
             {
@@ -330,7 +336,7 @@ namespace XIVLauncher
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Could not set up logging. Please report this error.\n\n" + ex.Message, "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowSimpleMessage("Could not set up logging. Please report this error.\n\n" + ex.Message, "XIVLauncherCN");
             }
 
             try
@@ -345,7 +351,7 @@ namespace XIVLauncher
 
                 if (result.Errors.Any())
                 {
-                    MessageBox.Show(helpWriter.ToString(), "Help");
+                    ShowSimpleMessage(helpWriter.ToString(), "Help");
                 }
 
                 CommandLine = result.Value ?? new CmdLineOptions();
@@ -381,7 +387,7 @@ namespace XIVLauncher
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Could not parse command line arguments. Please report this error.\n\n" + ex.Message, "XIVLauncherCN", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowSimpleMessage("Could not parse command line arguments. Please report this error.\n\n" + ex.Message, "XIVLauncherCN");
             }
 
             try
@@ -421,7 +427,6 @@ namespace XIVLauncher
                 Loc.Setup("{}");
             }
 #else
-            // Force all fallbacks
             Loc.Setup("{}");
 #endif
 
@@ -470,16 +475,16 @@ namespace XIVLauncher
 
                     if (ex is HttpRequestException httpRequestException && httpRequestException.StatusCode.HasValue && (int)httpRequestException.StatusCode is 403 or 444 or 522)
                     {
-                        MessageBox.Show(
+                        ShowSimpleMessage(
                             "错误: " + $"服务器返回了错误代码 {httpRequestException.StatusCode}.\n你的IP可能被WAF封禁, 请前往频道进行上报." + Environment.NewLine +
                             "XIVLauncher could not check for updates. Please check your internet connection or try again.\n\n" + ex,
-                            "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            "XIVLauncher Error");
                     }
                     else
                     {
-                        MessageBox.Show("错误: " + ex.Message + Environment.NewLine +
+                        ShowSimpleMessage("错误: " + ex.Message + Environment.NewLine +
                                         "XIVLauncher could not check for updates. Please check your internet connection or try again.\n\n" + ex,
-                                        "XIVLauncher Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        "XIVLauncher Error");
                     }
 
                     Environment.Exit(0);
@@ -487,27 +492,6 @@ namespace XIVLauncher
                 }
             }
 #endif
-
-            try
-            {
-                if (App.Settings.LauncherLanguage == LauncherLanguage.Russian)
-                {
-                    var dict = new ResourceDictionary
-                    {
-                        { "PrimaryHueLightBrush", UaBrush },
-                        //{"PrimaryHueLightForegroundBrush", uaBrush},
-                        { "PrimaryHueMidBrush", UaBrush },
-                        //{"PrimaryHueMidForegroundBrush", uaBrush},
-                        { "PrimaryHueDarkBrush", UaBrush },
-                        //{"PrimaryHueDarkForegroundBrush", uaBrush},
-                    };
-                    this.Resources.MergedDictionaries.Add(dict);
-                }
-            }
-            catch
-            {
-                // ignored
-            }
 
             if (EnvironmentSettings.IsDisableUpdates)
             {
