@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Avalonia.Controls;
+using Avalonia.Interactivity;
 using XIVLauncher.Common.Addon.Implementations;
 using XIVLauncher.Windows.ViewModel;
 
@@ -27,7 +28,7 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void NextButton_Click(object sender, RoutedEventArgs e)
+        private void NextButton_Click(object? sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(PathEntry.Text))
                 Close();
@@ -44,13 +45,13 @@ namespace XIVLauncher.Windows
             Close();
         }
 
-        private void AdminCheckBox_OnChecked(object sender, RoutedEventArgs e)
+        private void AdminCheckBox_OnChecked(object? sender, RoutedEventArgs e)
         {
             KillCheckBox.IsEnabled = false;
             KillCheckBox.IsChecked = false;
         }
 
-        private void AdminCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        private void AdminCheckBox_OnUnchecked(object? sender, RoutedEventArgs e)
         {
             KillCheckBox.IsEnabled = true;
         }

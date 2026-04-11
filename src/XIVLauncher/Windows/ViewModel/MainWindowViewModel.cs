@@ -18,12 +18,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Threading;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
+using Material.Icons;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Addon;
@@ -46,7 +45,7 @@ namespace XIVLauncher.Windows.ViewModel
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        private readonly Window _window;
+        private readonly Avalonia.Controls.Window _window;
 
         private readonly Task<GateStatus> loginStatusTask;
         private bool refetchLoginStatus = false;
@@ -76,7 +75,7 @@ namespace XIVLauncher.Windows.ViewModel
             ForceQR
         };
 
-        public MainWindowViewModel(Window window)
+        public MainWindowViewModel(Avalonia.Controls.Window window)
         {
             _window = window;
 
@@ -108,7 +107,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             // Grey out world status icon while deferred check is running
             WorldStatusIconColor = new SolidColorBrush(Color.FromRgb(38, 38, 38));
-            ModeSwitchIcon = MaterialDesignThemes.Wpf.PackIconKind.Injection;
+            ModeSwitchIcon = MaterialIconKind.Injection;
             this.FfxivProcessCollection = new ObservableCollection<FfxivProcess>();
             //this.loginStatusTask = Launcher.GetLoginStatus();
             //this.loginStatusTask.ContinueWith((resultTask) =>
@@ -237,18 +236,18 @@ namespace XIVLauncher.Windows.ViewModel
         }
         public void SwitchCard(LoginCard i)
         {
-            _window.Dispatcher.Invoke(
+            Dispatcher.UIThread.InvokeAsync(
                 () =>
                 {
                     this.CancelLogin();
                     this.LoginCardTransitionerIndex = (int)i;
-                    ModeSwitchIcon = (i == LoginCard.InjectMode) ? MaterialDesignThemes.Wpf.PackIconKind.Login : MaterialDesignThemes.Wpf.PackIconKind.Injection;
+                    ModeSwitchIcon = (i == LoginCard.InjectMode) ? MaterialIconKind.Login : MaterialIconKind.Injection;
                     if ((LoginCardTransitionerIndex == (int)LoginCard.InjectMode))
                     {
                         RefreshFfxivProcess();
                     }
                 }
-                );
+                ).GetAwaiter().GetResult();
         }
 
         public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
@@ -256,13 +255,13 @@ namespace XIVLauncher.Windows.ViewModel
             if (this.IsLoggingIn)
                 return;
             //if (username == null) username = string.Empty;
-            if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
+            if (!Dispatcher.UIThread.CheckAccess())
             {
-                _window.Dispatcher.Invoke(() => TryLogin(loginType, username, password, doingAutoLogin, readWeGameInfo, action));
+                Dispatcher.UIThread.InvokeAsync(() => TryLogin(loginType, username, password, doingAutoLogin, readWeGameInfo, action)).GetAwaiter().GetResult();
                 return;
             }
 
-            LoadingDialogCancelButtonVisibility = Visibility.Collapsed;
+            IsLoadingDialogCancelButtonVisible = false;
 
             IsEnabled = false;
             //LoginCardTransitionerIndex = 0;
@@ -691,21 +690,11 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        private static BitmapImage ConvertByteArrayToBitmapImage(byte[] imageData)
+        private static Bitmap ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             if (imageData == null || imageData.Length == 0) return null;
 
-            var bitmapImage = new BitmapImage();
-            using (var stream = new MemoryStream(imageData))
-            {
-                stream.Seek(0, SeekOrigin.Begin); // 确保流的位置在起始处
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad; // 加载后立即释放流
-                bitmapImage.StreamSource = stream;
-                bitmapImage.EndInit();
-                bitmapImage.Freeze(); // 可选：跨线程使用时冻结对象
-            }
-            return bitmapImage;
+            return new Bitmap(new MemoryStream(imageData));
         }
 
         private async Task<Launcher.LoginResult> TryLoginToGame(
@@ -1314,24 +1303,25 @@ namespace XIVLauncher.Windows.ViewModel
                 Hide();
                 IsEnabled = false;
 
-                var progressDialog = _window.Dispatcher.Invoke(() =>
+                GameRepairProgressWindow? progressDialog = null;
+                Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     var d = new GameRepairProgressWindow(verify);
                     if (_window.IsVisible)
                         d.Owner = _window;
                     d.Show();
                     d.Activate();
-                    return d;
-                });
+                    progressDialog = d;
+                }).GetAwaiter().GetResult();
 
                 for (bool doVerify = true; doVerify;)
                 {
-                    progressDialog.Dispatcher.Invoke(progressDialog.Show);
+                    Dispatcher.UIThread.InvokeAsync(() => progressDialog!.Show()).GetAwaiter().GetResult();
 
                     verify.Start();
                     await verify.WaitForCompletion().ConfigureAwait(false);
 
-                    progressDialog.Dispatcher.Invoke(progressDialog.Hide);
+                    Dispatcher.UIThread.InvokeAsync(() => progressDialog!.Hide()).GetAwaiter().GetResult();
 
                     switch (verify.State)
                     {
@@ -1420,7 +1410,7 @@ namespace XIVLauncher.Windows.ViewModel
                     }
                 }
 
-                progressDialog.Dispatcher.Invoke(progressDialog.Close);
+                Dispatcher.UIThread.InvokeAsync(() => progressDialog!.Close()).GetAwaiter().GetResult();
                 mutex.Close();
                 mutex = null;
             }
@@ -1515,7 +1505,7 @@ namespace XIVLauncher.Windows.ViewModel
                     }
                     var currentSelectedProcessId = SelectedProcess?.ProcessId;
                     var newProcesses = AppUtil.GetGameProcess();
-                    App.Current.Dispatcher.Invoke(() =>
+                    Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         for (int i = FfxivProcessCollection.Count - 1; i >= 0; i--)
                         {
@@ -1539,7 +1529,7 @@ namespace XIVLauncher.Windows.ViewModel
                         {
                             SelectedProcess = FfxivProcessCollection.FirstOrDefault(p => p.ProcessId == currentSelectedProcessId.Value);
                         }
-                    });
+                    }).GetAwaiter().GetResult();
 
                     Log.Verbose($"Refreshing Processes...");
                     Thread.Sleep(1000);
@@ -1558,9 +1548,9 @@ namespace XIVLauncher.Windows.ViewModel
                 return;
             }
             //if (username == null) username = string.Empty;
-            if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
+            if (!Dispatcher.UIThread.CheckAccess())
             {
-                _window.Dispatcher.Invoke(() => TryInjectGame());
+                Dispatcher.UIThread.InvokeAsync(() => TryInjectGame()).GetAwaiter().GetResult();
                 return;
             }
             IsLoadingDialogOpen = true;
@@ -1892,7 +1882,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         public void OnWindowClosed(object sender, object args)
         {
-            Application.Current.Shutdown();
+            ((Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)Avalonia.Application.Current.ApplicationLifetime).Shutdown();
         }
 
         public void OnWindowClosing(object sender, CancelEventArgs args)
@@ -2048,15 +2038,16 @@ namespace XIVLauncher.Windows.ViewModel
 
             Hide();
 
-            PatchDownloadDialog progressDialog = _window.Dispatcher.Invoke(() =>
+            PatchDownloadDialog? progressDialog = null;
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 var d = new PatchDownloadDialog(patcher);
                 if (_window.IsVisible)
                     d.Owner = _window;
                 d.Show();
                 d.Activate();
-                return d;
-            });
+                progressDialog = d;
+            }).GetAwaiter().GetResult();
 
             try
             {
@@ -2103,11 +2094,14 @@ namespace XIVLauncher.Windows.ViewModel
             }
             finally
             {
-                progressDialog.Dispatcher.Invoke(() =>
+                if (progressDialog != null)
                 {
-                    progressDialog.Hide();
-                    progressDialog.Close();
-                });
+                    Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        progressDialog.Hide();
+                        progressDialog.Close();
+                    }).GetAwaiter().GetResult();
+                }
             }
 
             return false;
@@ -2260,14 +2254,14 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        private Visibility _loadingDialogCancelButtonVisibility;
-        public Visibility LoadingDialogCancelButtonVisibility
+        private bool _isLoadingDialogCancelButtonVisible;
+        public bool IsLoadingDialogCancelButtonVisible
         {
-            get => _loadingDialogCancelButtonVisibility;
+            get => _isLoadingDialogCancelButtonVisible;
             set
             {
-                _loadingDialogCancelButtonVisibility = value;
-                OnPropertyChanged(nameof(LoadingDialogCancelButtonVisibility));
+                _isLoadingDialogCancelButtonVisible = value;
+                OnPropertyChanged(nameof(IsLoadingDialogCancelButtonVisible));
             }
         }
 
@@ -2304,8 +2298,8 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        private BitmapImage _qrCodeBitmapImage;
-        public BitmapImage QrCodeBitmapImage
+        private Bitmap _qrCodeBitmapImage;
+        public Bitmap QrCodeBitmapImage
         {
             get => _qrCodeBitmapImage;
             set
@@ -2315,8 +2309,8 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        private MaterialDesignThemes.Wpf.PackIconKind _modeSwitchIcon;
-        public MaterialDesignThemes.Wpf.PackIconKind ModeSwitchIcon
+        private MaterialIconKind _modeSwitchIcon;
+        public MaterialIconKind ModeSwitchIcon
         {
             get => _modeSwitchIcon;
             set

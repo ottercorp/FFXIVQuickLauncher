@@ -1,5 +1,5 @@
-﻿using System.Windows;
-using System.Windows.Input;
+﻿using Avalonia.Controls;
+using Avalonia.Input;
 using XIVLauncher.Common.Game;
 using XIVLauncher.Windows.ViewModel;
 
@@ -15,14 +15,12 @@ namespace XIVLauncher.Windows
             InitializeComponent();
 
             this.DataContext = new IntegrityCheckProgressWindowViewModel();
-
-            MouseMove += IntegrityCheckProgressWindow_OnMouseMove;
         }
 
-        private void IntegrityCheckProgressWindow_OnMouseMove(object sender, MouseEventArgs e)
+        private void Window_PointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                BeginMoveDrag(e);
         }
 
         public void UpdateProgress(IntegrityCheck.IntegrityCheckProgress progress)

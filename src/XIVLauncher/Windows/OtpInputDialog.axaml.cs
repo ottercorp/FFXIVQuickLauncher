@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Threading;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Threading;
 using Serilog;
 using XIVLauncher.Common.Http;
 using XIVLauncher.Windows.ViewModel;
@@ -15,18 +14,19 @@ using XIVLauncher.Windows.ViewModel;
 namespace XIVLauncher.Windows
 {
     /// <summary>
-    /// Interaction logic for OtpInputDialog.xaml
+    /// Interaction logic for OtpInputDialog.axaml
     /// </summary>
     public partial class OtpInputDialog : Window
     {
         public event Action<string> OnResult;
 
-        private readonly Brush _otpInputPromptDefaultBrush;
+        private readonly IBrush _otpInputPromptDefaultBrush;
 
         private OtpInputDialogViewModel ViewModel => DataContext as OtpInputDialogViewModel;
 
         private OtpListener _otpListener;
         private bool _ignoreCurrentOtp;
+        private bool? _dialogResult;
 
         public OtpInputDialog()
         {
@@ -36,13 +36,24 @@ namespace XIVLauncher.Windows
 
             this.DataContext = new OtpInputDialogViewModel();
 
-            MouseMove += OtpInputDialog_OnMouseMove;
+            PointerPressed += OtpInputDialog_OnPointerPressed;
             Activated += (_, _) => OtpTextBox.Focus();
             GotFocus += (_, _) => OtpTextBox.Focus();
         }
 
-        public new bool? ShowDialog()
+        private void OtpInputDialog_OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                return;
+            if (e.Source is Button || e.Source is TextBox)
+                return;
+            BeginMoveDrag(e);
+        }
+
+        /// <summary>Shows the OTP dialog modally. Pass the owner window when available (Avalonia requires an owner for modal dialogs).</summary>
+        public bool? ShowOtpDialog(Window owner)
+        {
+            _dialogResult = null;
             OtpTextBox.Focus();
 
             if (App.Settings.OtpServerEnabled)
@@ -52,7 +63,6 @@ namespace XIVLauncher.Windows
 
                 try
                 {
-                    // Start Listen
                     Task.Run(() => _otpListener.Start());
                     Log.Debug("OTP server started...");
                 }
@@ -62,7 +72,11 @@ namespace XIVLauncher.Windows
                 }
             }
 
-            return base.ShowDialog();
+            if (owner != null && owner.IsVisible)
+                ShowInTaskbar = false;
+
+            ShowDialog(owner).GetAwaiter().GetResult();
+            return _dialogResult;
         }
 
         public void Reset()
@@ -86,13 +100,11 @@ namespace XIVLauncher.Windows
             {
                 Log.Error("Malformed OTP: {Otp}", otp);
 
-                Dispatcher.Invoke(() =>
+                Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     OtpInputPrompt.Text = ViewModel.OtpInputPromptBadLoc;
                     OtpInputPrompt.Foreground = Brushes.Red;
-                    Storyboard myStoryboard = (Storyboard)OtpInputPrompt.Resources["InvalidShake"];
-                    Storyboard.SetTarget(myStoryboard.Children.ElementAt(0), OtpInputPrompt);
-                    myStoryboard.Begin();
+                    ShakeAnimationAsync();
                     OtpTextBox.Focus();
                 });
 
@@ -102,100 +114,110 @@ namespace XIVLauncher.Windows
             _ignoreCurrentOtp = false;
             OnResult?.Invoke(otp);
 
-            Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (_ignoreCurrentOtp)
                 {
-                    Storyboard myStoryboard = (Storyboard)OtpInputPrompt.Resources["InvalidShake"];
-                    Storyboard.SetTarget(myStoryboard.Children.ElementAt(0), OtpInputPrompt);
-                    myStoryboard.Begin();
+                    ShakeAnimationAsync();
                     OtpTextBox.Focus();
                 }
                 else
                 {
                     _otpListener?.Stop();
-                    DialogResult = true;
-                    Hide();
+                    _dialogResult = true;
+                    Close();
                 }
             });
+        }
+
+        private async void ShakeAnimationAsync()
+        {
+            var transform = OtpInputPrompt.RenderTransform as TranslateTransform ?? new TranslateTransform();
+            OtpInputPrompt.RenderTransform = transform;
+            for (var i = 0; i < 4; i++)
+            {
+                transform.X = 5;
+                await Task.Delay(50);
+                transform.X = -5;
+                await Task.Delay(50);
+            }
+
+            transform.X = 0;
         }
 
         private void Cancel()
         {
             OnResult?.Invoke(null);
             _otpListener?.Stop();
-            DialogResult = false;
-            Hide();
+            _dialogResult = false;
+            Close();
         }
 
-        private void OtpInputDialog_OnMouseMove(object sender, MouseEventArgs e)
+        private void OtpTextBox_OnTextInput(object? sender, TextInputEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
-        }
+            if (string.IsNullOrEmpty(e.Text))
+                return;
 
-        private void OtpTextBox_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
             var regex = new Regex("[^0-9]+");
-            e.Handled = regex.IsMatch(e.Text);
+            if (regex.IsMatch(e.Text))
+                e.Handled = true;
         }
 
-        private void OtpTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void OtpTextBox_OnKeyDown(object? sender, KeyEventArgs e)
         {
             if (e.Key == Key.Space)
             {
                 e.Handled = true;
+                return;
             }
-        }
 
-        private void OtpTextBox_OnKeyDown(object sender, KeyEventArgs e)
-        {
             if (e.Key == Key.Escape)
             {
                 Cancel();
             }
             else if (e.Key == Key.Enter)
             {
-                TryAcceptOtp(this.OtpTextBox.Text);
+                TryAcceptOtp(OtpTextBox.Text);
             }
         }
 
-        private void OkButton_OnClick(object sender, RoutedEventArgs e)
+        private void OkButton_OnClick(object? sender, RoutedEventArgs e)
         {
-            TryAcceptOtp(this.OtpTextBox.Text);
+            TryAcceptOtp(OtpTextBox.Text);
         }
 
-        private void CancelButton_OnClick(object sender, RoutedEventArgs e)
+        private void CancelButton_OnClick(object? sender, RoutedEventArgs e)
         {
             Cancel();
         }
 
-        private void PasteButton_OnClick(object sender, RoutedEventArgs e)
+        private async void PasteButton_OnClick(object? sender, RoutedEventArgs e)
         {
-            this.OtpTextBox.Text = Clipboard.GetText();
-            TryAcceptOtp(this.OtpTextBox.Text);
+            var top = TopLevel.GetTopLevel(this);
+            var text = top?.Clipboard != null ? await top.Clipboard.GetTextAsync() : null;
+            OtpTextBox.Text = text ?? "";
+            TryAcceptOtp(OtpTextBox.Text);
         }
 
-        public void OpenShortcutInfo_MouseUp(object sender, RoutedEventArgs e)
+        public void OpenShortcutInfo_PointerReleased(object? sender, PointerReleasedEventArgs e)
         {
-            Process.Start($"https://goatcorp.github.io/faq/mobile_otp");
+            Process.Start(new ProcessStartInfo("https://goatcorp.github.io/faq/mobile_otp") { UseShellExecute = true });
         }
 
         public static string AskForOtp(Action<OtpInputDialog, string> onOtpResult, Window parentWindow)
         {
-            if (Dispatcher.CurrentDispatcher != parentWindow.Dispatcher)
-                return parentWindow.Dispatcher.Invoke(() => AskForOtp(onOtpResult, parentWindow));
+            if (!Dispatcher.UIThread.CheckAccess())
+                return Dispatcher.UIThread.InvokeAsync(() => AskForOtp(onOtpResult, parentWindow)).GetAwaiter().GetResult();
 
             var dialog = new OtpInputDialog();
             if (parentWindow.IsVisible)
             {
-                dialog.Owner = parentWindow;
                 dialog.ShowInTaskbar = false;
             }
 
             string result = null;
             dialog.OnResult += otp => onOtpResult(dialog, result = otp);
-            return dialog.ShowDialog() == true ? result : null;
+            return dialog.ShowOtpDialog(parentWindow.IsVisible ? parentWindow : null) == true ? result : null;
         }
     }
 }

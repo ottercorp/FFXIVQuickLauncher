@@ -471,7 +471,7 @@ namespace XIVLauncher.Windows
             if (_maintenanceQueueTimer == null)
                 SetupMaintenanceQueueTimer();
 
-            Model.LoadingDialogCancelButtonVisibility = Visibility.Visible;
+            Model.IsLoadingDialogCancelButtonVisible = true;
             Model.LoadingDialogMessage = Model.WaitingForMaintenanceLoc;
             Model.IsLoadingDialogOpen = true;
 

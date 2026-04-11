@@ -1,5 +1,5 @@
-﻿using System.Windows;
-using System.Windows.Input;
+﻿using Avalonia.Controls;
+using Avalonia.Input;
 using XIVLauncher.Windows.ViewModel;
 
 namespace XIVLauncher.Windows
@@ -13,22 +13,20 @@ namespace XIVLauncher.Windows
         {
             InitializeComponent();
 
-            AutoLoginDisclaimer.Visibility = App.Settings.AutologinEnabled ? Visibility.Visible : Visibility.Collapsed;
-            ResetUidCacheDisclaimer.Visibility = App.Settings.UniqueIdCacheEnabled ? Visibility.Visible : Visibility.Collapsed;
-            if (ResetUidCacheDisclaimer.Visibility == Visibility.Visible
-                && AutoLoginDisclaimer.Visibility == Visibility.Visible) {
+            AutoLoginDisclaimer.IsVisible = App.Settings.AutologinEnabled;
+            ResetUidCacheDisclaimer.IsVisible = App.Settings.UniqueIdCacheEnabled;
+            if (ResetUidCacheDisclaimer.IsVisible
+                && AutoLoginDisclaimer.IsVisible) {
                 UpdateLoadingCard.Height += 19;
             }
 
             this.DataContext = new UpdateLoadingDialogViewModel();
-
-            MouseMove += UpdateLoadingDialog_OnMouseMove;
         }
 
-        private void UpdateLoadingDialog_OnMouseMove(object sender, MouseEventArgs e)
+        private void Window_PointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                BeginMoveDrag(e);
         }
     }
 }

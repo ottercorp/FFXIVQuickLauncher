@@ -1,25 +1,23 @@
 ﻿<Window x:Class="XIVLauncher.Windows.IntegrityCheckProgressWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        mc:Ignorable="d"
+        xmlns:materialDesign="using:Material.Avalonia"
         Title="Integrity check progress" WindowStartupLocation="CenterScreen"
-        Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Medium"
-
-        AllowsTransparency="True"
+        Icon="/Resources/dalamud_icon.ico" CanResize="False"
+        Foreground="{DynamicResource MaterialDesignBody}"
+        FontWeight="Medium"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
         Background="Transparent"
-        WindowStyle="None" Height="130.401" Width="263.516">
+        Height="130.401" Width="263.516"
+        PointerPressed="Window_PointerPressed">
     <Grid>
         <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="114" Margin="0,0,10,0">
             <StackPanel Margin="16,16,10,10">
                 <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Margin="0,0,0,10" Text="{Binding IntegrityCheckRunningLoc}"/>
-                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                <ProgressBar
                              Value="0"
-                             IsIndeterminate="True" Height="35" Width="35" Margin="0,0,0,10"/>
+                             IsIndeterminate="True" Height="4" Width="200" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                 <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" x:Name="InfoTextBlock">FileName</TextBlock>
             </StackPanel>
         </materialDesign:Card>

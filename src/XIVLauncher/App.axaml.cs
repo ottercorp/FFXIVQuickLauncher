@@ -256,7 +256,7 @@ namespace XIVLauncher
             Environment.Exit(0);
         }
 
-        private static void ShowSimpleMessage(string message, string title = "XIVLauncherCN")
+        public static void ShowSimpleMessage(string message, string title = "XIVLauncherCN")
         {
             var msgWindow = new Window
             {

@@ -1,32 +1,35 @@
 ﻿<Window x:Class="XIVLauncher.Windows.DalamudLoadingOverlay"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        mc:Ignorable="d"
-        Title="XIVLauncher Update" WindowStartupLocation="Manual" Left="0" Top="0"
-        Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
-        TextElement.FontWeight="Medium"
-
-        AllowsTransparency="True"
-        Background="Transparent" ShowInTaskbar="False"
+        xmlns:materialDesign="using:Material.Avalonia"
+        xmlns:materialIcons="using:Material.Icons.Avalonia"
+        Title="XIVLauncher Update"
+        WindowStartupLocation="Manual"
+        Left="0"
+        Top="0"
+        CanResize="False"
+        Foreground="{DynamicResource MaterialDesignBody}"
+        FontWeight="Medium"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        ShowInTaskbar="False"
         Topmost="True"
-        WindowStyle="None" Height="186.088" Width="270"
+        Height="186.088"
+        Width="270"
         Loaded="DalamudLoadingOverlay_OnLoaded">
     <Grid Margin="0,0,0,0">
         <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="124" Margin="0,0,56,0">
             <StackPanel Margin="16,16,16,0">
-                <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Text="{Binding DalamudUpdateLoc}" x:Name="UpdateText"/>
+                <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Text="{Binding DalamudUpdateLoc}" x:Name="UpdateText" />
 
-                <materialDesign:PackIcon Kind="About" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="30" Height="30" Foreground="White" x:Name="InfoIcon" Visibility="Collapsed" Margin="0,8,0,0"/>
+                <materialIcons:MaterialIcon Kind="About" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="30" Height="30" Foreground="White" x:Name="InfoIcon" IsVisible="False" Margin="0,8,0,0" />
 
                 <ProgressBar
-                    IsIndeterminate="True" Margin="0,20,0,0" x:Name="ProgressBar"/>
+                    IsIndeterminate="True" Margin="0,20,0,0" x:Name="ProgressBar" />
 
-                <TextBlock Foreground="DarkGray" Margin="0, 16,0,0" TextAlignment="Center" x:Name="ProgressTextBlock"/>
-                <TextBlock Foreground="DarkGray" Margin="0, 4,0,0" TextAlignment="Center" x:Name="PercentageTextBlock"/>
+                <TextBlock Foreground="DarkGray" Margin="0,16,0,0" TextAlignment="Center" x:Name="ProgressTextBlock" />
+                <TextBlock Foreground="DarkGray" Margin="0,4,0,0" TextAlignment="Center" x:Name="PercentageTextBlock" />
             </StackPanel>
         </materialDesign:Card>
     </Grid>

@@ -1,24 +1,20 @@
 ﻿<Window x:Class="XIVLauncher.Windows.GenericAddonSetupWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:XIVLauncher"
-        xmlns:components="clr-namespace:XIVLauncher.Xaml.Components"
-        mc:Ignorable="d"
+        xmlns:components="using:XIVLauncher.Xaml.Components"
         Title="{Binding GenericAddonSetupTitleLoc}" Height="281.747" Width="533.495"
         WindowStartupLocation="CenterScreen"
-        Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        Icon="/Resources/dalamud_icon.ico" CanResize="False"
+        Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.FontWeight="Medium" >
+        FontWeight="Medium">
     <Grid>
         <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"
                    Text="{Binding GenericAddonSetupDescriptionLoc}" />
         <components:FileEntry x:Name="PathEntry" Description="Select an Addon file"
                               Filters="EXE File, *.exe;Powershell Script, *.ps1;Shell Script, *.bat" Margin="10,0,0,80"
                               Width="400" VerticalAlignment="Center" HorizontalAlignment="Left" />
-        <Label Margin="10,0,0,10" Width="400" VerticalAlignment="Center" HorizontalAlignment="Left" Content="{Binding CommandLineParametersLoc}"/>
+        <TextBlock Margin="10,0,0,10" Width="400" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{Binding CommandLineParametersLoc}"/>
         <TextBox x:Name="CommandLineTextBox" Margin="10,0,0,-30" Width="400"
                  VerticalAlignment="Center" HorizontalAlignment="Left" />
         <CheckBox x:Name="AdminCheckBox" Content="{Binding RunAsAdminLoc}" Margin="10,0,0,-100" Width="400"

@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Timers;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Threading;
 using XIVLauncher.Common.Game.Patch;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Windows.ViewModel;
@@ -14,7 +13,7 @@ using XIVLauncher.Xaml;
 namespace XIVLauncher.Windows
 {
     /// <summary>
-    ///     Interaction logic for GameRepairProgressWindow.xaml
+    ///     Interaction logic for GameRepairProgressWindow.axaml
     /// </summary>
     public partial class GameRepairProgressWindow : Window
     {
@@ -39,8 +38,7 @@ namespace XIVLauncher.Windows
 
             this.DataContext = new GameRepairProgressWindowViewModel();
 
-            MouseMove += GameRepairProgressWindow_OnMouseMove;
-            Closing += GameRepairProgressWindow_OnClosing;
+            PointerPressed += GameRepairProgressWindow_OnPointerPressed;
 
             ViewModel.CancelCommand = new SyncCommand(CancelButton_OnCommand);
 
@@ -64,13 +62,16 @@ namespace XIVLauncher.Windows
             _verify.Cancel().ConfigureAwait(false);
         }
 
-        private void GameRepairProgressWindow_OnMouseMove(object sender, MouseEventArgs e)
+        private void GameRepairProgressWindow_OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                return;
+            if (e.Source is Button)
+                return;
+            BeginMoveDrag(e);
         }
 
-        private void GameRepairProgressWindow_OnClosing(object sender, CancelEventArgs e)
+        private void GameRepairProgressWindow_OnClosing(object? sender, WindowClosingEventArgs e)
         {
             e.Cancel = true;
 
@@ -131,7 +132,6 @@ namespace XIVLauncher.Windows
                     {
                         UpdateInstallProgressDisplay();
                     }
-
 
                     break;
 
@@ -195,10 +195,10 @@ namespace XIVLauncher.Windows
         {
             for (var i = 0; i < _installProgressBars.Length; i++)
             {
-                var visibility = i < visibleCount ? Visibility.Visible : Visibility.Collapsed;
-                _installProgressBars[i].Visibility = visibility;
-                _installInfoTextBlocks[i].Visibility = visibility;
-                if (visibility == Visibility.Collapsed)
+                var visible = i < visibleCount;
+                _installProgressBars[i].IsVisible = visible;
+                _installInfoTextBlocks[i].IsVisible = visible;
+                if (!visible)
                 {
                     _installProgressBars[i].Value = 0;
                     _installInfoTextBlocks[i].Text = string.Empty;
@@ -211,7 +211,7 @@ namespace XIVLauncher.Windows
             if (_verify == null)
                 return;
 
-            this.Dispatcher.Invoke(UpdateStatusDisplay);
+            Dispatcher.UIThread.InvokeAsync(UpdateStatusDisplay);
         }
     }
 }

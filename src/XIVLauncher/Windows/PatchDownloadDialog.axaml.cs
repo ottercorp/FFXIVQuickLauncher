@@ -1,18 +1,19 @@
 using System;
-using System.ComponentModel;
 using System.Linq;
 using System.Timers;
-using System.Windows;
-using System.Windows.Input;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Media;
+using Avalonia.Threading;
 using XIVLauncher.Common.Game.Patch;
 using XIVLauncher.Common.Util;
 using XIVLauncher.Windows.ViewModel;
-using Brushes = System.Windows.Media.Brushes;
+using Brushes = Avalonia.Media.Brushes;
 
 namespace XIVLauncher.Windows
 {
     /// <summary>
-    /// Interaction logic for PatchDownloadDialog.xaml
+    /// Interaction logic for PatchDownloadDialog.axaml
     /// </summary>
     public partial class PatchDownloadDialog : Window
     {
@@ -30,7 +31,7 @@ namespace XIVLauncher.Windows
 
             this.DataContext = new PatchDownloadDialogViewModel();
 
-            MouseMove += PatchDownloadDialog_OnMouseMove;
+            PointerPressed += PatchDownloadDialog_OnPointerPressed;
 
             _timer = new Timer();
             _timer.Elapsed += ViewUpdateTimerOnElapsed;
@@ -41,10 +42,11 @@ namespace XIVLauncher.Windows
             Closed += (_, _) => _timer.Dispose();
         }
 
-        private void PatchDownloadDialog_OnMouseMove(object sender, MouseEventArgs e)
+        private void PatchDownloadDialog_OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
-                DragMove();
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                return;
+            BeginMoveDrag(e);
         }
 
         private void ViewUpdateTimerOnElapsed(object sender, ElapsedEventArgs e)
@@ -52,7 +54,7 @@ namespace XIVLauncher.Windows
             if (_manager == null)
                 return;
 
-            this.Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 SetGeneralProgress(_manager.CurrentInstallIndex, _manager.Downloads.Count, this._manager.IsInstallerBusy);
 
@@ -69,14 +71,14 @@ namespace XIVLauncher.Windows
                     if (_manager.Slots[i] == PatchManager.SlotState.Checking)
                     {
                         SetPatchProgress(i,
-                                         $"{activePatch.Patch} ({ViewModel.PatchCheckingLoc})", 100f, true);
+                            $"{activePatch.Patch} ({ViewModel.PatchCheckingLoc})", 100f, true);
                     }
                     else
                     {
-                        var pct = Math.Round((double) (100 * _manager.Progresses[i]) / activePatch.Patch.Length, 2);
+                        var pct = Math.Round((double)(100 * _manager.Progresses[i]) / activePatch.Patch.Length, 2);
                         SetPatchProgress(i,
-                                         $"{activePatch.Patch} ({pct:#0.0}%, {ApiHelpers.BytesToString(_manager.Speeds[i])}/s)",
-                                         pct, false);
+                            $"{activePatch.Patch} ({pct:#0.0}%, {ApiHelpers.BytesToString(_manager.Speeds[i])}/s)",
+                            pct, false);
                     }
                 }
 
@@ -167,9 +169,9 @@ namespace XIVLauncher.Windows
             this.Progress4.BorderBrush = Brushes.LightSkyBlue;
         }
 
-        private void PatchDownloadDialog_OnClosing(object sender, CancelEventArgs e)
+        private void PatchDownloadDialog_OnClosing(object? sender, WindowClosingEventArgs e)
         {
-            e.Cancel = true; // We can't cancel patching yet, big TODO
+            e.Cancel = true;
         }
     }
 }

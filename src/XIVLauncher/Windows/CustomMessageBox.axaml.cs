@@ -2,15 +2,18 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Media;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CheapLoc;
-using MaterialDesignThemes.Wpf;
+using Material.Icons;
 using Serilog;
 using XIVLauncher.Common;
 using XIVLauncher.Common.Util;
@@ -18,11 +21,12 @@ using XIVLauncher.Support;
 using XIVLauncher.Windows.ViewModel;
 using XIVLauncher.Xaml;
 using Constants = XIVLauncher.Common.Constants;
+using Brushes = Avalonia.Media.Brushes;
 
 namespace XIVLauncher.Windows
 {
     /// <summary>
-    /// Interaction logic for CustomMessageBox.xaml
+    /// Interaction logic for CustomMessageBox.axaml
     /// </summary>
     public partial class CustomMessageBox : Window
     {
@@ -43,11 +47,10 @@ namespace XIVLauncher.Windows
 
             DataContext = new CustomMessageBoxViewModel();
 
-            ViewModel.CopyMessageTextCommand = new SyncCommand(p => Clipboard.SetText(_builder.Text));
+            ViewModel.CopyMessageTextCommand = new SyncCommand(_ => _ = CopyMessageTextAsync());
 
             if (builder.ParentWindow?.IsVisible ?? false)
             {
-                Owner = builder.ParentWindow;
                 ShowInTaskbar = false;
             }
             else
@@ -58,18 +61,21 @@ namespace XIVLauncher.Windows
             Title = builder.Caption;
             MessageTextBlock.Text = builder.Text;
             if (string.IsNullOrWhiteSpace(builder.Description))
-                DescriptionTextBox.Visibility = Visibility.Collapsed;
+            {
+                DescriptionTextBox.IsVisible = false;
+            }
             else
             {
-                DescriptionTextBox.Document.Blocks.Clear();
-                DescriptionTextBox.Document.Blocks.Add(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run(builder.Description)));
+                DescriptionTextBox.Text = builder.Description;
+                DescriptionTextBox.IsVisible = true;
             }
+
             switch (builder.Buttons)
             {
                 case MessageBoxButton.OK:
                     Button1.Content = builder.OkButtonText ?? ViewModel.OkLoc;
-                    Button2.Visibility = Visibility.Collapsed;
-                    Button3.Visibility = Visibility.Collapsed;
+                    Button2.IsVisible = false;
+                    Button3.IsVisible = false;
                     (builder.DefaultResult switch
                     {
                         MessageBoxResult.OK => Button1,
@@ -79,7 +85,7 @@ namespace XIVLauncher.Windows
                 case MessageBoxButton.OKCancel:
                     Button1.Content = builder.OkButtonText ?? ViewModel.OkLoc;
                     Button2.Content = builder.CancelButtonText ?? ViewModel.CancelWithShortcutLoc;
-                    Button3.Visibility = Visibility.Collapsed;
+                    Button3.IsVisible = false;
                     (builder.DefaultResult switch
                     {
                         MessageBoxResult.OK => Button1,
@@ -102,7 +108,7 @@ namespace XIVLauncher.Windows
                 case MessageBoxButton.YesNo:
                     Button1.Content = builder.YesButtonText ?? ViewModel.YesWithShortcutLoc;
                     Button2.Content = builder.NoButtonText ?? ViewModel.NoWithShortcutLoc;
-                    Button3.Visibility = Visibility.Collapsed;
+                    Button3.IsVisible = false;
                     (builder.DefaultResult switch
                     {
                         MessageBoxResult.Yes => Button1,
@@ -121,16 +127,18 @@ namespace XIVLauncher.Windows
                                 countdown -= 1;
                                 if (countdown <= 0)
                                     break;
-                                Dispatcher.Invoke(() => Button1.Content = $"{builder.YesButtonText ?? ViewModel.YesWithShortcutLoc} ({countdown})");
+                                await Dispatcher.UIThread.InvokeAsync(() =>
+                                    Button1.Content = $"{builder.YesButtonText ?? ViewModel.YesWithShortcutLoc} ({countdown})");
                             }
-                            Dispatcher.Invoke(() =>
+
+                            await Dispatcher.UIThread.InvokeAsync(() =>
                             {
                                 Button1.IsEnabled = true;
                                 Button1.Content = builder.YesButtonText ?? ViewModel.YesWithShortcutLoc;
-                            }
-                            );
+                            });
                         });
                     }
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(builder.Buttons), builder.Buttons, null);
@@ -139,43 +147,69 @@ namespace XIVLauncher.Windows
             switch (builder.Image)
             {
                 case MessageBoxImage.None:
-                    ErrorPackIcon.Visibility = Visibility.Collapsed;
+                    ErrorPackIcon.IsVisible = false;
                     break;
                 case MessageBoxImage.Hand:
-                    ErrorPackIcon.Visibility = Visibility.Visible;
-                    ErrorPackIcon.Kind = PackIconKind.Error;
+                    ErrorPackIcon.IsVisible = true;
+                    ErrorPackIcon.Kind = MaterialIconKind.Error;
                     ErrorPackIcon.Foreground = Brushes.Red;
-                    SystemSounds.Hand.Play();
                     break;
                 case MessageBoxImage.Question:
-                    ErrorPackIcon.Visibility = Visibility.Visible;
-                    ErrorPackIcon.Kind = PackIconKind.QuestionMarkCircle;
+                    ErrorPackIcon.IsVisible = true;
+                    ErrorPackIcon.Kind = MaterialIconKind.QuestionMarkCircle;
                     ErrorPackIcon.Foreground = Brushes.DodgerBlue;
-                    SystemSounds.Question.Play();
                     break;
                 case MessageBoxImage.Exclamation:
-                    ErrorPackIcon.Visibility = Visibility.Visible;
-                    ErrorPackIcon.Kind = PackIconKind.Warning;
+                    ErrorPackIcon.IsVisible = true;
+                    ErrorPackIcon.Kind = MaterialIconKind.Warning;
                     ErrorPackIcon.Foreground = Brushes.Yellow;
-                    SystemSounds.Exclamation.Play();
                     break;
                 case MessageBoxImage.Asterisk:
-                    ErrorPackIcon.Visibility = Visibility.Visible;
-                    ErrorPackIcon.Kind = PackIconKind.Information;
+                    ErrorPackIcon.IsVisible = true;
+                    ErrorPackIcon.Kind = MaterialIconKind.Information;
                     ErrorPackIcon.Foreground = Brushes.DodgerBlue;
-                    SystemSounds.Asterisk.Play();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(builder.Image), builder.Image, null);
             }
 
-            OfficialLauncherButton.Visibility = builder.ShowOfficialLauncher ? Visibility.Visible : Visibility.Collapsed;
-            DiscordButton.Visibility = builder.ShowDiscordLink ? Visibility.Visible : Visibility.Collapsed;
-            FaqButton.Visibility = builder.ShowHelpLinks ? Visibility.Visible : Visibility.Collapsed;
-            IntegrityReportButton.Visibility = builder.ShowIntegrityReportLinks ? Visibility.Visible : Visibility.Collapsed;
-            NewGitHubIssueButton.Visibility = builder.ShowNewGitHubIssue ? Visibility.Visible : Visibility.Collapsed;
+            OfficialLauncherButton.IsVisible = builder.ShowOfficialLauncher;
+            DiscordButton.IsVisible = builder.ShowDiscordLink;
+            FaqButton.IsVisible = builder.ShowHelpLinks;
+            IntegrityReportButton.IsVisible = builder.ShowIntegrityReportLinks;
+            NewGitHubIssueButton.IsVisible = builder.ShowNewGitHubIssue;
 
             Topmost = builder.OverrideTopMostFromParentWindow ? builder.ParentWindow?.Topmost ?? builder.TopMost : builder.TopMost;
+        }
+
+        private async Task CopyMessageTextAsync()
+        {
+            var top = TopLevel.GetTopLevel(this);
+            if (top?.Clipboard != null)
+                await top.Clipboard.SetTextAsync(_builder.Text);
+        }
+
+        private static bool IsDescendantOf(Control? ancestor, Visual? node)
+        {
+            while (node != null)
+            {
+                if (ReferenceEquals(node, ancestor))
+                    return true;
+                node = node.GetVisualParent();
+            }
+
+            return false;
+        }
+
+        private void CustomMessageBox_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                return;
+            if (e.Source is Button || e.Source is TextBox)
+                return;
+            if (IsDescendantOf(DescriptionTextBox, e.Source as Visual))
+                return;
+            BeginMoveDrag(e);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -186,13 +220,7 @@ namespace XIVLauncher.Windows
             base.OnKeyDown(e);
         }
 
-        private void CustomMessageBox_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed && e.Source != DescriptionTextBox)
-                DragMove();
-        }
-
-        private void Button1_Click(object sender, RoutedEventArgs e)
+        private void Button1_Click(object? sender, RoutedEventArgs e)
         {
             _result = _builder.Buttons switch
             {
@@ -205,7 +233,7 @@ namespace XIVLauncher.Windows
             Close();
         }
 
-        private void Button2_Click(object sender, RoutedEventArgs e)
+        private void Button2_Click(object? sender, RoutedEventArgs e)
         {
             _result = _builder.Buttons switch
             {
@@ -217,7 +245,7 @@ namespace XIVLauncher.Windows
             Close();
         }
 
-        private void Button3_Click(object sender, RoutedEventArgs e)
+        private void Button3_Click(object? sender, RoutedEventArgs e)
         {
             _result = _builder.Buttons switch
             {
@@ -227,7 +255,7 @@ namespace XIVLauncher.Windows
             Close();
         }
 
-        private void OfficialLauncherButton_Click(object sender, RoutedEventArgs e)
+        private void OfficialLauncherButton_Click(object? sender, RoutedEventArgs e)
         {
             if (App.Settings.GamePath == null || !GameHelpers.GetOfficialLauncherPath(App.Settings.GamePath).Exists)
             {
@@ -275,34 +303,31 @@ namespace XIVLauncher.Windows
             Environment.Exit(0);
         }
 
-        private void DiscordButton_Click(object sender, RoutedEventArgs e)
-        {
-            SupportLinks.OpenDiscord(sender, e);
-        }
-
-        private void QQButton_Click(object sender, RoutedEventArgs e)
+        private void QQButton_Click(object? sender, RoutedEventArgs e)
         {
             SupportLinks.OpenQQChannel(sender, e);
         }
 
-        private void FaqButton_Click(object sender, RoutedEventArgs e)
+        private void FaqButton_Click(object? sender, RoutedEventArgs e)
         {
             SupportLinks.OpenFaq(sender, e);
         }
 
-        private void IntegrityReportButton_Click(object sender, RoutedEventArgs e)
+        private void IntegrityReportButton_Click(object? sender, RoutedEventArgs e)
         {
-            Process.Start(Path.Combine(Paths.RoamingPath, "integrityreport.txt"));
+            Process.Start(new ProcessStartInfo(Path.Combine(Paths.RoamingPath, "integrityreport.txt")) { UseShellExecute = true });
         }
 
-        private void NewGitHubIssueButton_OnClick(object sender, RoutedEventArgs e)
+        private void NewGitHubIssueButton_OnClick(object? sender, RoutedEventArgs e)
         {
             Process.Start(new ProcessStartInfo($"{App.REPO_URL}/issues/new?assignees=octocat&labels=bug%2Ctriage&template=bugreport.yml") { UseShellExecute = true });
         }
-        private void PackTroubleshooting_OnClick(object sender, RoutedEventArgs e)
+
+        private void PackTroubleshooting_OnClick(object? sender, RoutedEventArgs e)
         {
             PackGenerator.PackAndShowMessage();
         }
+
         public enum ExitOnCloseModes
         {
             DontExitOnClose,
@@ -315,8 +340,8 @@ namespace XIVLauncher.Windows
             internal string Caption = "XIVLauncherCN";
             internal string Description;
             internal MessageBoxButton Buttons = MessageBoxButton.OK;
-            internal MessageBoxResult DefaultResult = MessageBoxResult.None;  // On enter
-            internal MessageBoxResult CancelResult = MessageBoxResult.None;  // On escape
+            internal MessageBoxResult DefaultResult = MessageBoxResult.None;
+            internal MessageBoxResult CancelResult = MessageBoxResult.None;
             internal MessageBoxImage Image = MessageBoxImage.None;
             internal string OkButtonText;
             internal string CancelButtonText;
@@ -333,31 +358,154 @@ namespace XIVLauncher.Windows
             internal bool OverrideTopMostFromParentWindow = true;
             internal float YesCountDownSeconds = 0;
 
-            public Builder() { }
-            public Builder WithText(string text) { Text = text; return this; }
-            public Builder WithTextFormatted(string format, params object[] args) { Text = string.Format(format, args); return this; }
-            public Builder WithAppendText(string text) { Text = (Text ?? "") + text; return this; }
-            public Builder WithAppendTextFormatted(string format, params object[] args) { Text = (Text ?? "") + string.Format(format, args); return this; }
-            public Builder WithCaption(string caption) { Caption = caption; return this; }
-            public Builder WithDescription(string description) { Description = description; return this; }
-            public Builder WithAppendDescription(string description) { Description = (Description ?? "") + description; return this; }
-            public Builder WithButtons(MessageBoxButton buttons) { Buttons = buttons; return this; }
-            public Builder WithDefaultResult(MessageBoxResult result) { DefaultResult = result; return this; }
-            public Builder WithCancelResult(MessageBoxResult result) { CancelResult = result; return this; }
-            public Builder WithImage(MessageBoxImage image) { Image = image; return this; }
-            public Builder WithTopMost(bool topMost = true) { TopMost = topMost; return this; }
-            public Builder WithExitOnClose(ExitOnCloseModes exitOnCloseMode = ExitOnCloseModes.ExitOnClose) { ExitOnCloseMode = exitOnCloseMode; return this; }
-            public Builder WithOkButtonText(string text) { OkButtonText = text; return this; }
-            public Builder WithCancelButtonText(string text) { CancelButtonText = text; return this; }
-            public Builder WithYesButtonText(string text) { YesButtonText = text; return this; }
-            public Builder WithNoButtonText(string text) { NoButtonText = text; return this; }
-            public Builder WithShowHelpLinks(bool showHelpLinks = true) { ShowHelpLinks = showHelpLinks; return this; }
-            public Builder WithShowDiscordLink(bool showDiscordLink = true) { ShowDiscordLink = showDiscordLink; return this; }
-            public Builder WithShowOfficialLauncher(bool showOfficialLauncher = true) { ShowOfficialLauncher = showOfficialLauncher; return this; }
-            public Builder WithShowIntegrityReportLink(bool showReportLinks = true) { ShowIntegrityReportLinks = showReportLinks; return this; }
-            public Builder WithShowNewGitHubIssue(bool showNewGitHubIssue = true) { ShowNewGitHubIssue = showNewGitHubIssue; return this; }
-            public Builder WithParentWindow(Window window) { ParentWindow = window; return this; }
-            public Builder WithParentWindow(Window window, bool overrideTopMost) { ParentWindow = window; OverrideTopMostFromParentWindow = overrideTopMost; return this; }
+            public Builder()
+            {
+            }
+
+            public Builder WithText(string text)
+            {
+                Text = text;
+                return this;
+            }
+
+            public Builder WithTextFormatted(string format, params object[] args)
+            {
+                Text = string.Format(format, args);
+                return this;
+            }
+
+            public Builder WithAppendText(string text)
+            {
+                Text = (Text ?? "") + text;
+                return this;
+            }
+
+            public Builder WithAppendTextFormatted(string format, params object[] args)
+            {
+                Text = (Text ?? "") + string.Format(format, args);
+                return this;
+            }
+
+            public Builder WithCaption(string caption)
+            {
+                Caption = caption;
+                return this;
+            }
+
+            public Builder WithDescription(string description)
+            {
+                Description = description;
+                return this;
+            }
+
+            public Builder WithAppendDescription(string description)
+            {
+                Description = (Description ?? "") + description;
+                return this;
+            }
+
+            public Builder WithButtons(MessageBoxButton buttons)
+            {
+                Buttons = buttons;
+                return this;
+            }
+
+            public Builder WithDefaultResult(MessageBoxResult result)
+            {
+                DefaultResult = result;
+                return this;
+            }
+
+            public Builder WithCancelResult(MessageBoxResult result)
+            {
+                CancelResult = result;
+                return this;
+            }
+
+            public Builder WithImage(MessageBoxImage image)
+            {
+                Image = image;
+                return this;
+            }
+
+            public Builder WithTopMost(bool topMost = true)
+            {
+                TopMost = topMost;
+                return this;
+            }
+
+            public Builder WithExitOnClose(ExitOnCloseModes exitOnCloseMode = ExitOnCloseModes.ExitOnClose)
+            {
+                ExitOnCloseMode = exitOnCloseMode;
+                return this;
+            }
+
+            public Builder WithOkButtonText(string text)
+            {
+                OkButtonText = text;
+                return this;
+            }
+
+            public Builder WithCancelButtonText(string text)
+            {
+                CancelButtonText = text;
+                return this;
+            }
+
+            public Builder WithYesButtonText(string text)
+            {
+                YesButtonText = text;
+                return this;
+            }
+
+            public Builder WithNoButtonText(string text)
+            {
+                NoButtonText = text;
+                return this;
+            }
+
+            public Builder WithShowHelpLinks(bool showHelpLinks = true)
+            {
+                ShowHelpLinks = showHelpLinks;
+                return this;
+            }
+
+            public Builder WithShowDiscordLink(bool showDiscordLink = true)
+            {
+                ShowDiscordLink = showDiscordLink;
+                return this;
+            }
+
+            public Builder WithShowOfficialLauncher(bool showOfficialLauncher = true)
+            {
+                ShowOfficialLauncher = showOfficialLauncher;
+                return this;
+            }
+
+            public Builder WithShowIntegrityReportLink(bool showReportLinks = true)
+            {
+                ShowIntegrityReportLinks = showReportLinks;
+                return this;
+            }
+
+            public Builder WithShowNewGitHubIssue(bool showNewGitHubIssue = true)
+            {
+                ShowNewGitHubIssue = showNewGitHubIssue;
+                return this;
+            }
+
+            public Builder WithParentWindow(Window window)
+            {
+                ParentWindow = window;
+                return this;
+            }
+
+            public Builder WithParentWindow(Window window, bool overrideTopMost)
+            {
+                ParentWindow = window;
+                OverrideTopMostFromParentWindow = overrideTopMost;
+                return this;
+            }
 
             public Builder WithExceptionText()
             {
@@ -388,9 +536,14 @@ namespace XIVLauncher.Windows
                 return this;
             }
 
-            public Builder WithYesCountdown(float countDownSeconds) { YesCountDownSeconds = countDownSeconds; return this; }
+            public Builder WithYesCountdown(float countDownSeconds)
+            {
+                YesCountDownSeconds = countDownSeconds;
+                return this;
+            }
 
             public static Builder NewFrom(string text) => new Builder().WithText(text);
+
             public static Builder NewFrom(Exception exc, string context, ExitOnCloseModes exitOnCloseMode = ExitOnCloseModes.DontExitOnClose)
             {
                 var builder = new Builder()
@@ -410,7 +563,6 @@ namespace XIVLauncher.Windows
                         .WithNoButtonText(Loc.Localize("Exit", "_Exit"));
                 }
 
-                // When this happens we probably don't want them to run into it again, in case it's an issue with a moved game for example
                 if (App.Settings != null)
                     App.Settings.AutologinEnabled = false;
 
@@ -450,38 +602,24 @@ namespace XIVLauncher.Windows
                 };
 
                 var res = new CustomMessageBox(this);
-                res.ShowDialog();
+                res.ShowDialog(ParentWindow).GetAwaiter().GetResult();
                 return res._result;
             }
 
             public MessageBoxResult ShowInNewThread()
             {
-                MessageBoxResult? res = null;
-                var newWindowThread = new Thread(() => res = ShowAssumingDispatcherThread());
-                newWindowThread.SetApartmentState(ApartmentState.STA);
-                newWindowThread.IsBackground = true;
-                newWindowThread.Start();
-                newWindowThread.Join();
-                return res.GetValueOrDefault(CancelResult);
+                if (Dispatcher.UIThread.CheckAccess())
+                    return ShowAssumingDispatcherThread();
+                return Dispatcher.UIThread.InvokeAsync(ShowAssumingDispatcherThread).GetAwaiter().GetResult();
             }
 
             public MessageBoxResult Show()
             {
                 MessageBoxResult result;
-                if (ParentWindow != null)
-                {
-                    if (System.Windows.Threading.Dispatcher.CurrentDispatcher == ParentWindow.Dispatcher)
-                        result = ShowAssumingDispatcherThread();
-                    else
-                        result = ParentWindow.Dispatcher.Invoke(ShowAssumingDispatcherThread);
-                }
+                if (Dispatcher.UIThread.CheckAccess())
+                    result = ShowAssumingDispatcherThread();
                 else
-                {
-                    if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
-                        result = ShowAssumingDispatcherThread();
-                    else
-                        result = Application.Current.Dispatcher.Invoke(ShowAssumingDispatcherThread);
-                }
+                    result = Dispatcher.UIThread.InvokeAsync(ShowAssumingDispatcherThread).GetAwaiter().GetResult();
 
                 if (ExitOnCloseMode == ExitOnCloseModes.ExitOnClose)
                 {
@@ -532,7 +670,6 @@ namespace XIVLauncher.Windows
             return true;
         }
 
-        // https://docs.microsoft.com/en-us/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way
         private static string EncodeParameterArgument(string argument, bool force = false)
         {
             if (!force && argument.Length > 0 && argument.IndexOfAny(" \t\n\v\"".ToCharArray()) == -1)
@@ -561,6 +698,7 @@ namespace XIVLauncher.Windows
                         quoted.Append(chr);
                         break;
                 }
+
                 numberBackslashes = 0;
             }
 

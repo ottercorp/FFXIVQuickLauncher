@@ -1,7 +1,8 @@
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using System.Windows;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 using XIVLauncher.Common.Support;
 using XIVLauncher.Windows.ViewModel;
 
@@ -50,13 +51,13 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void CloseButton_OnClick(object sender, RoutedEventArgs e)
+        private void CloseButton_OnClick(object? sender, RoutedEventArgs e)
         {
             Save();
             Close();
         }
 
-        private void ResetCacheButton_OnClick(object sender, RoutedEventArgs e)
+        private void ResetCacheButton_OnClick(object? sender, RoutedEventArgs e)
         {
             App.UniqueIdCache.Reset();
         }

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Timers;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Interop;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
 using CheapLoc;
 using XIVLauncher.Common.PlatformAbstractions;
 using XIVLauncher.Common.Util;
@@ -14,7 +15,7 @@ namespace XIVLauncher.Windows
     // TODO(goat): Dispatcher!!
 
     /// <summary>
-    /// Interaction logic for DalamudLoadingOverlay.xaml
+    /// Interaction logic for DalamudLoadingOverlay.axaml
     /// </summary>
     public partial class DalamudLoadingOverlay : Window, IDalamudLoadingOverlay
     {
@@ -23,16 +24,13 @@ namespace XIVLauncher.Windows
             InitializeComponent();
 
             this.DataContext = new DalamudLoadingOverlayViewModel();
-
-            var interop = new WindowInteropHelper(this);
-            interop.EnsureHandle();
         }
 
         private IDalamudLoadingOverlay.DalamudUpdateStep _progress;
 
         public void SetStep(IDalamudLoadingOverlay.DalamudUpdateStep progress)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 _progress = progress;
 
@@ -57,9 +55,9 @@ namespace XIVLauncher.Windows
                     case IDalamudLoadingOverlay.DalamudUpdateStep.Unavailable:
                         ProgressTextBlock.Text = Loc.Localize("DalamudUnavailable",
                             "Plugins are currently unavailable\ndue to a game update.");
-                        InfoIcon.Visibility = Visibility.Visible;
-                        ProgressBar.Visibility = Visibility.Collapsed;
-                        UpdateText.Visibility = Visibility.Collapsed;
+                        InfoIcon.IsVisible = true;
+                        ProgressBar.IsVisible = false;
+                        UpdateText.IsVisible = false;
                         break;
 
                     default:
@@ -70,19 +68,18 @@ namespace XIVLauncher.Windows
 
         public void SetVisible()
         {
-            this.Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (IsClosed)
                     return;
 
-                // TODO(goat): this is real bad, just do it any other way that doesn't possibly block
                 if (_progress == IDalamudLoadingOverlay.DalamudUpdateStep.Unavailable)
                 {
-                    var t = new Timer(15000) {AutoReset = false};
+                    var t = new Timer(15000) { AutoReset = false };
 
                     t.Elapsed += (_, _) =>
                     {
-                        this.Dispatcher.Invoke(this.Close);
+                        Dispatcher.UIThread.InvokeAsync(Close);
                     };
                     t.Start();
                 }
@@ -93,7 +90,7 @@ namespace XIVLauncher.Windows
 
         public void SetInvisible()
         {
-            this.Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (IsClosed)
                     return;
@@ -104,7 +101,7 @@ namespace XIVLauncher.Windows
 
         public void ReportProgress(long? size, long downloaded, double? progress)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (IsClosed)
                     return;
@@ -123,7 +120,7 @@ namespace XIVLauncher.Windows
             });
         }
 
-        private void DalamudLoadingOverlay_OnLoaded(object sender, RoutedEventArgs e)
+        private void DalamudLoadingOverlay_OnLoaded(object? sender, RoutedEventArgs e)
         {
             HideFromWindowSwitcher.Hide(this);
         }
@@ -136,10 +133,11 @@ namespace XIVLauncher.Windows
             IsClosed = true;
         }
 
-        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
-            base.OnMouseLeftButtonDown(e);
-            this.DragMove();
+            base.OnPointerPressed(e);
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                BeginMoveDrag(e);
         }
     }
 }

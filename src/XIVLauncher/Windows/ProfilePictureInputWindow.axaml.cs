@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Avalonia.Controls;
+using Avalonia.Interactivity;
 using XIVLauncher.Accounts;
 using XIVLauncher.Windows.ViewModel;
 
@@ -18,7 +19,7 @@ namespace XIVLauncher.Windows
             DataContext = new ProfilePictureInputWindowViewModel();
         }
 
-        private void NextButton_Click(object sender, RoutedEventArgs e)
+        private void NextButton_Click(object? sender, RoutedEventArgs e)
         {
             ResultName = CharacterNameTextBox.Text;
             ResultWorld = WorldNameTextBox.Text;

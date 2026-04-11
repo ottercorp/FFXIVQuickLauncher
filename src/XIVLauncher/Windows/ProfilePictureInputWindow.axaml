@@ -1,26 +1,21 @@
 ﻿<Window x:Class="XIVLauncher.Windows.ProfilePictureInputWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        mc:Ignorable="d"
         Title="{Binding ProfilePictureInputTitleLoc}" Height="268.361" Width="535.302" WindowStartupLocation="CenterScreen"
-        Icon="pack://application:,,,/Resources/dalamud_icon.ico" ResizeMode="NoResize"
-        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        Icon="/Resources/dalamud_icon.ico" CanResize="False"
+        Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
-        TextElement.FontWeight="Medium" >
+        FontWeight="Medium">
     <StackPanel>
         <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" Text="{Binding ProfilePictureInputDescriptionLoc}"/>
 
         <StackPanel Orientation="Vertical" Width="180" HorizontalAlignment="Left" Margin="10,20,0,0">
-            <Label Width="210" VerticalAlignment="Center" HorizontalAlignment="Left" Content="{Binding CharacterNameLoc}"/>
+            <TextBlock Width="210" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{Binding CharacterNameLoc}"/>
             <TextBox x:Name="CharacterNameTextBox" Width="203"/>
         </StackPanel>
 
         <StackPanel Orientation="Vertical" Width="180" HorizontalAlignment="Left" Margin="10,10,0,0">
-            <Label Width="210" VerticalAlignment="Center" HorizontalAlignment="Left" Content="{Binding WorldNameLoc}"/>
+            <TextBlock Width="210" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{Binding WorldNameLoc}"/>
             <TextBox x:Name="WorldNameTextBox" Width="203"/>
         </StackPanel>
 

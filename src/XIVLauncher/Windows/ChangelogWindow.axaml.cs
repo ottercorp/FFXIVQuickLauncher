@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.Media;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Windows;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using Serilog;
@@ -72,7 +74,7 @@ namespace XIVLauncher.Windows
             UpdateNotice.Text = string.Format(Model.UpdateNoticeLoc, version);
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object? sender, RoutedEventArgs e)
         {
             Close();
         }
@@ -102,17 +104,17 @@ namespace XIVLauncher.Windows
                     client.DefaultRequestHeaders.Add("User-Agent", PlatformHelpers.GetVersion());
                     var response = JsonConvert.DeserializeObject<ReleaseMeta>(await client.GetStringAsync(META_URL));
 
-                    Dispatcher.Invoke(() => this.ChangeLogText.Text = _prerelease ? response.PrereleaseVersion.Changelog : response.ReleaseVersion.Changelog);
+                    _ = Dispatcher.UIThread.InvokeAsync(() => this.ChangeLogText.Text = _prerelease ? response.PrereleaseVersion.Changelog : response.ReleaseVersion.Changelog);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Could not get changelog");
-                    Dispatcher.Invoke(() => this.ChangeLogText.Text = Model.ChangelogLoadingErrorLoc);
+                    _ = Dispatcher.UIThread.InvokeAsync(() => this.ChangeLogText.Text = Model.ChangelogLoadingErrorLoc);
                 }
             });
         }
 
-        private void EmailButton_OnClick(object sender, RoutedEventArgs e)
+        private void EmailButton_OnClick(object? sender, RoutedEventArgs e)
         {
             // Try getting the Windows 10 "build", e.g. 1909
             var releaseId = "???";
