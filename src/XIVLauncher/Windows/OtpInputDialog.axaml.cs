@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -194,7 +195,7 @@ namespace XIVLauncher.Windows
         private async void PasteButton_OnClick(object? sender, RoutedEventArgs e)
         {
             var top = TopLevel.GetTopLevel(this);
-            var text = top?.Clipboard != null ? await top.Clipboard.GetTextAsync() : null;
+            var text = top?.Clipboard != null ? await top.Clipboard.TryGetTextAsync() : null;
             OtpTextBox.Text = text ?? "";
             TryAcceptOtp(OtpTextBox.Text);
         }

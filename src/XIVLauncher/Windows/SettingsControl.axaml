@@ -136,7 +136,7 @@
                                     <DataTemplate DataType="addon:AddonEntry">
                                         <StackPanel Orientation="Horizontal">
                                             <CheckBox IsChecked="{Binding IsEnabled}"
-                                                      Checked="ToggleButton_OnChecked"
+                                                      IsCheckedChanged="ToggleButton_OnIsCheckedChanged"
                                                       Foreground="{DynamicResource MaterialDesignBody}" />
                                             <TextBlock Text="{Binding Addon.Name}"
                                                        Margin="10,0,0,0"

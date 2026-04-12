@@ -1,4 +1,4 @@
-﻿<Window x:Class="XIVLauncher.Windows.GenericAddonSetupWindow"
+<Window x:Class="XIVLauncher.Windows.GenericAddonSetupWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:components="using:XIVLauncher.Xaml.Components"
@@ -18,8 +18,8 @@
         <TextBox x:Name="CommandLineTextBox" Margin="10,0,0,-30" Width="400"
                  VerticalAlignment="Center" HorizontalAlignment="Left" />
         <CheckBox x:Name="AdminCheckBox" Content="{Binding RunAsAdminLoc}" Margin="10,0,0,-100" Width="400"
-                  VerticalAlignment="Center" HorizontalAlignment="Left" Checked="AdminCheckBox_OnChecked"
-                  Unchecked="AdminCheckBox_OnUnchecked" />
+                  VerticalAlignment="Center" HorizontalAlignment="Left"
+                  IsCheckedChanged="AdminCheckBox_OnIsCheckedChanged" />
         <CheckBox x:Name="RunOnCloseCheckBox" Content="{Binding RunOnCloseLoc}" Margin="10,0,0,-140"
                   Width="400" VerticalAlignment="Center" HorizontalAlignment="Left" />
         <CheckBox x:Name="KillCheckBox" Content="{Binding KillAfterCloseLoc}" Margin="10,0,0,-180"

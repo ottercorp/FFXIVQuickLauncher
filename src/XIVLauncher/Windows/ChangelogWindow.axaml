@@ -1,4 +1,4 @@
-ï»¿<Window
+<Window
     x:Class="XIVLauncher.Windows.ChangelogWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -55,7 +55,7 @@
                 <StackPanel Orientation="Horizontal">
                     <materialIcons:MaterialIcon Kind="Qqchat" Width="24" Height="24" />
                     <TextBlock Margin="8,0,0,0" VerticalAlignment="Center"
-                               Text="åŠ å…¥QQé¢‘é“" />
+                               Text="¼ÓÈëQQÆµµÀ" />
                 </StackPanel>
             </Button>
 

@@ -9,7 +9,7 @@
         CanResize="False"
         Foreground="{DynamicResource MaterialDesignBody}"
         FontWeight="Medium"
-        SystemDecorations="None"
+        WindowDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
         Height="400"

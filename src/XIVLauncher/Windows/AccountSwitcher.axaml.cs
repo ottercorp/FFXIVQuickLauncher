@@ -24,7 +24,8 @@ namespace XIVLauncher.Windows
     /// </summary>
     public partial class AccountSwitcher : Window
     {
-        private const string AccountSwitcherDragIndexFormat = "xivlauncher/account-switcher-index";
+        private static readonly DataFormat<string> AccountSwitcherDragIndexFormat =
+            DataFormat.CreateStringApplicationFormat("xivlauncher/account-switcher-index");
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -32,6 +33,7 @@ namespace XIVLauncher.Windows
 
         private Avalonia.Point? _dragStart;
         private ListBoxItem? _draggedItem;
+        private PointerPressedEventArgs? _pendingDragPointerPressed;
         private bool _isDragging;
         private bool _listReorderDragStarted;
 
@@ -84,6 +86,8 @@ namespace XIVLauncher.Windows
         {
             if (e.InitialPressMouseButton != MouseButton.Left)
                 return;
+
+            _pendingDragPointerPressed = null;
 
             if (_listReorderDragStarted)
             {
@@ -262,6 +266,7 @@ namespace XIVLauncher.Windows
                 return;
 
             _draggedItem.IsSelected = true;
+            _pendingDragPointerPressed = e;
         }
 
         private async void AccountListView_OnPointerMoved(object? sender, PointerEventArgs e)
@@ -286,13 +291,24 @@ namespace XIVLauncher.Windows
 
             _listReorderDragStarted = true;
             _isDragging = true;
+            var trigger = _pendingDragPointerPressed;
+            _pendingDragPointerPressed = null;
+            if (trigger == null)
+            {
+                _isDragging = false;
+                _dragStart = null;
+                _draggedItem = null;
+                return;
+            }
+
             try
             {
-                var dragData = new DataObject();
-                dragData.Set(AccountSwitcherDragIndexFormat,
-                    draggedIndex.ToString(InvariantCulture));
+                var transfer = new DataTransfer();
+                transfer.Add(DataTransferItem.Create(
+                    AccountSwitcherDragIndexFormat,
+                    draggedIndex.ToString(InvariantCulture)));
 
-                await DragDrop.DoDragDrop(e, dragData, DragDropEffects.Move);
+                await DragDrop.DoDragDropAsync(trigger, transfer, DragDropEffects.Move);
             }
             finally
             {
@@ -304,7 +320,7 @@ namespace XIVLauncher.Windows
 
         private void AccountListView_OnDragOver(object? sender, DragEventArgs e)
         {
-            if (e.Data.Contains(AccountSwitcherDragIndexFormat))
+            if (e.DataTransfer.Contains(AccountSwitcherDragIndexFormat))
                 e.DragEffects = DragDropEffects.Move;
             else
                 e.DragEffects = DragDropEffects.None;
@@ -312,8 +328,8 @@ namespace XIVLauncher.Windows
 
         private void AccountListView_OnDrop(object? sender, DragEventArgs e)
         {
-            var indexObj = e.Data.Get(AccountSwitcherDragIndexFormat);
-            if (indexObj is not string indexStr ||
+            var indexStr = e.DataTransfer.TryGetValue(AccountSwitcherDragIndexFormat);
+            if (indexStr is null ||
                 !int.TryParse(indexStr, NumberStyles.Integer, InvariantCulture, out var draggedIndex))
                 return;
 

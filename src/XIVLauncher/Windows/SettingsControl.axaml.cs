@@ -95,10 +95,10 @@ namespace XIVLauncher.Windows
             else
                 EntryPointDalamudLoadMethodRadioButton.IsChecked = true;
 
-            // Prevent raising events...
-            this.EnableHooksCheckBox.Checked -= this.EnableHooksCheckBox_OnChecked;
+            // Prevent raising events... (Avalonia 12: ToggleButton.Checked removed; use IsChecked property changes.)
+            this.EnableHooksCheckBox.PropertyChanged -= this.EnableHooksCheckBox_OnIsCheckedPropertyChanged;
             EnableHooksCheckBox.IsChecked = App.Settings.InGameAddonEnabled;
-            this.EnableHooksCheckBox.Checked += this.EnableHooksCheckBox_OnChecked;
+            this.EnableHooksCheckBox.PropertyChanged += this.EnableHooksCheckBox_OnIsCheckedPropertyChanged;
 
             this.EnableDcTravelCheckBox.IsChecked = App.Settings.EnableDcTravel;
 
@@ -262,8 +262,10 @@ namespace XIVLauncher.Windows
             }
         }
 
-        private void ToggleButton_OnChecked(object? sender, RoutedEventArgs e)
+        private void ToggleButton_OnIsCheckedChanged(object? sender, RoutedEventArgs e)
         {
+            if (sender is not CheckBox { IsChecked: true })
+                return;
             App.Settings.AddonList = (List<AddonEntry>)AddonListView.ItemsSource;
         }
 
@@ -343,6 +345,15 @@ namespace XIVLauncher.Windows
             {
                 LauncherLanguageNoticeTextBlock.IsVisible = true;
             }
+        }
+
+        private void EnableHooksCheckBox_OnIsCheckedPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property != CheckBox.IsCheckedProperty)
+                return;
+            if (e.NewValue is not true)
+                return;
+            EnableHooksCheckBox_OnChecked(EnableHooksCheckBox, new RoutedEventArgs());
         }
 
         private void EnableHooksCheckBox_OnChecked(object? sender, RoutedEventArgs e)
