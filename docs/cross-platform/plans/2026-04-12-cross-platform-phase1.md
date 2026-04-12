@@ -159,9 +159,10 @@ git commit -m "feat: reference Common.Unix and select ISteam by OS"
 | §4 PatchInstaller / net10.0 | Task 1 |
 | §4 Common `WIN32` 与 RID | Task 2 |
 | §3 运行时选 Steam | Task 3 |
-| §5 密钥 KeySharp | 留待 Phase 2 |
+| §5 密钥 KeySharp | 留待 Phase 3 |
 | §6 WeGame 仅 Windows | 留待后续任务（UI 与打包裁剪） |
-| §7 Unix 内进程补丁 | 留待 Phase 2（主窗口/补丁调用点） |
+| §7 Unix 内进程补丁 | 留待 Phase 3（主窗口/补丁调用点） |
+| Windows API 清点与 Common 迁移 | [Phase 2 — Windows API](./2026-04-12-cross-platform-phase2-windows-api.md) |
 
 ---
 

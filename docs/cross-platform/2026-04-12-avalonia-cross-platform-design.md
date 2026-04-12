@@ -96,3 +96,5 @@ flowchart TB
 ## 11. 参考
 
 - [ottercorp/XIVLauncher.Core](https://github.com/ottercorp/XIVLauncher.Core)（`cn` 分支）：内进程补丁、KeySharp 凭证、`Program.cs` 平台分支。
+- [Avalonia 主程序 Windows API 清单](./2026-04-12-avalonia-windows-api-inventory.md)：逐项说明是否迁入 `Common.Windows` / `Common.Unix`。
+- 实现计划：[Phase 1](./plans/2026-04-12-cross-platform-phase1.md)、[Phase 2 — Windows API 抽象](./plans/2026-04-12-cross-platform-phase2-windows-api.md)。
