@@ -29,6 +29,7 @@ namespace XIVLauncher.Xaml.Components
         public FolderEntry()
         {
             InitializeComponent();
+            DataContext = this;
         }
 
         private async void BrowseFolder(object sender, RoutedEventArgs e)

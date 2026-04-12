@@ -6,6 +6,7 @@
              xmlns:addon="using:XIVLauncher.Common.Addon"
              xmlns:components="using:XIVLauncher.Xaml.Components"
              xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+             x:DataType="viewModel:SettingsControlViewModel"
              Foreground="{DynamicResource MaterialDesignBody}"
              Background="{DynamicResource MaterialDesignPaper}"
              FontWeight="Medium">

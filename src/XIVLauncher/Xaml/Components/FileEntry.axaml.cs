@@ -39,6 +39,7 @@ namespace XIVLauncher.Xaml.Components
         public FileEntry()
         {
             InitializeComponent();
+            DataContext = this;
         }
 
         private async void BrowseFile(object sender, RoutedEventArgs e)

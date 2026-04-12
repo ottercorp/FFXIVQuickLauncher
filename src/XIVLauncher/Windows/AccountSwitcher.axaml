@@ -4,6 +4,8 @@
         xmlns:materialIcons="using:Material.Icons.Avalonia"
         xmlns:materialControls="using:Material.Styles.Controls"
         xmlns:accounts="using:XIVLauncher.Accounts"
+        xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+        x:DataType="viewModel:AccountSwitcherViewModel"
         Title="Account Switcher"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
@@ -39,7 +41,7 @@
                         </Style>
                     </ListBox.Styles>
                     <ListBox.ItemTemplate>
-                        <DataTemplate DataType="{x:Type accounts:AccountSwitcherEntry}">
+                        <DataTemplate DataType="accounts:AccountSwitcherEntry">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />

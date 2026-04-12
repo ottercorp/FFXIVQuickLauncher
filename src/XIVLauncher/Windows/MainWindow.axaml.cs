@@ -57,7 +57,7 @@ namespace XIVLauncher.Windows
         private bool _everShown = false;
 
         //private SdoArea[] _sdoAreas;
-        class BannerDotInfo
+        public class BannerDotInfo
         {
             public bool Active { get; set; }
             public int Index { get; set; }

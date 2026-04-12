@@ -1,6 +1,8 @@
 <Window x:Class="XIVLauncher.Windows.ProfilePictureInputWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+        x:DataType="viewModel:ProfilePictureInputWindowViewModel"
         Title="{Binding ProfilePictureInputTitleLoc}" Height="268.361" Width="535.302" WindowStartupLocation="CenterScreen"
         Icon="/Resources/dalamud_icon.ico" CanResize="False"
         Foreground="{DynamicResource MaterialDesignBody}"

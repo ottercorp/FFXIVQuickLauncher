@@ -4,6 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:materialDesign="clr-namespace:Material.Styles;assembly=Material.Styles"
     xmlns:materialIcons="using:Material.Icons.Avalonia"
+    xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+    x:DataType="viewModel:ChangeLogWindowViewModel"
     Title="XIVLauncher Update" MaxWidth="800" WindowStartupLocation="CenterScreen"
     Icon="/Resources/dalamud_icon.ico" CanResize="False" SizeToContent="WidthAndHeight"
     Foreground="{DynamicResource MaterialDesignBody}"

@@ -1,6 +1,8 @@
 <Window x:Class="XIVLauncher.Windows.AdvancedSettingsWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+        x:DataType="viewModel:AdvancedSettingsViewModel"
         Title="{Binding AdvancedSettingsTitleLoc}" SizeToContent="Height" Width="450" WindowStartupLocation="CenterScreen"
         Icon="/Resources/dalamud_icon.ico" CanResize="False"
         Foreground="{DynamicResource MaterialDesignBody}"

@@ -16,7 +16,10 @@ namespace XIVLauncher.Windows.ViewModel
             OkLoc = Loc.Localize("OK", "OK");
             OtpOneClickHintLoc = Loc.Localize("OtpOneClickHint", "Or use the app!\r\nClick here to learn more!");
             OtpInputPromptBadLoc = Loc.Localize("OtpInputPromptBad", "Enter a valid OTP key.\nIt is 6 digits long.");
+            QRHintLoc = Loc.Localize("QRHint", "Scan this QR code with your authenticator app.");
         }
+
+        public string QRHintLoc { get; private set; }
 
         public string OtpInputPromptLoc { get; private set; }
         public string CancelWithShortcutLoc { get; private set; }

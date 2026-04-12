@@ -2,6 +2,8 @@
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialControls="using:Material.Styles.Controls"
+        xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+        x:DataType="viewModel:PatchDownloadDialogViewModel"
         Title="XIVLauncher Update"
         WindowStartupLocation="CenterScreen"
         CanResize="False"

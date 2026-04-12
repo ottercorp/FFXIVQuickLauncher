@@ -9,6 +9,7 @@
     xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
     xmlns:windows="using:XIVLauncher.Windows"
     xmlns:xaml="using:XIVLauncher.Xaml"
+    x:DataType="viewModel:MainWindowViewModel"
     Title="XIVLauncherCN"
     Width="814"
     Height="399"
@@ -90,7 +91,7 @@
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
+                                    <DataTemplate DataType="windows:MainWindow+BannerDotInfo">
                                         <RadioButton GroupName="banner"
                                                      IsChecked="{Binding Active}"
                                                      PointerEntered="RadioButton_MouseEnter"
@@ -143,7 +144,7 @@
                                 Classes="Flat"
                                 HorizontalAlignment="Left"
                                 Focusable="False"
-                                ToolTip.Tip="注入器模式切换"
+                                ToolTip.Tip="???????"
                                 Margin="0"
                                 Height="77"
                                 Width="77"
@@ -218,12 +219,12 @@
                                                TextAlignment="Center"
                                                Margin="0,18,0,0" />
                                     <Button
-                                        Content="取消登录"
+                                        Content="????"
                                         Command="{Binding Path=LoginCancelCommand}"
                                         Margin="0,0,7,0"
                                         Height ="36"
                                         HorizontalAlignment="Center"
-                                        ToolTip.Tip="取消登录">
+                                        ToolTip.Tip="????">
                                     </Button>
                                 </DockPanel>
 
@@ -237,7 +238,7 @@
                                         VerticalAlignment="Top"
                                         SelectedItem="{Binding Path=GuiLoginType}"
                                         SelectionChanged="LoginTypeSelection_OnSelectionChanged"
-                                        PlaceholderText="选择登录方式">
+                                        PlaceholderText="??????">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate DataType="game:GuiLoginType">
                                                 <TextBlock Text="{Binding DisplayName}" />
@@ -254,7 +255,7 @@
                                         ItemsSource="{Binding Path=SdoAreas}"
                                         SelectedItem="{Binding Path=Area}"
                                         SelectionChanged="ServerSelection_OnSelectionChanged"
-                                        PlaceholderText="选择服务器">
+                                        PlaceholderText="?????">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate DataType="game:SdoArea">
                                                 <TextBlock Text="{Binding AreaName}" />
@@ -269,7 +270,7 @@
                                         Margin="0,1,0,0"
                                         TextWrapping="Wrap"
                                         VerticalAlignment="Top"
-                                        Watermark="盛趣账号"
+                                        Watermark="????"
                                         TextChanged="LoginUsername_OnTextChanged"
                                         Text="{Binding Username}"
                                         Cursor="IBeam" />
@@ -281,7 +282,7 @@
                                         HorizontalAlignment="Stretch"
                                         Margin="0,1,0,0"
                                         VerticalAlignment="Top"
-                                        PasswordChar="●"
+                                        PasswordChar="?"
                                         RevealPassword="True"
                                         TextChanged="LoginPassword_OnTextChanged"
                                         Watermark="{Binding LoginPasswordLoc}"
@@ -290,24 +291,24 @@
                                     <CheckBox
                                         IsVisible="True"
                                         DockPanel.Dock="Top"
-                                        Content="快速登录"
+                                        Content="????"
                                         HorizontalAlignment="Stretch"
                                         Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         x:Name="FastLoginCheckBox"
                                         Click="FastLoginCheckBox_OnClick"
-                                        ToolTip.Tip="缓存登录信息,类PC叨鱼快速登录"
+                                        ToolTip.Tip="??????,?PC??????"
                                         IsChecked="{Binding IsFastLogin}" />
 
                                     <CheckBox
                                         IsVisible="False"
                                         DockPanel.Dock="Top"
-                                        Content="读取登录信息"
+                                        Content="??????"
                                         HorizontalAlignment="Stretch"
                                         Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         x:Name="ReadWeGameInfoCheckBox"
-                                        ToolTip.Tip="从WeGame版FFXIV中读取登录信息"
+                                        ToolTip.Tip="?WeGame?FFXIV???????"
                                         IsChecked="{Binding IsReadWegameInfo}" />
 
                                     <StackPanel Orientation="Horizontal"
@@ -414,7 +415,7 @@
                                             Margin="0 0 0 0"
                                             Background="#FF0096DB"
                                             BorderBrush="#FF0096DB"
-                                            ToolTip.Tip="返回登录页面"
+                                            ToolTip.Tip="??????"
                                             Height ="36"
                                             Click="BackToLoginPageButton_OnClick">
                                         <StackPanel Orientation="Horizontal" Margin="0">
@@ -438,9 +439,9 @@
                                         VerticalAlignment="Top"
                                         ItemsSource="{Binding FfxivProcessCollection}"
                                         SelectedItem="{Binding SelectedProcess}"
-                                        PlaceholderText="选择要注入的进程">
+                                        PlaceholderText="????????">
                                         <ComboBox.ItemTemplate>
-                                            <DataTemplate>
+                                            <DataTemplate DataType="viewModel:MainWindowViewModel+FfxivProcess">
                                                 <StackPanel Orientation="Horizontal">
                                                     <materialIcons:MaterialIcon
                                                         Kind="BlockHelper"
@@ -460,7 +461,7 @@
                                                 DockPanel.Dock="Bottom">
                                         <Button
                                             x:Name="InjectButton"
-                                            Content="带到前台"
+                                            Content="????"
                                             Click="InjectButton_Click"
                                             Margin="0,0,10,0"
                                             Width="90"
@@ -468,7 +469,7 @@
                                         </Button>
                                         <Button
                                             x:Name="BringUp"
-                                            Content="注入"
+                                            Content="??"
                                             Command="{Binding Path=InjectGameCommand}"
                                             Margin="0,0,0,0"
                                             Width="90"

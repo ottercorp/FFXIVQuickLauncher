@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialIcons="using:Material.Icons.Avalonia"
         xmlns:materialControls="using:Material.Styles.Controls"
+        xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+        x:DataType="viewModel:OtpInputDialogViewModel"
         Title="Enter OTP key"
         WindowStartupLocation="CenterScreen"
         CanResize="False"

@@ -3,6 +3,8 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:materialIcons="using:Material.Icons.Avalonia"
+    xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
+    x:DataType="viewModel:CustomMessageBoxViewModel"
     Title="XIVLauncher Error"
     WindowStartupLocation="CenterScreen"
     CanResize="False"
