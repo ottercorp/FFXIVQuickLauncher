@@ -2139,201 +2139,183 @@ namespace XIVLauncher.Windows.ViewModel
 
         #region Bindings
 
-        private bool _isAutoLogin;
         public bool IsAutoLogin
         {
-            get => _isAutoLogin;
+            get => field;
             set
             {
-                _isAutoLogin = value;
+                field = value;
                 OnPropertyChanged(nameof(IsAutoLogin));
             }
         }
 
-        private bool _isFastLogin;
         public bool IsFastLogin
         {
-            get => _isFastLogin;
+            get => field;
             set
             {
-                _isFastLogin = value;
+                field = value;
                 OnPropertyChanged(nameof(IsFastLogin));
             }
         }
 
-        private bool _isReadWegameInfo;
         public bool IsReadWegameInfo
         {
-            get => _isReadWegameInfo;
+            get => field;
             set
             {
-                _isReadWegameInfo = value;
+                field = value;
                 OnPropertyChanged(nameof(IsReadWegameInfo));
             }
         }
 
-        private bool _isOtp;
         public bool IsOtp
         {
-            get => _isOtp;
+            get => field;
             set
             {
-                _isOtp = value;
+                field = value;
                 OnPropertyChanged(nameof(IsOtp));
             }
         }
 
-        private bool _isSteam;
         public bool IsSteam
         {
-            get => _isSteam;
+            get => field;
             set
             {
-                _isSteam = value;
+                field = value;
                 OnPropertyChanged(nameof(IsSteam));
             }
         }
 
-        private string _username;
         public string Username
         {
-            get => _username;
+            get => field;
             set
             {
-                _username = value;
+                field = value;
                 OnPropertyChanged(nameof(Username));
             }
         }
 
-        private GuiLoginType _guiLoginType;
         public GuiLoginType GuiLoginType
         {
-            get => _guiLoginType;
+            get => field;
             set
             {
-                _guiLoginType = value;
+                field = value;
                 OnPropertyChanged(nameof(GuiLoginType));
             }
         }
 
-        private SdoArea _area;
         public SdoArea Area
         {
-            get => _area;
+            get => field;
             set
             {
-                _area = value;
-                Log.Debug($"Area Change:{_area} -> {value}");
+                Log.Debug($"Area Change:{field} -> {value}");
+                field = value;
                 OnPropertyChanged(nameof(Area));
             }
         }
 
-        private bool _isEnabled;
         public bool IsEnabled
         {
-            get => _isEnabled;
+            get => field;
             set
             {
-                _isEnabled = value;
+                field = value;
                 OnPropertyChanged(nameof(IsEnabled));
             }
         }
 
-        private int _loginCardTransitionerIndex;
         public int LoginCardTransitionerIndex
         {
-            get => _loginCardTransitionerIndex;
+            get => field;
             set
             {
-                _loginCardTransitionerIndex = value;
+                field = value;
                 OnPropertyChanged(nameof(LoginCardTransitionerIndex));
             }
         }
 
-        private int _shellPageIndex = 1;
         public int ShellPageIndex
         {
-            get => _shellPageIndex;
+            get => field;
             set
             {
-                _shellPageIndex = value;
+                field = value;
                 OnPropertyChanged(nameof(ShellPageIndex));
             }
-        }
+        } = 1;
 
-        private bool _isLoadingDialogOpen;
         public bool IsLoadingDialogOpen
         {
-            get => _isLoadingDialogOpen;
+            get => field;
             set
             {
-                _isLoadingDialogOpen = value;
+                field = value;
                 OnPropertyChanged(nameof(IsLoadingDialogOpen));
             }
         }
 
-        private bool _isLoadingDialogCancelButtonVisible;
         public bool IsLoadingDialogCancelButtonVisible
         {
-            get => _isLoadingDialogCancelButtonVisible;
+            get => field;
             set
             {
-                _isLoadingDialogCancelButtonVisible = value;
+                field = value;
                 OnPropertyChanged(nameof(IsLoadingDialogCancelButtonVisible));
             }
         }
 
-        private string _loadingDialogMessage;
         public string LoadingDialogMessage
         {
-            get => _loadingDialogMessage;
+            get => field;
             set
             {
-                _loadingDialogMessage = value;
+                field = value;
                 OnPropertyChanged(nameof(LoadingDialogMessage));
             }
         }
 
-        private string _loginMessage;
         public string LoginMessage
         {
-            get => _loginMessage;
+            get => field;
             set
             {
-                _loginMessage = value;
+                field = value;
                 OnPropertyChanged(nameof(LoginMessage));
             }
         }
 
-        private SolidColorBrush _worldStatusIconColor;
         public SolidColorBrush WorldStatusIconColor
         {
-            get => _worldStatusIconColor;
+            get => field;
             set
             {
-                _worldStatusIconColor = value;
+                field = value;
                 OnPropertyChanged(nameof(WorldStatusIconColor));
             }
         }
 
-        private Bitmap _qrCodeBitmapImage;
         public Bitmap QrCodeBitmapImage
         {
-            get => _qrCodeBitmapImage;
+            get => field;
             set
             {
-                _qrCodeBitmapImage = value;
+                field = value;
                 OnPropertyChanged(nameof(QrCodeBitmapImage));
             }
         }
 
-        private MaterialIconKind _modeSwitchIcon;
         public MaterialIconKind ModeSwitchIcon
         {
-            get => _modeSwitchIcon;
+            get => field;
             set
             {
-                _modeSwitchIcon = value;
+                field = value;
                 OnPropertyChanged(nameof(ModeSwitchIcon));
             }
         }
@@ -2357,24 +2339,22 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        private ObservableCollection<FfxivProcess> _ffxivProcessCollection;
         public ObservableCollection<FfxivProcess> FfxivProcessCollection
         {
-            get => _ffxivProcessCollection;
+            get => field;
             set
             {
-                _ffxivProcessCollection = value;
+                field = value;
                 OnPropertyChanged(nameof(FfxivProcessCollection));
             }
         }
 
-        private FfxivProcess _selectedProcess;
         public FfxivProcess SelectedProcess
         {
-            get => _selectedProcess;
+            get => field;
             set
             {
-                _selectedProcess = value;
+                field = value;
                 OnPropertyChanged(nameof(SelectedProcess));
             }
         }

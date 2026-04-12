@@ -7,9 +7,6 @@ namespace XIVLauncher.Windows.ViewModel
 {
     class SettingsControlViewModel : INotifyPropertyChanged
     {
-        private string _gamePath;
-        private string _patchPath;
-
         public SettingsControlViewModel()
         {
             SetupLoc();
@@ -33,10 +30,10 @@ namespace XIVLauncher.Windows.ViewModel
         /// </summary>
         public string GamePath
         {
-            get => _gamePath;
+            get => field;
             set
             {
-                _gamePath = value;
+                field = value;
                 OnPropertyChanged(nameof(GamePath));
                 OnPropertyChanged(nameof(IsRunIntegrityCheckPossible));
             }
@@ -47,10 +44,10 @@ namespace XIVLauncher.Windows.ViewModel
         /// </summary>
         public string PatchPath
         {
-            get => _patchPath;
+            get => field;
             set
             {
-                _patchPath = value;
+                field = value;
                 OnPropertyChanged(nameof(PatchPath));
             }
         }
