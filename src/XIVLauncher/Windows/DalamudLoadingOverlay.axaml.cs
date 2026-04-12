@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Timers;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -24,6 +25,7 @@ namespace XIVLauncher.Windows
             InitializeComponent();
 
             this.DataContext = new DalamudLoadingOverlayViewModel();
+            Position = new PixelPoint(0, 0);
         }
 
         private IDalamudLoadingOverlay.DalamudUpdateStep _progress;

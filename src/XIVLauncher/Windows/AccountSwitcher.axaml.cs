@@ -24,8 +24,7 @@ namespace XIVLauncher.Windows
     /// </summary>
     public partial class AccountSwitcher : Window
     {
-        private static readonly DataFormat<string> AccountSwitcherDragIndexFormat =
-            DataFormat.CreateStringApplicationFormat("xivlauncher/account-switcher-index");
+        private const string AccountSwitcherDragIndexFormat = "xivlauncher/account-switcher-index";
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -230,24 +229,22 @@ namespace XIVLauncher.Windows
             RefreshEntries();
         }
 
-        private void DontSavePassword_OnChecked(object? sender, RoutedEventArgs e)
+        private void DontSavePassword_OnClick(object? sender, RoutedEventArgs e)
         {
             if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
                 return;
 
             var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
-            account.AutoLogin = false;
-            account.Password = string.Empty;
-            _accountManager.Save();
-        }
+            if (AccountEntrySavePasswordCheck.IsChecked == true)
+            {
+                account.AutoLogin = false;
+                account.Password = string.Empty;
+            }
+            else
+            {
+                account.AutoLogin = true;
+            }
 
-        private void DontSavePassword_OnUnchecked(object? sender, RoutedEventArgs e)
-        {
-            if (AccountListView.SelectedItem is not AccountSwitcherEntry selectedEntry)
-                return;
-
-            var account = _accountManager.Accounts.First(a => a.Id == selectedEntry.Account.Id);
-            account.AutoLogin = true;
             _accountManager.Save();
         }
 
@@ -281,7 +278,9 @@ namespace XIVLauncher.Windows
             if (Math.Abs(diff.X) <= 4 && Math.Abs(diff.Y) <= 4)
                 return;
 
-            var draggedIndex = AccountListView.IndexFromContainer(_draggedItem);
+            var draggedIndex = AccountListView.ItemsSource is System.Collections.IList list
+                ? list.IndexOf(_draggedItem.DataContext)
+                : -1;
             if (draggedIndex < 0)
                 return;
 
@@ -289,12 +288,11 @@ namespace XIVLauncher.Windows
             _isDragging = true;
             try
             {
-                var dragData = new DataTransfer();
-                dragData.Add(DataTransferItem.Create(
-                    AccountSwitcherDragIndexFormat,
-                    draggedIndex.ToString(InvariantCulture)));
+                var dragData = new DataObject();
+                dragData.Set(AccountSwitcherDragIndexFormat,
+                    draggedIndex.ToString(InvariantCulture));
 
-                await DragDrop.DoDragDropAsync(e, dragData, DragDropEffects.Move);
+                await DragDrop.DoDragDrop(e, dragData, DragDropEffects.Move);
             }
             finally
             {
@@ -306,7 +304,7 @@ namespace XIVLauncher.Windows
 
         private void AccountListView_OnDragOver(object? sender, DragEventArgs e)
         {
-            if (e.DataTransfer.Contains(AccountSwitcherDragIndexFormat))
+            if (e.Data.Contains(AccountSwitcherDragIndexFormat))
                 e.DragEffects = DragDropEffects.Move;
             else
                 e.DragEffects = DragDropEffects.None;
@@ -314,7 +312,8 @@ namespace XIVLauncher.Windows
 
         private void AccountListView_OnDrop(object? sender, DragEventArgs e)
         {
-            if (!e.DataTransfer.TryGetValue(AccountSwitcherDragIndexFormat, out var indexStr) ||
+            var indexObj = e.Data.Get(AccountSwitcherDragIndexFormat);
+            if (indexObj is not string indexStr ||
                 !int.TryParse(indexStr, NumberStyles.Integer, InvariantCulture, out var draggedIndex))
                 return;
 
@@ -324,7 +323,9 @@ namespace XIVLauncher.Windows
             if (targetItem == null)
                 return;
 
-            var targetIndex = AccountListView.IndexFromContainer(targetItem);
+            var targetIndex = AccountListView.ItemsSource is System.Collections.IList list
+                ? list.IndexOf(targetItem.DataContext)
+                : -1;
 
             if (targetIndex < 0 || draggedIndex < 0)
                 return;

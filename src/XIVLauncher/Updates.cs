@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Serilog;
 using Velopack;
 using XIVLauncher.Common.Util;
+using Avalonia.Threading;
 using XIVLauncher.Windows;
 
 #nullable enable
@@ -237,17 +238,17 @@ namespace XIVLauncher
 
                     try
                     {
-                        changelogWindow.Dispatcher.Invoke(() =>
+                        Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             changelogWindow.UpdateVersion(newRelease.TargetFullRelease.Version.ToString());
                             changelogWindow.ChangeLogText.Text = changelog;
                             changelogWindow.Show();
-                            changelogWindow.Closed += (_, _) =>
+                            changelogWindow.Closed += (s, ev) =>
                             {
                                 // install new version and restart app
                                 mgr.ApplyUpdatesAndRestart(newRelease);
                             };
-                        });
+                        }).GetAwaiter().GetResult();
 
                         OnUpdateCheckFinished?.Invoke(false);
                     }

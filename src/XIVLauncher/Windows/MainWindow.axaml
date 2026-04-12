@@ -2,17 +2,16 @@
     x:Class="XIVLauncher.Windows.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:assists="using:Material.Styles.Assists"
     xmlns:dialogHost="using:DialogHostAvalonia"
     xmlns:game="using:XIVLauncher.Common.Game"
-    xmlns:materialDesign="using:Material.Avalonia"
     xmlns:materialIcons="using:Material.Icons.Avalonia"
+    xmlns:materialControls="using:Material.Styles.Controls"
     xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
     xmlns:windows="using:XIVLauncher.Windows"
     xmlns:xaml="using:XIVLauncher.Xaml"
     Title="XIVLauncherCN"
-    Width="700"
-    Height="376"
+    Width="814"
+    Height="399"
     WindowStartupLocation="CenterScreen"
     CanResize="False"
     CanMinimize="True"
@@ -22,9 +21,20 @@
     FontWeight="Medium"
     Closing="MainWindow_OnClosing">
 
+    <Window.Styles>
+        <Style Selector="ComboBox.compactInput">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="0,4,0,2" />
+        </Style>
+        <Style Selector="TextBox.compactInput">
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Padding" Value="0,4,0,2" />
+        </Style>
+    </Window.Styles>
+
     <Window.Resources>
-        <x:Double x:Key="BannerCardWidth">399</x:Double>
-        <x:Double x:Key="BannerCardHeight">213</x:Double>
+        <x:Double x:Key="BannerCardWidth">544</x:Double>
+        <x:Double x:Key="BannerCardHeight">290</x:Double>
         <xaml:NewsTagToMaterialIconKindConverter x:Key="NewsTagToIconKindConverter" />
         <xaml:NewsTagToForegroundBrushConverter x:Key="NewsTagToForegroundConverter" />
     </Window.Resources>
@@ -37,51 +47,56 @@
                                      CloseMainWindowGracefully="SettingsControl_OnCloseMainWindowGracefully" />
 
             <Grid>
-                <Grid Margin="10">
-                    <Grid>
+                <Grid Margin="5">
+                    <Grid RowSpacing="5" ColumnSpacing="5">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
-                            <RowDefinition />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <materialDesign:Card
+                        <materialControls:Card
                             Grid.Row="0"
                             Grid.Column="0"
                             Margin="0"
+                            Padding="0"
+                            ClipToBounds="True"
                             HorizontalAlignment="Left"
                             Width="{DynamicResource BannerCardWidth}"
                             Height="{DynamicResource BannerCardHeight}"
                             Cursor="Hand"
                             PointerReleased="BannerCard_MouseUp">
-                            <Viewbox>
-                                <Image x:Name="BannerImage"
-                                       Source="avares://XIVLauncherCN/Resources/placeholder-news.png" />
-                            </Viewbox>
-                        </materialDesign:Card>
+                            <Image x:Name="BannerImage"
+                                   Stretch="UniformToFill"
+                                   Source="avares://XIVLauncherCN/Resources/placeholder-news.png" />
+                        </materialControls:Card>
 
-                        <Border CornerRadius="8"
+                        <Border CornerRadius="16"
                                 Background="#aa333333"
+                                Grid.Row="0"
+                                Grid.Column="0"
                                 VerticalAlignment="Bottom"
                                 HorizontalAlignment="Right"
-                                Margin="0,0,8,8">
+                                Margin="0,0,8,8"
+                                Padding="2">
                             <ItemsControl x:Name="BannerDot" Opacity="1">
-                                <ItemsControl.RenderTransform>
-                                    <RotateTransform Angle="-90" />
-                                </ItemsControl.RenderTransform>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <RadioButton GroupName="banner"
                                                      IsChecked="{Binding Active}"
-                                                     RenderTransformOrigin="0.5,0.5"
                                                      PointerEntered="RadioButton_MouseEnter"
                                                      PointerExited="RadioButton_MouseLeave">
                                             <RadioButton.RenderTransform>
-                                                <ScaleTransform ScaleX="0.75" ScaleY="0.75" />
+                                                <ScaleTransform ScaleX="1" ScaleY="1" />
                                             </RadioButton.RenderTransform>
                                         </RadioButton>
                                     </DataTemplate>
@@ -89,10 +104,10 @@
                             </ItemsControl>
                         </Border>
 
-                        <materialDesign:Card
+                        <materialControls:Card
                             Grid.Row="1"
                             Grid.Column="0"
-                            Margin="0 10 0 0"
+                            Margin="0"
                             Height="94"
                             HorizontalAlignment="Left"
                             Width="{DynamicResource BannerCardWidth}">
@@ -109,12 +124,12 @@
                                                 Foreground="{Binding Tag, Converter={StaticResource NewsTagToForegroundConverter}}" />
                                             <TextBlock Text="{Binding Title}"
                                                        VerticalAlignment="Center"
-                                                       Margin="12,0,0,0" />
+                                                       Margin="0,0,0,0" />
                                         </StackPanel>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                        </materialDesign:Card>
+                        </materialControls:Card>
 
                         <StackPanel
                             Grid.Row="1"
@@ -122,67 +137,53 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Margin="0 0 -10 -10">
+                            Margin="0">
                             <Button
                                 x:Name="QueueButton"
-                                Style="{DynamicResource MaterialDesignFlatButton}"
+                                Classes="Flat"
                                 HorizontalAlignment="Left"
                                 Focusable="False"
                                 ToolTip.Tip="注入器模式切换"
                                 Margin="0"
                                 Height="77"
                                 Width="77"
+                                Foreground="{DynamicResource PrimaryHueMidBrush}"
                                 Command="{Binding Path=InjectModeSwitchCommand}"
                                 Cursor="Hand">
-                                <StackPanel Orientation="Vertical"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch">
-                                    <materialIcons:MaterialIcon
-                                        Kind="{Binding ModeSwitchIcon}"
-                                        Height="Auto"
-                                        Width="Auto" />
-                                </StackPanel>
+                                <materialIcons:MaterialIcon
+                                    Kind="{Binding ModeSwitchIcon}"
+                                    Width="48" Height="48" />
                             </Button>
 
                             <Button
-                                Style="{DynamicResource MaterialDesignFlatButton}"
+                                Classes="Flat"
                                 HorizontalAlignment="Left"
                                 Focusable="False"
                                 ToolTip.Tip="{Binding WorldStatusLoc}"
                                 Margin="0"
                                 Height="77"
                                 Width="77"
+                                Foreground="{DynamicResource PrimaryHueMidBrush}"
                                 Click="WorldStatusButton_Click">
-                                <StackPanel Orientation="Vertical"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch">
-                                    <materialIcons:MaterialIcon Kind="Earth"
-                                                                Height="Auto"
-                                                                Width="Auto" />
-                                </StackPanel>
+                                <materialIcons:MaterialIcon Kind="Earth" Width="48" Height="48" />
                             </Button>
 
                             <Button
                                 x:Name="SettingsButton"
-                                Style="{DynamicResource MaterialDesignFlatButton}"
+                                Classes="Flat"
                                 HorizontalAlignment="Left"
                                 Focusable="False"
                                 ToolTip.Tip="{Binding SettingsLoc}"
                                 Margin="0"
                                 Height="77"
                                 Width="77"
+                                Foreground="{DynamicResource PrimaryHueMidBrush}"
                                 Command="{Binding ShowShellSettingsCommand}">
-                                <StackPanel Orientation="Vertical"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch">
-                                    <materialIcons:MaterialIcon Kind="Cog"
-                                                                Height="Auto"
-                                                                Width="Auto" />
-                                </StackPanel>
+                                <materialIcons:MaterialIcon Kind="Cog" Width="48" Height="48" />
                             </Button>
                         </StackPanel>
 
-                        <materialDesign:Card
+                        <materialControls:Card
                             Grid.Row="0"
                             Grid.Column="1"
                             Width="255"
@@ -220,49 +221,55 @@
                                         Content="取消登录"
                                         Command="{Binding Path=LoginCancelCommand}"
                                         Margin="0,0,7,0"
-                                        Width="142"
+                                        Height ="36"
                                         HorizontalAlignment="Center"
                                         ToolTip.Tip="取消登录">
                                     </Button>
                                 </DockPanel>
 
-                                <DockPanel Margin="30,0,30,0" Height="204">
+                                <DockPanel Margin="16,0,16,0">
                                     <ComboBox
                                         DockPanel.Dock="Top"
                                         x:Name="LoginTypeSelection"
+                                        Classes="compactInput"
                                         HorizontalAlignment="Stretch"
-                                        Margin="0,10,0,0"
-                                        Height="24"
+                                        Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         SelectedItem="{Binding Path=GuiLoginType}"
-                                        SelectedValuePath="LoginType"
-                                        DisplayMemberPath="DisplayName"
                                         SelectionChanged="LoginTypeSelection_OnSelectionChanged"
-                                        assists:ComboBoxAssist.Label="选择登录方式">
+                                        PlaceholderText="选择登录方式">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="game:GuiLoginType">
+                                                <TextBlock Text="{Binding DisplayName}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <ComboBox
                                         DockPanel.Dock="Top"
                                         x:Name="ServerSelection"
+                                        Classes="compactInput"
                                         HorizontalAlignment="Stretch"
-                                        Margin="0,8,0,0"
-                                        Height="24"
+                                        Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         ItemsSource="{Binding Path=SdoAreas}"
                                         SelectedItem="{Binding Path=Area}"
-                                        SelectedValuePath="Areaid"
-                                        DisplayMemberPath="AreaName"
                                         SelectionChanged="ServerSelection_OnSelectionChanged"
-                                        assists:ComboBoxAssist.Label="选择服务器">
+                                        PlaceholderText="选择服务器">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="game:SdoArea">
+                                                <TextBlock Text="{Binding AreaName}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <TextBox
                                         DockPanel.Dock="Top"
                                         x:Name="LoginUsername"
+                                        Classes="compactInput"
                                         HorizontalAlignment="Stretch"
-                                        Margin="0,8,0,0"
-                                        Height="24"
+                                        Margin="0,1,0,0"
                                         TextWrapping="Wrap"
                                         VerticalAlignment="Top"
-                                        assists:TextFieldAssist.Label="盛趣账号"
+                                        Watermark="盛趣账号"
                                         TextChanged="LoginUsername_OnTextChanged"
                                         Text="{Binding Username}"
                                         Cursor="IBeam" />
@@ -270,14 +277,14 @@
                                         IsEnabled="True"
                                         DockPanel.Dock="Top"
                                         x:Name="LoginPassword"
+                                        Classes="compactInput"
                                         HorizontalAlignment="Stretch"
-                                        Height="24"
-                                        Margin="0,8,0,0"
+                                        Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         PasswordChar="●"
-                                        RevealPasswordButtonIsVisible="True"
+                                        RevealPassword="True"
                                         TextChanged="LoginPassword_OnTextChanged"
-                                        assists:TextFieldAssist.Label="{Binding LoginPasswordLoc}"
+                                        Watermark="{Binding LoginPasswordLoc}"
                                         Cursor="IBeam" />
 
                                     <CheckBox
@@ -285,7 +292,7 @@
                                         DockPanel.Dock="Top"
                                         Content="快速登录"
                                         HorizontalAlignment="Stretch"
-                                        Margin="0,8,0,0"
+                                        Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         x:Name="FastLoginCheckBox"
                                         Click="FastLoginCheckBox_OnClick"
@@ -297,7 +304,7 @@
                                         DockPanel.Dock="Top"
                                         Content="读取登录信息"
                                         HorizontalAlignment="Stretch"
-                                        Margin="0,8,0,0"
+                                        Margin="0,1,0,0"
                                         VerticalAlignment="Top"
                                         x:Name="ReadWeGameInfoCheckBox"
                                         ToolTip.Tip="从WeGame版FFXIV中读取登录信息"
@@ -306,7 +313,7 @@
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Bottom"
-                                                Margin="0,0,0,10"
+                                                Margin="0,0,0,4"
                                                 DockPanel.Dock="Bottom">
                                         <Button
                                             x:Name="LoginButton"
@@ -314,6 +321,9 @@
                                             Command="{Binding Path=StartLoginCommand}"
                                             Margin="0,0,0,0"
                                             Width="84"
+                                            Height="30"
+                                            Padding="16,4"
+                                            Foreground="White"
                                             ToolTip.Tip="{Binding LoginTooltipLoc}">
 
                                             <Button.ContextMenu>
@@ -339,21 +349,23 @@
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Center"
                                             Margin="0,0,7,0"
+                                            Padding="0"
+                                            Height="30"
                                             ToolTip.Tip="{Binding Path=LaunchOptionsLoc}">
                                             <Button.Flyout>
                                                 <MenuFlyout Placement="Bottom">
-                                                    <MenuFlyoutItem Header="{Binding LoginRepairLoc}"
-                                                                    Command="{Binding Path=LoginRepairCommand}" />
-                                                    <MenuFlyoutSeparator />
-                                                    <MenuFlyoutItem Header="{Binding LoginNoDalamudLoc}"
-                                                                    Command="{Binding Path=LoginNoDalamudCommand}" />
-                                                    <MenuFlyoutItem Header="{Binding LoginNoPluginsLoc}"
-                                                                    Command="{Binding Path=LoginNoPluginsCommand}" />
-                                                    <MenuFlyoutItem Header="{Binding LoginNoThirdLoc}"
-                                                                    Command="{Binding Path=LoginNoThirdCommand}" />
-                                                    <MenuFlyoutSeparator />
-                                                    <MenuFlyoutItem Header="{Binding LoginNoStartLoc}"
-                                                                    Command="{Binding Path=LoginNoStartCommand}" />
+                                                    <MenuItem Header="{Binding LoginRepairLoc}"
+                                                              Command="{Binding Path=LoginRepairCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding LoginNoDalamudLoc}"
+                                                              Command="{Binding Path=LoginNoDalamudCommand}" />
+                                                    <MenuItem Header="{Binding LoginNoPluginsLoc}"
+                                                              Command="{Binding Path=LoginNoPluginsCommand}" />
+                                                    <MenuItem Header="{Binding LoginNoThirdLoc}"
+                                                              Command="{Binding Path=LoginNoThirdCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding LoginNoStartLoc}"
+                                                              Command="{Binding Path=LoginNoStartCommand}" />
                                                 </MenuFlyout>
                                             </Button.Flyout>
                                             <Border Margin="0,0,0,0"
@@ -365,7 +377,7 @@
                                                     <materialIcons:MaterialIcon Kind="ChevronDoubleDown"
                                                                                 Background="{DynamicResource PrimaryHueMidBrush}"
                                                                                 Foreground="White"
-                                                                                Height="30" />
+                                                                                Width="30" Height="30" />
                                                 </StackPanel>
                                             </Border>
                                         </Button>
@@ -374,12 +386,15 @@
                                                 IsVisible="True"
                                                 x:Name="AccountSwitcherButton"
                                                 Margin="0 0 0 0"
+                                                Height="30"
+                                                Padding="8,4"
                                                 Background="#FF0096DB"
                                                 BorderBrush="#FF0096DB"
+                                                Foreground="White"
                                                 ToolTip.Tip="{Binding OpenAccountSwitcherLoc}"
                                                 Click="AccountSwitcherButton_OnClick">
                                             <StackPanel Orientation="Horizontal" Margin="0">
-                                                <materialIcons:MaterialIcon Kind="AccountGroup" />
+                                                <materialIcons:MaterialIcon Kind="AccountGroup" Width="20" Height="20" />
                                             </StackPanel>
                                         </Button>
                                     </StackPanel>
@@ -400,10 +415,11 @@
                                             Background="#FF0096DB"
                                             BorderBrush="#FF0096DB"
                                             ToolTip.Tip="返回登录页面"
+                                            Height ="36"
                                             Click="BackToLoginPageButton_OnClick">
                                         <StackPanel Orientation="Horizontal" Margin="0">
                                             <materialIcons:MaterialIcon Kind="RedoVariant"
-                                                                        RenderTransformOrigin="0.5,0.5">
+                                                                        Width="24" Height="24">
                                                 <materialIcons:MaterialIcon.RenderTransform>
                                                     <RotateTransform Angle="180" />
                                                 </materialIcons:MaterialIcon.RenderTransform>
@@ -418,11 +434,11 @@
                                         x:Name="ProcessSelection"
                                         HorizontalAlignment="Stretch"
                                         Margin="0,10,0,0"
-                                        Height="24"
+                                        Height="48"
                                         VerticalAlignment="Top"
                                         ItemsSource="{Binding FfxivProcessCollection}"
                                         SelectedItem="{Binding SelectedProcess}"
-                                        assists:ComboBoxAssist.Label="选择要注入的进程">
+                                        PlaceholderText="选择要注入的进程">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -461,7 +477,7 @@
                                     </StackPanel>
                                 </DockPanel>
                             </Carousel>
-                        </materialDesign:Card>
+                        </materialControls:Card>
                     </Grid>
 
                     <dialogHost:DialogHost
@@ -484,7 +500,7 @@
                                         Margin="0 8 0 0" />
                                     <Button
                                         x:Name="LoadingMessageCancelButton"
-                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Classes="Flat"
                                         Margin="0 8 0 0"
                                         Click="QuitMaintenanceQueueButton_OnClick"
                                         Content="{Binding CancelWithShortcutLoc}"

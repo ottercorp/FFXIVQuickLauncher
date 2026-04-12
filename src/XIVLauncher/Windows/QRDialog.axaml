@@ -2,7 +2,7 @@
         x:Name="ScanQRWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="using:Material.Avalonia"
+        xmlns:materialControls="using:Material.Styles.Controls"
         Title="Scan QR Code"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
@@ -14,7 +14,7 @@
         Height="196.088"
         Width="269.186">
     <Grid Margin="0,0,0,0">
-        <materialDesign:Card Background="White" Height="165" Margin="0,0,10,0">
+        <materialControls:Card Background="White" Height="165" Margin="0,0,10,0">
             <StackPanel Margin="16,8,10,0">
                 <Image Height="99" Width="99" x:Name="QRImage" Focusable="True" />
 
@@ -23,10 +23,11 @@
                         Content="取消"
                         Margin="7,0,0,0"
                         Width="220"
+                        Height ="36"
                         Click="OkButton_OnClick" />
                 </StackPanel>
                 <TextBlock Foreground="DarkGray" Margin="0,8,0,0" TextAlignment="Center" Cursor="Hand" PointerReleased="OpenQRShortcutInfo_PointerReleased" Text="{Binding QRHintLoc}" />
             </StackPanel>
-        </materialDesign:Card>
+        </materialControls:Card>
     </Grid>
 </Window>

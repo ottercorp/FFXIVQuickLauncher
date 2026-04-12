@@ -1,10 +1,14 @@
 ﻿<Application x:Class="XIVLauncher.App"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:themes="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
+             xmlns:dialogHostAvalonia="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              RequestedThemeVariant="Dark">
     <Application.Styles>
-        <StyleInclude Source="avares://Material.Avalonia/Material.Avalonia.Templates.axaml" />
-        <StyleInclude Source="avares://Material.Avalonia/Material.Avalonia.ToolKit.axaml" />
+        <themes:MaterialTheme BaseTheme="Dark" PrimaryColor="Blue" SecondaryColor="Lime" />
+        <materialIcons:MaterialIconStyles />
+        <dialogHostAvalonia:DialogHostStyles />
     </Application.Styles>
 
     <Application.Resources>

@@ -5,8 +5,10 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using CheapLoc;
@@ -29,7 +31,7 @@ namespace XIVLauncher.Windows
     /// <summary>
     ///     Interaction logic for SettingsControl.axaml
     /// </summary>
-    public partial class SettingsControl
+    public partial class SettingsControl : UserControl
     {
         public event EventHandler SettingsDismissed;
         public event EventHandler CloseMainWindowGracefully;
@@ -174,7 +176,7 @@ namespace XIVLauncher.Windows
         /// </summary>
         private void NavigateFromSettingsToMain()
         {
-            for (var p = this.Parent as Control; p != null; p = p.Parent as Control)
+            for (var p = this.GetLogicalParent() as Control; p != null; p = p.GetLogicalParent() as Control)
             {
                 if (p is SelectingItemsControl sic && sic.ItemCount >= 2 && sic.SelectedIndex == 0)
                 {
@@ -442,7 +444,7 @@ namespace XIVLauncher.Windows
             {
                 case MessageBoxResult.Yes:
                     var fts = new FirstTimeSetup();
-                    fts.ShowDialog();
+                    fts.ShowDialog(GetOwnerWindow()).GetAwaiter().GetResult();
 
                     Log.Debug($"WasCompleted: {fts.WasCompleted}");
 

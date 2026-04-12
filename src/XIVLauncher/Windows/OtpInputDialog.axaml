@@ -1,8 +1,8 @@
 ﻿<Window x:Class="XIVLauncher.Windows.OtpInputDialog"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="using:Material.Avalonia"
         xmlns:materialIcons="using:Material.Icons.Avalonia"
+        xmlns:materialControls="using:Material.Styles.Controls"
         Title="Enter OTP key"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
@@ -14,7 +14,7 @@
         Height="196.088"
         Width="269.186">
     <Grid Margin="0,0,0,0">
-        <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="165" Margin="0,0,10,0">
+        <materialControls:Card Background="{DynamicResource MaterialDesignPaper}" Height="165" Margin="0,0,10,0">
             <StackPanel Margin="16,8,10,0">
                 <Grid
                     HorizontalAlignment="Stretch"
@@ -43,7 +43,6 @@
                         x:Name="OtpTextBox" />
                     <Button
                         x:Name="PasteButton"
-                        Style="{DynamicResource MaterialDesignFlatButton}"
                         ToolTip.Tip="{Binding PasteButtonLoc}"
                         HorizontalAlignment="Right"
                         Click="PasteButton_OnClick"
@@ -68,6 +67,6 @@
                 </StackPanel>
                 <TextBlock Foreground="DarkGray" Margin="0,8,0,0" TextAlignment="Center" Cursor="Hand" PointerReleased="OpenShortcutInfo_PointerReleased" Text="{Binding OtpOneClickHintLoc}" />
             </StackPanel>
-        </materialDesign:Card>
+        </materialControls:Card>
     </Grid>
 </Window>

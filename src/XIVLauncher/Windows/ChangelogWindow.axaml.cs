@@ -87,16 +87,15 @@ namespace XIVLauncher.Windows
             // LoadChangelog();
         }
 
-        public new void ShowDialog()
+        public async Task ShowDialogAsync(Window? owner)
         {
-            // base.ShowDialog();
-            //
-            // LoadChangelog();
+            if (owner != null)
+                await base.ShowDialog(owner);
         }
 
         private void LoadChangelog()
         {
-            var _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 try
                 {
@@ -104,12 +103,12 @@ namespace XIVLauncher.Windows
                     client.DefaultRequestHeaders.Add("User-Agent", PlatformHelpers.GetVersion());
                     var response = JsonConvert.DeserializeObject<ReleaseMeta>(await client.GetStringAsync(META_URL));
 
-                    _ = Dispatcher.UIThread.InvokeAsync(() => this.ChangeLogText.Text = _prerelease ? response.PrereleaseVersion.Changelog : response.ReleaseVersion.Changelog);
+                    await Dispatcher.UIThread.InvokeAsync(() => this.ChangeLogText.Text = _prerelease ? response.PrereleaseVersion.Changelog : response.ReleaseVersion.Changelog);
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Could not get changelog");
-                    _ = Dispatcher.UIThread.InvokeAsync(() => this.ChangeLogText.Text = Model.ChangelogLoadingErrorLoc);
+                    await Dispatcher.UIThread.InvokeAsync(() => this.ChangeLogText.Text = Model.ChangelogLoadingErrorLoc);
                 }
             });
         }

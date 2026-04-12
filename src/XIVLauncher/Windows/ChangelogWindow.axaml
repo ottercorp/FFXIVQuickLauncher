@@ -2,7 +2,7 @@
     x:Class="XIVLauncher.Windows.ChangelogWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:materialDesign="using:Material.Avalonia"
+    xmlns:materialDesign="clr-namespace:Material.Styles;assembly=Material.Styles"
     xmlns:materialIcons="using:Material.Icons.Avalonia"
     Title="XIVLauncher Update" MaxWidth="800" WindowStartupLocation="CenterScreen"
     Icon="/Resources/dalamud_icon.ico" CanResize="False" SizeToContent="WidthAndHeight"
@@ -21,7 +21,7 @@
                         TextWrapping="Wrap"
                         Foreground="{DynamicResource MaterialDesignBody}">
                     </TextBlock>
-                    <TextBlock Margin="10" MaxWidth="650" Height="Auto" x:Name="ChangeLogText" TextWrapping="Wrap"></TextBlock>
+                    <TextBlock Margin="10" MaxWidth="650" x:Name="ChangeLogText" TextWrapping="Wrap"></TextBlock>
                 </StackPanel>
 
                 <materialIcons:MaterialIcon Kind="Globe" HorizontalAlignment="Stretch" Foreground="DodgerBlue"
@@ -29,14 +29,14 @@
             </StackPanel>
         </StackPanel>
 
-        <TextBlock Margin="10,20,10,20" MaxWidth="800" Height="Auto" Text="{Binding ChangelogThanksLoc}" TextWrapping="Wrap"></TextBlock>
+        <TextBlock Margin="10,20,10,20" MaxWidth="800" Text="{Binding ChangelogThanksLoc}" TextWrapping="Wrap"></TextBlock>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                     VerticalAlignment="Bottom" Margin="0,15,10,10">
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     Margin="0,0,5,0" Click="EmailButton_OnClick" IsVisible="False">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Email" />
+                    <materialIcons:MaterialIcon Kind="Email" Width="24" Height="24" />
                     <TextBlock Margin="8,0,0,0" VerticalAlignment="Center"
                                Text="{Binding SendEmailLoc}" />
                 </StackPanel>
@@ -50,10 +50,10 @@
                                Text="{Binding JoinDiscordLoc}" />
                 </StackPanel>
             </Button>-->
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     x:Name="QqButton" Margin="0,0,5,0">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Qqchat" />
+                    <materialIcons:MaterialIcon Kind="Qqchat" Width="24" Height="24" />
                     <TextBlock Margin="8,0,0,0" VerticalAlignment="Center"
                                Text="加入QQ频道" />
                 </StackPanel>

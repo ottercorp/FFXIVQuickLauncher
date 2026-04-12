@@ -237,18 +237,21 @@ namespace XIVLauncher.Windows.ViewModel
         }
         public void SwitchCard(LoginCard i)
         {
-            Dispatcher.UIThread.InvokeAsync(
-                () =>
+            void DoSwitch()
+            {
+                this.CancelLogin();
+                this.LoginCardTransitionerIndex = (int)i;
+                ModeSwitchIcon = (i == LoginCard.InjectMode) ? MaterialIconKind.Login : MaterialIconKind.Injection;
+                if (LoginCardTransitionerIndex == (int)LoginCard.InjectMode)
                 {
-                    this.CancelLogin();
-                    this.LoginCardTransitionerIndex = (int)i;
-                    ModeSwitchIcon = (i == LoginCard.InjectMode) ? MaterialIconKind.Login : MaterialIconKind.Injection;
-                    if ((LoginCardTransitionerIndex == (int)LoginCard.InjectMode))
-                    {
-                        RefreshFfxivProcess();
-                    }
+                    RefreshFfxivProcess();
                 }
-                ).GetAwaiter().GetResult();
+            }
+
+            if (Dispatcher.UIThread.CheckAccess())
+                DoSwitch();
+            else
+                Dispatcher.UIThread.InvokeAsync(DoSwitch).GetAwaiter().GetResult();
         }
 
         public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
@@ -772,16 +775,19 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 Log.Error(ex, "StartGame failed... (LoginStatus={0})", loginStatus);
 
+                // Keep a stable owner reference; avoid touching UI properties from worker threads.
+                var dialogParentWindow = _window;
+
                 var msgbox = new CustomMessageBox.Builder()
                              .WithCaption(Loc.Localize("LoginNoOauthTitle", "Login issue"))
                              .WithImage(MessageBoxImage.Error)
                              .WithShowHelpLinks(true)
                              .WithShowDiscordLink(true)
-                             .WithParentWindow(_window);
+                             .WithParentWindow(dialogParentWindow);
 
                 if (ex is SdoLoginException sdoLoginEx)
                 {
-                    if (this.loginCts.IsCancellationRequested)
+                    if (this.loginCts?.IsCancellationRequested == true)
                     {
                         Log.Information($"手动取消登录");
                         this.loginCts.Dispose();
@@ -799,7 +805,9 @@ namespace XIVLauncher.Windows.ViewModel
                     msgbox = new CustomMessageBox.Builder()
                             .WithCaption($"{Loc.Localize("LoginNoOauthTitle", "Login issue")}: {sdoLoginEx.ErrorCode}")
                             .WithImage(MessageBoxImage.Question)
-                            .WithParentWindow(_window)
+                            .WithButtons(MessageBoxButton.OKCancel)
+                            .WithOkButtonText("确认")
+                            .WithParentWindow(dialogParentWindow)
                             .WithText(sdoLoginEx.Message);
                     msgbox.Show();
                     return null;
@@ -1308,8 +1316,6 @@ namespace XIVLauncher.Windows.ViewModel
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     var d = new GameRepairProgressWindow(verify);
-                    if (_window.IsVisible)
-                        d.Owner = _window;
                     d.Show();
                     d.Activate();
                     progressDialog = d;
@@ -2043,8 +2049,6 @@ namespace XIVLauncher.Windows.ViewModel
             Dispatcher.UIThread.InvokeAsync(() =>
             {
                 var d = new PatchDownloadDialog(patcher);
-                if (_window.IsVisible)
-                    d.Owner = _window;
                 d.Show();
                 d.Activate();
                 progressDialog = d;

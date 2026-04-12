@@ -14,9 +14,9 @@ using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CheapLoc;
+using System.Runtime.InteropServices;
 using Material.Icons;
 using Material.Icons.Avalonia;
-using Material.Styles.Assists;
 using Serilog;
 using XIVLauncher.Accounts;
 using XIVLauncher.Common;
@@ -37,6 +37,18 @@ namespace XIVLauncher.Windows
     /// </summary>
     public partial class MainWindow : Window
     {
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vKey);
+
+        private static KeyModifiers GetCurrentKeyModifiers()
+        {
+            var mods = KeyModifiers.None;
+            if ((GetAsyncKeyState(0x11) & 0x8000) != 0) mods |= KeyModifiers.Control;
+            if ((GetAsyncKeyState(0x10) & 0x8000) != 0) mods |= KeyModifiers.Shift;
+            if ((GetAsyncKeyState(0x12) & 0x8000) != 0) mods |= KeyModifiers.Alt;
+            return mods;
+        }
+
         private Timer _bannerChangeTimer;
         private Headlines _headlines;
         private IReadOnlyList<Banner> _banners;
@@ -94,7 +106,7 @@ namespace XIVLauncher.Windows
             Model.ReloadHeadlines += () => Task.Run(SetupHeadlines);
 
             LoginTypeSelection.ItemsSource = GuiLoginType.Get(App.Settings.ShowWeGameTokenLogin.GetValueOrDefault(false));
-            LoginTypeSelection.SelectedValue = App.Settings.SelectedLoginType.GetValueOrDefault(LoginType.SdoSlide);
+            SetLoginTypeComboSelection(App.Settings.SelectedLoginType.GetValueOrDefault(LoginType.SdoSlide));
             NewsListView.ItemsSource = new List<News>
             {
                 new News
@@ -319,7 +331,7 @@ namespace XIVLauncher.Windows
 
             var savedAccount = _accountManager.CurrentAccount;
 
-            var modifiers = Keyboard.Instance?.Modifiers ?? KeyModifiers.None;
+            var modifiers = GetCurrentKeyModifiers();
 
             if (App.Settings.UniqueIdCacheEnabled && modifiers.HasFlag(KeyModifiers.Control))
             {
@@ -378,7 +390,7 @@ namespace XIVLauncher.Windows
                     return;
                 }
 
-                SettingsControl.ReloadSettings();
+                this.SettingsControl.ReloadSettings();
             }
             Task.Run(async () =>
             {
@@ -608,22 +620,22 @@ namespace XIVLauncher.Windows
                 case XivAccountType.Sdo:
                     if (account.Password is not null)
                     {
-                        LoginTypeSelection.SelectedValue = LoginType.SdoStatic;
+                        SetLoginTypeComboSelection(LoginType.SdoStatic);
 
                         // Make users happy by not showing their password
                         LoginPassword.Text = MainWindowViewModel.PresudoPassword;
                     }
                     else
                     {
-                        LoginTypeSelection.SelectedValue = LoginType.SdoSlide;
+                        SetLoginTypeComboSelection(LoginType.SdoSlide);
                     }
                     break;
                 case XivAccountType.WeGame:
-                    LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
+                    SetLoginTypeComboSelection(LoginType.WeGameToken);
                     LoginPassword.Text = MainWindowViewModel.PresudoPassword;
                     break;
                 case XivAccountType.WeGameSid:
-                    LoginTypeSelection.SelectedValue = LoginType.WeGameSid;
+                    SetLoginTypeComboSelection(LoginType.WeGameSid);
                     break;
             }
         }
@@ -646,15 +658,22 @@ namespace XIVLauncher.Windows
                     TermsAccepted = true,
                     SndaId = "114514",
                 },
-                State = Launcher.LoginState.Ok,
+                State = XIVLauncher.Common.Game.Launcher.LoginState.Ok,
                 UniqueId = "0"
             }, false, false, false, false).ConfigureAwait(false);
         }
 
-        private void LoginPassword_OnPasswordChanged(object? sender, TextChangedEventArgs e)
+        private void LoginPassword_OnTextChanged(object? sender, TextChangedEventArgs e)
         {
             if (this.DataContext != null)
                 ((MainWindowViewModel)this.DataContext).Password = ((TextBox)sender!).Text;
+        }
+
+        private void SetLoginTypeComboSelection(LoginType loginType)
+        {
+            if (LoginTypeSelection.ItemsSource is not IEnumerable<GuiLoginType> items)
+                return;
+            LoginTypeSelection.SelectedItem = items.FirstOrDefault(x => x.LoginType == loginType);
         }
 
         private void RadioButton_MouseEnter(object? sender, PointerEventArgs e)
@@ -701,8 +720,8 @@ namespace XIVLauncher.Windows
 
                 // Restore the size of the window to what we expect it to be
                 // There's no better way to do it that doesn't make me wanna off myself
-                Width = 700;
-                Height = 376;
+                Width = 814;
+                Height = 399;
             }
             catch (Exception ex)
             {
@@ -731,8 +750,8 @@ namespace XIVLauncher.Windows
             ReadWeGameInfoCheckBox.IsVisible = false;
             FastLoginCheckBox.Content = "快速登录";
             LoginPassword.Text = string.Empty;
-            TextFieldAssist.SetHint(this.LoginUsername, "盛趣账号");
-            TextFieldAssist.SetHint(this.LoginPassword, "密码");
+            this.LoginUsername.Watermark = "盛趣账号";
+            this.LoginPassword.Watermark = "密码";
 
             switch (selectedItem.LoginType)
             {
@@ -750,13 +769,13 @@ namespace XIVLauncher.Windows
                     break;
                 case LoginType.WeGameToken:
                     LoginPassword.IsVisible = true;
-                    TextFieldAssist.SetHint(this.LoginUsername, "SndaId");
-                    TextFieldAssist.SetHint(this.LoginPassword, "抓包Token");
+                    this.LoginUsername.Watermark = "SndaId";
+                    this.LoginPassword.Watermark = "抓包Token";
                     break;
                 case LoginType.WeGameSid:
                     FastLoginCheckBox.IsVisible = false;
                     ReadWeGameInfoCheckBox.IsVisible = true;
-                    TextFieldAssist.SetHint(this.LoginUsername, "从Wegame自动获取的账号");
+                    this.LoginUsername.Watermark = "从Wegame自动获取的账号";
                     break;
             }
         }

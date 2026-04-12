@@ -1,12 +1,10 @@
 ﻿<Window x:Class="XIVLauncher.Windows.DalamudLoadingOverlay"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="using:Material.Avalonia"
         xmlns:materialIcons="using:Material.Icons.Avalonia"
+        xmlns:materialControls="using:Material.Styles.Controls"
         Title="XIVLauncher Update"
         WindowStartupLocation="Manual"
-        Left="0"
-        Top="0"
         CanResize="False"
         Foreground="{DynamicResource MaterialDesignBody}"
         FontWeight="Medium"
@@ -19,7 +17,7 @@
         Width="270"
         Loaded="DalamudLoadingOverlay_OnLoaded">
     <Grid Margin="0,0,0,0">
-        <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="124" Margin="0,0,56,0">
+        <materialControls:Card Background="{DynamicResource MaterialDesignPaper}" Height="124" Margin="0,0,56,0">
             <StackPanel Margin="16,16,16,0">
                 <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Text="{Binding DalamudUpdateLoc}" x:Name="UpdateText" />
 
@@ -31,6 +29,6 @@
                 <TextBlock Foreground="DarkGray" Margin="0,16,0,0" TextAlignment="Center" x:Name="ProgressTextBlock" />
                 <TextBlock Foreground="DarkGray" Margin="0,4,0,0" TextAlignment="Center" x:Name="PercentageTextBlock" />
             </StackPanel>
-        </materialDesign:Card>
+        </materialControls:Card>
     </Grid>
 </Window>

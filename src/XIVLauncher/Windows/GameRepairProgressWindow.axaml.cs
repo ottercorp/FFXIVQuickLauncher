@@ -47,13 +47,16 @@ namespace XIVLauncher.Windows
             _timer.AutoReset = true;
             _timer.Interval = 20;
 
-            IsVisibleChanged += (_, _) =>
+            PropertyChanged += (s, e) =>
             {
-                _timer.Enabled = IsVisible;
-                if (IsVisible)
-                    UpdateStatusDisplay();
+                if (e.Property == IsVisibleProperty)
+                {
+                    _timer.Enabled = IsVisible;
+                    if (IsVisible)
+                        UpdateStatusDisplay();
+                }
             };
-            Closed += (_, _) => _timer.Dispose();
+            Closed += (s, e) => _timer.Dispose();
         }
 
         private void CancelButton_OnCommand(object p)

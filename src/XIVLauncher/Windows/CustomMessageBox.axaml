@@ -4,8 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:materialIcons="using:Material.Icons.Avalonia"
     Title="XIVLauncher Error"
-    Height="Auto"
-    Width="Auto"
     WindowStartupLocation="CenterScreen"
     CanResize="False"
     Foreground="{DynamicResource MaterialDesignBody}"
@@ -27,7 +25,7 @@
                          Padding="4"
                          AcceptsReturn="True"
                          IsReadOnly="True"
-                         VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
                          MaxHeight="120"
                          x:Name="DescriptionTextBox" />
             </StackPanel>
@@ -39,51 +37,51 @@
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0 0 10 10">
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     x:Name="OfficialLauncherButton" Margin="5,0,0,0" Click="OfficialLauncherButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Launch" />
+                    <materialIcons:MaterialIcon Kind="Launch" Width="24" Height="24" />
                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding OfficialLauncherLoc}" />
                 </StackPanel>
             </Button>
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     x:Name="DiscordButton" Margin="5,0,0,0" Click="QQButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Qqchat" />
+                    <materialIcons:MaterialIcon Kind="Qqchat" Width="24" Height="24" />
                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="加入QQ频道" />
                 </StackPanel>
             </Button>
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     x:Name="FaqButton" Margin="5,0,0,0" Click="FaqButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Information" />
+                    <materialIcons:MaterialIcon Kind="Information" Width="24" Height="24" />
                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding OpenFaqLoc}" />
                 </StackPanel>
             </Button>
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     x:Name="IntegrityReportButton" Margin="5,0,0,0" Click="IntegrityReportButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="FileDocument" />
+                    <materialIcons:MaterialIcon Kind="FileDocument" Width="24" Height="24" />
                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding OpenIntegrityReportLoc}" />
                 </StackPanel>
             </Button>
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left"
                     x:Name="NewGitHubIssueButton" Margin="5,0,0,0" Click="NewGitHubIssueButton_OnClick">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Github" />
+                    <materialIcons:MaterialIcon Kind="Github" Width="24" Height="24" />
                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding ReportErrorLoc}" />
                 </StackPanel>
             </Button>
-            <Button Style="{DynamicResource MaterialDesignFlatButton}" HorizontalAlignment="Left"
+            <Button HorizontalAlignment="Left" Height ="36"
                     x:Name="PackTroubleshooting" Margin="5,0,0,0" Click="PackTroubleshooting_OnClick">
                 <StackPanel Orientation="Horizontal">
-                    <materialIcons:MaterialIcon Kind="Bug" />
+                    <materialIcons:MaterialIcon Kind="Bug" Width="24" Height="24" />
                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="打包日志" />
                 </StackPanel>
             </Button>
-            <Button x:Name="Button1" Margin="5,0,0,0" HorizontalAlignment="Right" Click="Button1_Click" Content="Button1" MinWidth="80" />
-            <Button x:Name="Button2" Margin="5,0,0,0" HorizontalAlignment="Right" Click="Button2_Click" Content="Button2" MinWidth="80" />
-            <Button x:Name="Button3" Margin="5,0,0,0" HorizontalAlignment="Right" Click="Button3_Click" Content="Button3" MinWidth="80" />
+            <Button x:Name="Button1" Margin="5,0,0,0" HorizontalAlignment="Right" Click="Button1_Click" Content="Button1" MinWidth="80" Height ="36" />
+            <Button x:Name="Button2" Margin="5,0,0,0" HorizontalAlignment="Right" Click="Button2_Click" Content="Button2" MinWidth="80" Height ="36" />
+            <Button x:Name="Button3" Margin="5,0,0,0" HorizontalAlignment="Right" Click="Button3_Click" Content="Button3" MinWidth="80" Height ="36" />
         </StackPanel>
     </Grid>
 </Window>

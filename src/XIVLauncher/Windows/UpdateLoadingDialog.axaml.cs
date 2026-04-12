@@ -17,7 +17,9 @@ namespace XIVLauncher.Windows
             ResetUidCacheDisclaimer.IsVisible = App.Settings.UniqueIdCacheEnabled;
             if (ResetUidCacheDisclaimer.IsVisible
                 && AutoLoginDisclaimer.IsVisible) {
-                UpdateLoadingCard.Height += 19;
+                var card = this.FindControl<Control>("UpdateLoadingCard");
+                if (card != null)
+                    card.Height += 19;
             }
 
             this.DataContext = new UpdateLoadingDialogViewModel();

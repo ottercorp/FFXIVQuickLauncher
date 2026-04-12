@@ -581,7 +581,7 @@ namespace XIVLauncher.Windows
                         "Please report this error."));
             }
 
-            public MessageBoxResult ShowAssumingDispatcherThread()
+            private void EnsureDefaultResults()
             {
                 DefaultResult = DefaultResult != MessageBoxResult.None ? DefaultResult : Buttons switch
                 {
@@ -600,8 +600,43 @@ namespace XIVLauncher.Windows
                     MessageBoxButton.YesNo => MessageBoxResult.No,
                     _ => throw new NotImplementedException(),
                 };
+            }
+
+            private async Task<MessageBoxResult> ShowAsyncAssumingDispatcherThread()
+            {
+                EnsureDefaultResults();
 
                 var res = new CustomMessageBox(this);
+                if (ParentWindow != null)
+                {
+                    await res.ShowDialog(ParentWindow);
+                    return res._result;
+                }
+
+                var closed = new TaskCompletionSource<bool>();
+                void OnClosed(object? sender, EventArgs args)
+                {
+                    res.Closed -= OnClosed;
+                    closed.TrySetResult(true);
+                }
+
+                res.Closed += OnClosed;
+                res.Show();
+                await closed.Task;
+                return res._result;
+            }
+
+            public MessageBoxResult ShowAssumingDispatcherThread()
+            {
+                EnsureDefaultResults();
+
+                var res = new CustomMessageBox(this);
+                if (ParentWindow == null)
+                {
+                    res.Show();
+                    return res._result;
+                }
+
                 res.ShowDialog(ParentWindow).GetAwaiter().GetResult();
                 return res._result;
             }
@@ -610,7 +645,8 @@ namespace XIVLauncher.Windows
             {
                 if (Dispatcher.UIThread.CheckAccess())
                     return ShowAssumingDispatcherThread();
-                return Dispatcher.UIThread.InvokeAsync(ShowAssumingDispatcherThread).GetAwaiter().GetResult();
+
+                return Dispatcher.UIThread.InvokeAsync(ShowAsyncAssumingDispatcherThread).GetAwaiter().GetResult();
             }
 
             public MessageBoxResult Show()
@@ -619,7 +655,9 @@ namespace XIVLauncher.Windows
                 if (Dispatcher.UIThread.CheckAccess())
                     result = ShowAssumingDispatcherThread();
                 else
-                    result = Dispatcher.UIThread.InvokeAsync(ShowAssumingDispatcherThread).GetAwaiter().GetResult();
+                {
+                    result = Dispatcher.UIThread.InvokeAsync(ShowAsyncAssumingDispatcherThread).GetAwaiter().GetResult();
+                }
 
                 if (ExitOnCloseMode == ExitOnCloseModes.ExitOnClose)
                 {

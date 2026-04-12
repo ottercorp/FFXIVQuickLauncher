@@ -1,8 +1,8 @@
 <UserControl x:Class="XIVLauncher.Windows.SettingsControl"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="using:Material.Avalonia"
              xmlns:materialIcons="using:Material.Icons.Avalonia"
+             xmlns:materialControls="using:Material.Styles.Controls"
              xmlns:addon="using:XIVLauncher.Common.Addon"
              xmlns:components="using:XIVLauncher.Xaml.Components"
              xmlns:viewModel="using:XIVLauncher.Windows.ViewModel"
@@ -25,7 +25,7 @@
                         <Button HorizontalAlignment="Left" Click="RunIntegrityCheck_OnClick"
                                 IsEnabled="{Binding IsRunIntegrityCheckPossible}"
                                 ToolTip.Tip="{Binding RunIntegrityCheckTooltipLoc}" Margin="10,5,0,0"
-                                Content="{Binding RunIntegrityCheckLoc}" />
+                                Padding="16,4" Height="28" Content="{Binding RunIntegrityCheckLoc}" />
                     </StackPanel>
 
                     <TextBlock HorizontalAlignment="Left" VerticalAlignment="Top"
@@ -34,13 +34,10 @@
                     <StackPanel Orientation="Horizontal" Margin="0,15,0,0" IsVisible="False">
                         <CheckBox Foreground="{DynamicResource MaterialDesignBody}"
                                   x:Name="OtpServerCheckBox" Content="{Binding OtpServerCheckBoxLoc}" ToolTip.Tip="{Binding OtpServerTooltipLoc}"/>
-                        <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                HorizontalAlignment="Left" Click="LearnMoreButton_OnClick" Margin="5 0 0 0">
-                            <Button.ToolTip>
-                                <ToolTip>
-                                    <TextBlock Text="{Binding OtpLearnMoreTooltipLoc}" />
-                                </ToolTip>
-                            </Button.ToolTip>
+                        <Button HorizontalAlignment="Left" Click="LearnMoreButton_OnClick" Margin="5 0 0 0" Padding="16,4" Height="28">
+                            <ToolTip.Tip>
+                                <TextBlock Text="{Binding OtpLearnMoreTooltipLoc}" />
+                            </ToolTip.Tip>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock VerticalAlignment="Center"
                                            Foreground="DarkGray" FontSize="11" Text="{Binding LearnMoreLoc}"/>
@@ -124,11 +121,11 @@
                                    Foreground="{DynamicResource MaterialDesignBody}" Text="{Binding AutoLaunchHintLoc}" />
 
                         <!-- BUG(goat): There seems to be an issue with material design wherein this has an unintended margin on? Need to go negative to restore the original look. -->
-                        <materialDesign:Card Margin="0,-25,0,0" Height="220">
+                        <materialControls:Card Margin="0,-25,0,0" Height="220">
                             <ListBox x:Name="AddonListView" Height="220"
                                       PointerReleased="AddonListView_OnPointerReleased">
                                 <ListBox.ContextMenu>
-                                    <ContextMenu StaysOpen="True">
+                                    <ContextMenu>
                                         <MenuItem Header="{Binding RemoveLoc}"
                                                   Click="RemoveAddonEntry_OnClick"
                                                   Foreground="{DynamicResource MaterialDesignBody}" />
@@ -148,11 +145,11 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                        </materialDesign:Card>
+                        </materialControls:Card>
 
                         <Button Margin="0,0,0,7" HorizontalAlignment="Center"
                                 VerticalAlignment="Bottom" Click="AddAddon_OnClick"
-                                ToolTip.Tip="{Binding AutoLaunchAddNewToolTipLoc}" Content="{Binding AddNewLoc}" />
+                                ToolTip.Tip="{Binding AutoLaunchAddNewToolTipLoc}" Padding="16,4" Height="28" Content="{Binding AddNewLoc}" />
                     </Grid>
                 </Grid>
             </TabItem>
@@ -184,7 +181,7 @@
                                            Text="{Binding InGameAddonInjectionDelayLoc}" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                    <NumericUpDown x:Name="InjectionDelayUpDown" Width="60" HorizontalAlignment="Left" Minimum="0" Increment="1" FormatString="N0" Value="0"/>
+                                    <NumericUpDown x:Name="InjectionDelayUpDown" Width="120" Height="28" HorizontalAlignment="Left" Minimum="0" Increment="1" FormatString="N0" Value="0"/>
                                     <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"
                                                Margin="6,0,0,0" Text="ms" ToolTip.Tip="{Binding InGameAddonInjectionDelayDescriptionLoc}"/>
                                 </StackPanel>
@@ -233,7 +230,7 @@
                            Text="{Binding PatchSpeedLimitLoc}" />
 
                     <StackPanel Orientation="Horizontal">
-                        <NumericUpDown x:Name="SpeedLimiterUpDown" Margin="10,0,0,0" Width="60" HorizontalAlignment="Left" Minimum="0" Increment="1" FormatString="N0" Value="0"/>
+                        <NumericUpDown x:Name="SpeedLimiterUpDown" Margin="10,0,0,0" Width="120" Height="28" HorizontalAlignment="Left" Minimum="0" Increment="1" FormatString="N0" Value="0"/>
                         <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="6,0,0,0"
                                Text="MB/s" />
                     </StackPanel>
@@ -274,57 +271,49 @@
                                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding JoinDiscordLoc}"/>
                                 </StackPanel>
                             </Button>-->
-                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                    HorizontalAlignment="Left"
-                                    x:Name="QqButton" Margin="0,10,0,0">
+                            <Button HorizontalAlignment="Left"
+                                    x:Name="QqButton" Margin="0,10,0,0" Padding="16,4" Height="32">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialIcons:MaterialIcon Kind="Qqchat" />
+                                    <materialIcons:MaterialIcon Kind="Qqchat" Width="18" Height="18" />
                                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="加入QQ频道"/>
                                 </StackPanel>
                             </Button>
-                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                    HorizontalAlignment="Left"
-                                    x:Name="GitHubButton" Click="GitHubButton_OnClick" Margin="0 0 0 0">
+                            <Button HorizontalAlignment="Left"
+                                    x:Name="GitHubButton" Click="GitHubButton_OnClick" Margin="0 0 0 0" Padding="16,4" Height="32">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialIcons:MaterialIcon Kind="Github" />
+                                    <materialIcons:MaterialIcon Kind="Github" Width="18" Height="18" />
                                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center">GitHub</TextBlock>
                                 </StackPanel>
                             </Button>
-                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                    HorizontalAlignment="Left"
-                                    x:Name="FaqButton" Margin="0 0 0 0">
+                            <Button HorizontalAlignment="Left"
+                                    x:Name="FaqButton" Margin="0 0 0 0" Padding="16,4" Height="32">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialIcons:MaterialIcon  Kind="Information" />
+                                    <materialIcons:MaterialIcon Kind="Information" Width="18" Height="18" />
                                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding OpenFaqLoc}"/>
                                 </StackPanel>
                             </Button>
-                            <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                    HorizontalAlignment="Left"
+                            <Button HorizontalAlignment="Left"
                                     IsVisible="False"
-                                    x:Name="BackupToolButton" Click="BackupToolButton_OnClick">
+                                    x:Name="BackupToolButton" Click="BackupToolButton_OnClick" Padding="16,4" Height="32">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialIcons:MaterialIcon Kind="Wrench" />
+                                    <materialIcons:MaterialIcon Kind="Wrench" Width="18" Height="18" />
                                     <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding StartBackupToolLoc}"/>
                                 </StackPanel>
                             </Button>
                             <StackPanel Orientation="Horizontal">
-                                <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                        HorizontalAlignment="Left"
-                                        x:Name="OriginalLauncherButton" Click="OriginalLauncherButton_OnClick">
+                                <Button HorizontalAlignment="Left"
+                                        x:Name="OriginalLauncherButton" Click="OriginalLauncherButton_OnClick" Padding="16,4" Height="32">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialIcons:MaterialIcon Kind="Launch" />
+                                        <materialIcons:MaterialIcon Kind="Launch" Width="18" Height="18" />
                                         <TextBlock Margin="8 0 0 0" VerticalAlignment="Center" Text="{Binding StartOriginalLauncherLoc}"/>
                                     </StackPanel>
                                 </Button>
                                 
-                                <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                                        HorizontalAlignment="Left"
-                                        Click="OpenAdvancedSettings_OnClick" Margin="10 0 0 0">
-                                    <Button.ToolTip>
-                                        <ToolTip>
-                                            <TextBlock Text="{Binding OpenAdvancedSettingsTipLoc}" />
-                                        </ToolTip>
-                                    </Button.ToolTip>
+                                <Button HorizontalAlignment="Left"
+                                        Click="OpenAdvancedSettings_OnClick" Margin="10 0 0 0" Padding="16,4" Height="32">
+                                    <ToolTip.Tip>
+                                        <TextBlock Text="{Binding OpenAdvancedSettingsTipLoc}" />
+                                    </ToolTip.Tip>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Margin="0 0 0 0" VerticalAlignment="Center"
                                                    Foreground="DarkGray" FontSize="11" Text="{Binding OpenAdvancedSettingsLoc}"/>
@@ -340,16 +329,15 @@
                 </ScrollViewer>
             </TabItem>
         </TabControl>
-        <Button Style="{DynamicResource MaterialDesignFloatingActionMiniLightButton}"
-                ToolTip.Tip="{Binding OpenPluginsFolderLoc}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,60,10"
-                Click="PluginsFolderButton_Click">
+        <Button ToolTip.Tip="{Binding OpenPluginsFolderLoc}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,60,10"
+                Click="PluginsFolderButton_Click" Width="40" Height="40" Padding="0"
+                CornerRadius="20" Foreground="White">
             <materialIcons:MaterialIcon Kind="FolderOpen" Height="24" Width="24" />
         </Button>
 
-        <!-- Used to have Command="{x:Static materialDesign:Transitioner.MoveNextCommand}" but now invoked in AcceptButton_Click -->
-        <Button Style="{DynamicResource MaterialDesignFloatingActionMiniLightButton}"
-                ToolTip.Tip="{Binding SaveSettingsLoc}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10"
-                Click="AcceptButton_Click">
+        <Button ToolTip.Tip="{Binding SaveSettingsLoc}" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,10,10"
+                Click="AcceptButton_Click" Width="40" Height="40" Padding="0"
+                CornerRadius="20" Foreground="White">
             <materialIcons:MaterialIcon Kind="Check" Height="24" Width="24" />
         </Button>
     </Grid>

@@ -38,8 +38,12 @@ namespace XIVLauncher.Windows
             _timer.AutoReset = true;
             _timer.Interval = 200;
 
-            IsVisibleChanged += (_, _) => _timer.Enabled = IsVisible;
-            Closed += (_, _) => _timer.Dispose();
+            PropertyChanged += (s, e) =>
+            {
+                if (e.Property == IsVisibleProperty)
+                    _timer.Enabled = IsVisible;
+            };
+            Closed += (s, e) => _timer.Dispose();
         }
 
         private void PatchDownloadDialog_OnPointerPressed(object? sender, PointerPressedEventArgs e)

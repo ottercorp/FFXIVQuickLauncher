@@ -1,7 +1,7 @@
 <Window x:Class="XIVLauncher.Windows.PatchDownloadDialog"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="using:Material.Avalonia"
+        xmlns:materialControls="using:Material.Styles.Controls"
         Title="XIVLauncher Update"
         WindowStartupLocation="CenterScreen"
         CanResize="False"
@@ -14,7 +14,7 @@
         Width="340"
         Closing="PatchDownloadDialog_OnClosing">
     <Grid Margin="0,0,0,0">
-        <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="Auto" Margin="0,0,10,0">
+        <materialControls:Card Background="{DynamicResource MaterialDesignPaper}" Margin="0,0,10,0">
             <StackPanel Margin="16,16,16,0">
                 <TextBlock x:Name="PatchProgressText" Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Text="{Binding PatchPreparingLoc}" Margin="0,0,0,15" />
 
@@ -32,6 +32,6 @@
                 <TextBlock x:Name="BytesLeftText" Foreground="DarkGray" Margin="0,8,0,0" TextAlignment="Center" Text="{Binding PatchPreparingLoc}" />
                 <TextBlock x:Name="TimeLeftText" Foreground="DarkGray" Margin="0,0,0,12" TextAlignment="Center" Text="{Binding PatchPreparingLoc}" />
             </StackPanel>
-        </materialDesign:Card>
+        </materialControls:Card>
     </Grid>
 </Window>

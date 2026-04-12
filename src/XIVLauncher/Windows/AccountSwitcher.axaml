@@ -1,8 +1,8 @@
 <Window x:Class="XIVLauncher.Windows.AccountSwitcher"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="using:Material.Avalonia"
         xmlns:materialIcons="using:Material.Icons.Avalonia"
+        xmlns:materialControls="using:Material.Styles.Controls"
         xmlns:accounts="using:XIVLauncher.Accounts"
         Title="Account Switcher"
         WindowStartupLocation="CenterScreen"
@@ -17,7 +17,7 @@
         Deactivated="AccountSwitcher_OnDeactivated"
         Topmost="True">
     <Grid Margin="0,0,0,0">
-        <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="390" Margin="0,0,10,0">
+        <materialControls:Card Background="{DynamicResource MaterialDesignPaper}" Height="390" Margin="0,0,10,0">
             <StackPanel Margin="16,16,10,0">
                 <ListBox x:Name="AccountListView"
                          MaxHeight="370"
@@ -26,10 +26,10 @@
                          DragDrop.DragOver="AccountListView_OnDragOver"
                          DragDrop.Drop="AccountListView_OnDrop">
                     <ListBox.ContextMenu>
-                        <ContextMenu Opened="AccountListViewContext_Opened" StaysOpen="True">
+                        <ContextMenu Opened="AccountListViewContext_Opened">
                             <MenuItem Header="{Binding AccountSwitcherCreateShortcutLoc}" Click="CreateDesktopShortcut_OnClick" Foreground="{DynamicResource MaterialDesignBody}"/>
                             <MenuItem Header="{Binding RemoveLoc}" Click="RemoveAccount_OnClick" Foreground="{DynamicResource MaterialDesignBody}"/>
-                            <MenuItem x:Name="AccountEntrySavePasswordCheck" IsVisible="False" IsCheckable="True" Header="{Binding AccountSwitcherDontSavePasswordLoc}" Checked="DontSavePassword_OnChecked" Unchecked="DontSavePassword_OnUnchecked" Foreground="{DynamicResource MaterialDesignBody}"/>
+                            <MenuItem x:Name="AccountEntrySavePasswordCheck" IsVisible="False" ToggleType="CheckBox" Header="{Binding AccountSwitcherDontSavePasswordLoc}" Click="DontSavePassword_OnClick" Foreground="{DynamicResource MaterialDesignBody}"/>
                         </ContextMenu>
                     </ListBox.ContextMenu>
 
@@ -70,6 +70,6 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </StackPanel>
-        </materialDesign:Card>
+        </materialControls:Card>
     </Grid>
 </Window>

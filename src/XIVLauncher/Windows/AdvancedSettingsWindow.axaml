@@ -13,8 +13,7 @@
                           IsVisible="False"
                           Content="{Binding EnabledUidCacheLoc}"
                           HorizontalAlignment="Left" Margin="0,0,0,0" Foreground="DarkGray" />
-                <Button Style="{DynamicResource MaterialDesignFlatButton}"
-                        IsVisible="False"
+                <Button IsVisible="False"
                         HorizontalAlignment="Left"
                         Click="ResetCacheButton_OnClick" Margin="0,0,0,0">
                     <ToolTip.Tip>

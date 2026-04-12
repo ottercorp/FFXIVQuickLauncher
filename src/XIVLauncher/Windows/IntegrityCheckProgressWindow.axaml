@@ -1,7 +1,7 @@
 ﻿<Window x:Class="XIVLauncher.Windows.IntegrityCheckProgressWindow"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:materialDesign="using:Material.Avalonia"
+        xmlns:materialControls="using:Material.Styles.Controls"
         Title="Integrity check progress" WindowStartupLocation="CenterScreen"
         Icon="/Resources/dalamud_icon.ico" CanResize="False"
         Foreground="{DynamicResource MaterialDesignBody}"
@@ -12,7 +12,7 @@
         Height="130.401" Width="263.516"
         PointerPressed="Window_PointerPressed">
     <Grid>
-        <materialDesign:Card Background="{DynamicResource MaterialDesignPaper}" Height="114" Margin="0,0,10,0">
+        <materialControls:Card Background="{DynamicResource MaterialDesignPaper}" Height="114" Margin="0,0,10,0">
             <StackPanel Margin="16,16,10,10">
                 <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" Margin="0,0,0,10" Text="{Binding IntegrityCheckRunningLoc}"/>
                 <ProgressBar
@@ -20,6 +20,6 @@
                              IsIndeterminate="True" Height="4" Width="200" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                 <TextBlock Foreground="{DynamicResource MaterialDesignBody}" HorizontalAlignment="Center" x:Name="InfoTextBlock">FileName</TextBlock>
             </StackPanel>
-        </materialDesign:Card>
+        </materialControls:Card>
     </Grid>
 </Window>
