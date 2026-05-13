@@ -751,8 +751,8 @@ namespace XIVLauncher.Windows
                     break;
                 case LoginType.WeGameToken:
                     LoginPassword.Visibility = Visibility.Visible;
-                    HintAssist.SetHint(this.LoginUsername, "SndaId");
-                    HintAssist.SetHint(this.LoginPassword, "抓包Token");
+                    HintAssist.SetHint(this.LoginUsername, "SndaId (可留空, 自动抓取)");
+                    HintAssist.SetHint(this.LoginPassword, "Token (可留空, 自动抓取)");
                     break;
                 case LoginType.WeGameSid:
                     FastLoginCheckBox.Visibility = Visibility.Collapsed;

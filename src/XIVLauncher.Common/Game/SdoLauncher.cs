@@ -40,7 +40,7 @@ namespace XIVLauncher.Common.Game
                 new GuiLoginType { LoginType = LoginType.SdoStatic, DisplayName = "密码登录" },
                 new GuiLoginType { LoginType = LoginType.WeGameSid, DisplayName = "WeGame SID"}
             };
-            if (showWeGameToken)
+            if (true)
             {
                 types.Add(new GuiLoginType { LoginType = LoginType.WeGameToken, DisplayName = "WeGame抓包" });
             }

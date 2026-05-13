@@ -33,6 +33,7 @@ using XIVLauncher.Common.Game.Exceptions;
 using XIVLauncher.Common.Game.Patch;
 using XIVLauncher.Common.Game.Patch.Acquisition;
 using XIVLauncher.Common.Game.Patch.PatchList;
+using XIVLauncher.Common.Game.WeGame;
 using XIVLauncher.Common.Http;
 using XIVLauncher.Common.PlatformAbstractions;
 using XIVLauncher.Common.Util;
@@ -225,6 +226,99 @@ namespace XIVLauncher.Windows.ViewModel
                 argReader.Stop(true);
                 return data;
 
+            }
+        }
+
+        private Task<string> EnsureWeGameLauncherPathAsync()
+        {
+            return _window.Dispatcher.InvokeAsync(() =>
+            {
+                var current = App.Settings.WeGameLauncherPath;
+                if (WeGamePathValidator.IsValidSdologinDir(current))
+                    return current;
+
+                using var dlg = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+                {
+                    Multiselect = false,
+                    IsFolderPicker = true,
+                    EnsurePathExists = true,
+                    Title = "请选择 WeGame 版最终幻想 14 安装目录",
+                };
+
+                if (dlg.ShowDialog() != Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+                    return null;
+
+                var root = dlg.FileName;
+                if (!WeGamePathValidator.IsValidGameRoot(root))
+                {
+                    CustomMessageBox.Show(
+                        "未识别为 WeGame 版最终幻想 14 安装目录, 请确认所选路径。",
+                        "WeGame 登录", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
+                }
+
+                var sdologinDir = WeGamePathValidator.DeriveSdologinDir(root);
+                if (!WeGamePathValidator.IsValidSdologinDir(sdologinDir))
+                {
+                    CustomMessageBox.Show(
+                        $"未在 {sdologinDir} 下找到 sdologin.exe, 请确认所选路径完整。",
+                        "WeGame 登录", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
+                }
+
+                App.Settings.WeGameLauncherPath = sdologinDir;
+                return sdologinDir;
+            }).Task;
+        }
+
+        private async Task<bool> TryElevatedCopyAsync(VersionDllPermissionDeniedException ex)
+        {
+            var ask = CustomMessageBox.Builder
+                .NewFrom("写入 WeGame 安装目录失败, 需要管理员权限。\n" +
+                         "点击\"确定\"后系统会弹出权限确认窗口, 请同意继续。")
+                .WithImage(MessageBoxImage.Warning)
+                .WithButtons(MessageBoxButton.OKCancel)
+                .WithCaption("WeGame 登录")
+                .WithParentWindow(_window)
+                .Show();
+
+            if (ask != MessageBoxResult.OK) return false;
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/C copy /Y \"{ex.Source}\" \"{ex.Destination}\"",
+                Verb = "runas",
+                UseShellExecute = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                CreateNoWindow = true,
+            };
+
+            try
+            {
+                using var proc = Process.Start(psi);
+                if (proc == null)
+                {
+                    CustomMessageBox.Show("启动复制进程失败。", "WeGame 登录",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
+
+                await proc.WaitForExitAsync(loginCts.Token).ConfigureAwait(false);
+
+                if (proc.ExitCode != 0 ||
+                    !WeGameLoginCapturer.HashEquals(ex.Source, ex.Destination))
+                {
+                    CustomMessageBox.Show("复制 version.dll 失败, 请稍后再试。",
+                        "WeGame 登录", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                return false;
             }
         }
 
@@ -437,19 +531,63 @@ namespace XIVLauncher.Windows.ViewModel
                         finalLoginType = LoginType.WeGameSid;
                         break;
                     case LoginType.WeGameToken:
-                        if (inputPassword.IsNullOrEmpty())
-                        {
-                            serect = await AccountManager.CredProvider.Decrypt(savedAccount.AutoLoginSessionKey);
-                            //nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
-                            finalLoginType = LoginType.AutoLoginSession;
-                        }
-                        if (serect.IsNullOrEmpty())
+                    {
+                        var hasManualAccount = !string.IsNullOrEmpty(username);
+                        var hasManualToken = !string.IsNullOrEmpty(inputPassword);
+
+                        if (hasManualAccount && hasManualToken)
                         {
                             serect = inputPassword;
                             finalLoginType = LoginType.WeGameToken;
+                            break;
                         }
-                        ArgumentException.ThrowIfNullOrEmpty(serect, "自动登录密钥或者Token");
+
+                        if (savedAccount?.AutoLoginSessionKey != null)
+                        {
+                            serect = await AccountManager.CredProvider.Decrypt(savedAccount.AutoLoginSessionKey);
+                            if (!string.IsNullOrEmpty(serect))
+                            {
+                                if (string.IsNullOrEmpty(username))
+                                    username = savedAccount.LoginAccount;
+                                finalLoginType = LoginType.AutoLoginSession;
+                                doingAutoLogin = true;
+                                break;
+                            }
+                        }
+
+                        var sdologinDir = await EnsureWeGameLauncherPathAsync().ConfigureAwait(false);
+                        if (sdologinDir == null) return;
+
+                        var captureProgress = new Progress<string>(msg => LoginMessage = msg);
+                        var captured = false;
+                        while (!captured)
+                        {
+                            try
+                            {
+                                var capturer = new WeGameLoginCapturer();
+                                var (capUserId, capToken) = await capturer
+                                    .CaptureAsync(sdologinDir, loginCts.Token, captureProgress)
+                                    .ConfigureAwait(false);
+                                username = capUserId;
+                                serect = capToken;
+                                finalLoginType = LoginType.WeGameToken;
+                                captured = true;
+                            }
+                            catch (VersionDllPermissionDeniedException permEx)
+                            {
+                                if (!await TryElevatedCopyAsync(permEx).ConfigureAwait(false)) return;
+                                // 复制完, 下个 while 循环重试 CaptureAsync
+                            }
+                            catch (WeGameCapturePipeBusyException)
+                            {
+                                CustomMessageBox.Show(
+                                    "命名管道 ApkalluCaller 已被另一个进程占用, 请确认是否同时启动了多个 XIVLauncherCN 后重试。",
+                                    "WeGame 登录", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                return;
+                            }
+                        }
                         break;
+                    }
                     case LoginType.SdoSlide:
                         if (savedAccount != null && doingAutoLogin)
                         {

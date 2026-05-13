@@ -56,6 +56,7 @@ namespace XIVLauncher.Settings
         bool? EnableBeta { get; set; }
         bool? HasAgreeWeGameUsage { get; set; }
         bool? ShowWeGameTokenLogin { get; set; }
+        string WeGameLauncherPath { get; set; }
         CredType? CredType { get; set; }
 
         bool? EnableVerboseLog { get; set; }
