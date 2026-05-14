@@ -532,25 +532,17 @@ namespace XIVLauncher.Windows.ViewModel
                         break;
                     case LoginType.WeGameToken:
                     {
-                        var hasManualAccount = !string.IsNullOrEmpty(username);
-                        var hasManualToken = !string.IsNullOrEmpty(inputPassword);
-
-                        if (hasManualAccount && hasManualToken)
+                        // WeGameToken 走自动抓包, GUI 已隐藏 token 输入框, 这里不再支持手填 token。
+                        // 用保存的 token 走 LoginByWeGameToken 刷新出新的 session id;
+                        // 注意: AutoLoginSessionKey 对 WeGameToken 登录方式无效, 不要回退到它。
+                        if (savedAccount?.Password != null)
                         {
-                            serect = inputPassword;
-                            finalLoginType = LoginType.WeGameToken;
-                            break;
-                        }
-
-                        if (savedAccount?.AutoLoginSessionKey != null)
-                        {
-                            serect = await AccountManager.CredProvider.Decrypt(savedAccount.AutoLoginSessionKey);
+                            serect = await AccountManager.Decrypt(savedAccount.Password);
                             if (!string.IsNullOrEmpty(serect))
                             {
                                 if (string.IsNullOrEmpty(username))
                                     username = savedAccount.LoginAccount;
-                                finalLoginType = LoginType.AutoLoginSession;
-                                doingAutoLogin = true;
+                                finalLoginType = LoginType.WeGameToken;
                                 break;
                             }
                         }
@@ -715,7 +707,9 @@ namespace XIVLauncher.Windows.ViewModel
 
                     accountToSave.AreaName = Area.AreaName;
 
-                    if (doingAutoLogin && accountToSave.AccountType != XivAccountType.WeGameSid)
+                    // AutoLoginSessionKey 仅对 Sdo 帐号有效; WeGame 帐号下次登录用保存的 token 重新刷新 session,
+                    // WeGameSid 用 TestSID。所以这里只给 Sdo 走 LoginBySessionKey 的快登/DcTravel 续期。
+                    if (doingAutoLogin && accountToSave.AccountType == XivAccountType.Sdo)
                     {
                         //accountToSave.NSessionId = nSessionId;
 
@@ -737,6 +731,11 @@ namespace XIVLauncher.Windows.ViewModel
                     {
                         accountToSave.TestSID = await AccountManager.Encrypt(serect);
                         //accountToSave.TestSID = await AccountManager.CredProvider.Encrypt("password");
+                    }
+                    // WeGameToken 抓包/手动得到的 token 持久化, 下次直接走 LoginByWeGameToken 复用。
+                    if (accountToSave.AccountType == XivAccountType.WeGame)
+                    {
+                        accountToSave.Password = await AccountManager.Encrypt(serect);
                     }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);
@@ -942,6 +941,25 @@ namespace XIVLauncher.Windows.ViewModel
                         var account = this.AccountManager.Accounts.First(x => x.UserName == username);
                         account.AutoLoginSessionKey = null;
                         this.AccountManager.Save(account);
+                    }
+
+                    // WeGameToken: 若本次用的恰好是保存的 token, 服务端拒绝意味着它已失效;
+                    // 清掉 Password, 下次登录跳过"保存的 token"分支自动重新抓包。
+                    // 比对解密后的值, 避免自动抓包刚刚取到的 capUserId 命中别的账号时误清。
+                    if (fallbackLoginType == LoginType.WeGameToken && !string.IsNullOrEmpty(username))
+                    {
+                        var wgAccount = this.AccountManager.Accounts
+                                            .FirstOrDefault(x => x.UserName == username && x.AccountType == XivAccountType.WeGame);
+                        if (wgAccount?.Password != null)
+                        {
+                            var savedToken = await AccountManager.Decrypt(wgAccount.Password);
+                            if (savedToken == serect)
+                            {
+                                Log.Information("WeGameToken 保存的 token 已失效, 清除以触发下次重新抓包: {Username}", username);
+                                wgAccount.Password = null;
+                                this.AccountManager.Save(wgAccount);
+                            }
+                        }
                     }
 
                     msgbox = new CustomMessageBox.Builder()

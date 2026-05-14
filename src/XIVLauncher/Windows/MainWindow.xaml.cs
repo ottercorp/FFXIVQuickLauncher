@@ -343,6 +343,19 @@ namespace XIVLauncher.Windows
                         MainWindowViewModel.AfterLoginAction.Start
                     );
                 }
+                else if (savedAccount.AccountType == XivAccountType.WeGame)
+                {
+                    // WeGameToken 不能复用 AutoLoginSessionKey, 必须重新走 LoginByWeGameToken。
+                    // 传空密码, 让 TryLogin 内部从 savedAccount.Password 解出 token。
+                    Model.TryLogin(
+                        LoginType.WeGameToken,
+                        savedAccount.LoginAccount,
+                        null,
+                        Model.IsFastLogin,
+                        Model.IsReadWegameInfo,
+                        MainWindowViewModel.AfterLoginAction.Start
+                    );
+                }
                 else
                 {
                     Model.TryLogin(
@@ -623,7 +636,10 @@ namespace XIVLauncher.Windows
                     break;
                 case XivAccountType.WeGame:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
-                    LoginPassword.Password = MainWindowViewModel.PresudoPassword;
+                    if (account.Password is not null)
+                    {
+                        LoginPassword.Password = MainWindowViewModel.PresudoPassword;
+                    }
                     break;
                 case XivAccountType.WeGameSid:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameSid;
@@ -750,9 +766,9 @@ namespace XIVLauncher.Windows
                     //FastLoginCheckBox.Visibility = Visibility.Collapsed;
                     break;
                 case LoginType.WeGameToken:
-                    LoginPassword.Visibility = Visibility.Visible;
+                    // WeGameToken 全自动抓包, 不再支持手填 token; 用户名留空时也会从抓包结果回填。
+                    LoginPassword.Visibility = Visibility.Collapsed;
                     HintAssist.SetHint(this.LoginUsername, "SndaId (可留空, 自动抓取)");
-                    HintAssist.SetHint(this.LoginPassword, "Token (可留空, 自动抓取)");
                     break;
                 case LoginType.WeGameSid:
                     FastLoginCheckBox.Visibility = Visibility.Collapsed;

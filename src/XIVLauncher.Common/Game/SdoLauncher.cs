@@ -54,6 +54,7 @@ namespace XIVLauncher.Common.Game
         SdoQrCode,
         WeGameToken,
         WeGameSid,
+        // 仅在内部使用，不出现在GUI上
         AutoLoginSession
     }
 
