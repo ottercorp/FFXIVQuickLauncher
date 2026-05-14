@@ -532,6 +532,38 @@ namespace XIVLauncher.Windows.ViewModel
                         break;
                     case LoginType.WeGameToken:
                     {
+                                                if (!App.Settings.HasAgreeWeGameUsage.GetValueOrDefault(false))
+                        {
+                            var readWeGameUsageAsk = CustomMessageBox.Builder
+                                .NewFrom(
+                                """
+                        为保障您的账号安全，请在使用本功能前仔细阅读以下内容：
+                        🔐 功能原理说明
+                        本工具通过读取最终幻想14启动器与盛趣服务器通信的会话密钥实现登录和超域传送功能，不会对WeGame平台本身进行任何修改，也不会获取您的WeGame账号密码等敏感信息。
+                        WeGame平台->最终幻想14启动器-(在此读取登录信息)->盛趣服务器
+                        ⚠️ 注意事项
+                        本功能尚在测试中，保存的密钥有效期尚未测试清楚，如遇到登录问题可以用官方客户端重新登录。
+                        点击【确认使用】即表示您已理解：妥善保管设备安全是密钥有效性的最终保障
+                        """)
+                                .WithImage(MessageBoxImage.Warning)
+                                .WithButtons(MessageBoxButton.YesNo)
+                                .WithYesButtonText("确认使用")
+                                .WithCaption("WeGame Token登录功能说明")
+                                .WithYesCountdown(5)
+                                .WithParentWindow(_window)
+                                .Show();
+
+                            if (readWeGameUsageAsk == MessageBoxResult.No)
+                            {
+                                App.Settings.HasAgreeWeGameUsage = false;
+                                return;
+                            }
+                            else
+                            {
+                                App.Settings.HasAgreeWeGameUsage = true;
+                            }
+                        }
+
                         // WeGameToken 走自动抓包, GUI 已隐藏 token 输入框, 这里不再支持手填 token。
                         // 默认用保存的 token 走 LoginByWeGameToken 刷新出新的 session id;
                         // 勾选 "强制重新抓包"(GUI 上复用 ReadWeGameInfoCheckBox) 则跳过这步, 直接重抓。
