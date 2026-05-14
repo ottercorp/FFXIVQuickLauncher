@@ -736,6 +736,19 @@ namespace XIVLauncher.Windows.ViewModel
                     if (accountToSave.AccountType == XivAccountType.WeGame)
                     {
                         accountToSave.Password = await AccountManager.Encrypt(serect);
+
+                        // 游戏内 DcTravel 续期: 复用本次的 token 重新走 LoginByWeGameToken
+                        // 拉一份新的 tgt+session, 等价于 Sdo 的 LoginBySessionKey 续期。
+                        // 把 token 复制到独立局部, 避免被本方法末尾的 serect=null 清掉。
+                        if (doingAutoLogin && this.dcTravelListener != null)
+                        {
+                            var savedToken = serect;
+                            this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
+                            {
+                                var newLoginResult = await this.Launcher.LoginByWeGameToken(username, savedToken, false, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
+                                return newLoginResult.OauthLogin.SessionId;
+                            };
+                        }
                     }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);
