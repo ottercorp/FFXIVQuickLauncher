@@ -533,9 +533,10 @@ namespace XIVLauncher.Windows.ViewModel
                     case LoginType.WeGameToken:
                     {
                         // WeGameToken 走自动抓包, GUI 已隐藏 token 输入框, 这里不再支持手填 token。
-                        // 用保存的 token 走 LoginByWeGameToken 刷新出新的 session id;
+                        // 默认用保存的 token 走 LoginByWeGameToken 刷新出新的 session id;
+                        // 勾选 "强制重新抓包"(GUI 上复用 ReadWeGameInfoCheckBox) 则跳过这步, 直接重抓。
                         // 注意: AutoLoginSessionKey 对 WeGameToken 登录方式无效, 不要回退到它。
-                        if (savedAccount?.Password != null)
+                        if (!readWeGameInfo && savedAccount?.Password != null)
                         {
                             serect = await AccountManager.Decrypt(savedAccount.Password);
                             if (!string.IsNullOrEmpty(serect))
@@ -732,15 +733,16 @@ namespace XIVLauncher.Windows.ViewModel
                         accountToSave.TestSID = await AccountManager.Encrypt(serect);
                         //accountToSave.TestSID = await AccountManager.CredProvider.Encrypt("password");
                     }
-                    // WeGameToken 抓包/手动得到的 token 持久化, 下次直接走 LoginByWeGameToken 复用。
-                    if (accountToSave.AccountType == XivAccountType.WeGame)
+                    // WeGameToken: 跟 SdoStatic 一样, "保存密码"(doingAutoLogin) 勾选才把抓到的 token 落盘,
+                    // 下次免抓包直接走 LoginByWeGameToken 复用。
+                    if (accountToSave.AccountType == XivAccountType.WeGame && doingAutoLogin)
                     {
                         accountToSave.Password = await AccountManager.Encrypt(serect);
 
                         // 游戏内 DcTravel 续期: 复用本次的 token 重新走 LoginByWeGameToken
                         // 拉一份新的 tgt+session, 等价于 Sdo 的 LoginBySessionKey 续期。
                         // 把 token 复制到独立局部, 避免被本方法末尾的 serect=null 清掉。
-                        if (doingAutoLogin && this.dcTravelListener != null)
+                        if (this.dcTravelListener != null)
                         {
                             var savedToken = serect;
                             this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>

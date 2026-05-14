@@ -747,6 +747,8 @@ namespace XIVLauncher.Windows
             FastLoginCheckBox.Visibility = Visibility.Visible;
             ReadWeGameInfoCheckBox.Visibility = Visibility.Collapsed;
             FastLoginCheckBox.Content = "快速登录";
+            ReadWeGameInfoCheckBox.Content = "读取登录信息";
+            ReadWeGameInfoCheckBox.ToolTip = "从WeGame版FFXIV中读取登录信息";
             LoginPassword.Password = string.Empty;
             HintAssist.SetHint(this.LoginUsername, "盛趣账号");
             HintAssist.SetHint(this.LoginPassword, "密码");
@@ -769,6 +771,12 @@ namespace XIVLauncher.Windows
                     // WeGameToken 全自动抓包, 不再支持手填 token; 用户名留空时也会从抓包结果回填。
                     LoginPassword.Visibility = Visibility.Collapsed;
                     HintAssist.SetHint(this.LoginUsername, "SndaId (可留空, 自动抓取)");
+                    // 跟 SdoStatic 对齐: 勾选才把抓到的 token 持久化, 下次免抓包。
+                    FastLoginCheckBox.Content = "保存密码";
+                    // 复用同一个 checkbox: WeGameSid 用它"读取登录信息", WeGameToken 用它"强制重新抓包"。
+                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
+                    ReadWeGameInfoCheckBox.Content = "强制重新抓包";
+                    ReadWeGameInfoCheckBox.ToolTip = "勾选后忽略已保存的 token, 强制重新启动 sdologin 抓包";
                     break;
                 case LoginType.WeGameSid:
                     FastLoginCheckBox.Visibility = Visibility.Collapsed;
