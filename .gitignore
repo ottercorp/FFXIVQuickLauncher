@@ -289,3 +289,6 @@ src/Update.exe
 
 # XLCore build directory
 src/XIVLauncher.Core/build
+
+# ApkalluCaller (Rust) build output staged into XL Resources
+src/XIVLauncher/Resources/version.dll

@@ -1,3 +1,6 @@
 [submodule "src/FfxivArgLauncher"]
 	path = src/FfxivArgLauncher
 	url = https://github.com/ottercorp/FfxivArgLauncher
+[submodule "src/ApkalluCaller"]
+	path = src/ApkalluCaller
+	url = https://github.com/ottercorp/ApkalluCaller

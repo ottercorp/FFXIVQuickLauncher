@@ -55,6 +55,7 @@
 
     <ItemGroup>
         <Resource Remove="Resources\aria2c-xl.exe" />
+        <Resource Remove="Resources\version.dll" />
         <Resource Remove="Resources\CHANGELOG.txt" />
         <Resource Remove="Resources\COPYING.aria2" />
         <Resource Remove="Resources\LICENSE.txt" />
@@ -62,6 +63,9 @@
 
     <ItemGroup>
         <Content Include="Resources\aria2c-xl.exe">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Resources\version.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Resources\CHANGELOG.txt">
@@ -150,6 +154,43 @@
         </ItemGroup>
         <!-- writes the attribute to the customAssemblyInfo file -->
         <WriteCodeFragment Language="C#" OutputFile="$(CustomAssemblyInfoFile)" AssemblyAttributes="@(AssemblyAttributes)" />
+    </Target>
+
+    <!-- ApkalluCaller: Rust crate that builds version.dll (i686 cdylib) used for WeGame token capture. -->
+    <PropertyGroup>
+        <ApkalluCallerDir>$(MSBuildProjectDirectory)\..\ApkalluCaller</ApkalluCallerDir>
+        <ApkalluCallerTarget>i686-pc-windows-msvc</ApkalluCallerTarget>
+        <ApkalluCallerOutput>$(ApkalluCallerDir)\target\$(ApkalluCallerTarget)\release\version.dll</ApkalluCallerOutput>
+        <ApkalluCallerStage>$(MSBuildProjectDirectory)\Resources\version.dll</ApkalluCallerStage>
+        <SkipApkalluCaller Condition="'$(SkipApkalluCaller)' == ''">false</SkipApkalluCaller>
+    </PropertyGroup>
+
+    <Target Name="BuildApkalluCaller"
+            BeforeTargets="BeforeBuild"
+            Condition="'$(SkipApkalluCaller)' != 'true'">
+        <Error Condition="!Exists('$(ApkalluCallerDir)\Cargo.toml')"
+               Text="ApkalluCaller submodule not initialized. Run 'git submodule update --init --recursive' from the repo root, or pass /p:SkipApkalluCaller=true to skip (WeGame token capture will be unavailable)." />
+
+        <Exec Command="cargo --version" ConsoleToMsBuild="true" IgnoreExitCode="true">
+            <Output TaskParameter="ExitCode" PropertyName="_CargoExitCode" />
+        </Exec>
+        <Error Condition="'$(_CargoExitCode)' != '0'"
+               Text="'cargo' not found on PATH. Install the Rust toolchain from https://rustup.rs and reopen Visual Studio, or pass /p:SkipApkalluCaller=true." />
+
+        <Exec Command="rustup target add $(ApkalluCallerTarget)"
+              WorkingDirectory="$(ApkalluCallerDir)"
+              ConsoleToMsBuild="true" />
+
+        <Exec Command="cargo build --release --target $(ApkalluCallerTarget)"
+              WorkingDirectory="$(ApkalluCallerDir)"
+              ConsoleToMsBuild="true" />
+
+        <Error Condition="!Exists('$(ApkalluCallerOutput)')"
+               Text="ApkalluCaller build succeeded but '$(ApkalluCallerOutput)' is missing." />
+
+        <Copy SourceFiles="$(ApkalluCallerOutput)"
+              DestinationFiles="$(ApkalluCallerStage)"
+              SkipUnchangedFiles="true" />
     </Target>
 
 </Project>
