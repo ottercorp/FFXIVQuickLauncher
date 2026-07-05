@@ -519,6 +519,40 @@
                                         </DockPanel>
 
                                     </materialDesign:TransitionerSlide>
+
+                                    <materialDesign:TransitionerSlide>
+                                        <materialDesign:TransitionerSlide.BackwardWipe>
+                                            <materialDesign:FadeWipe />
+                                        </materialDesign:TransitionerSlide.BackwardWipe>
+
+                                        <StackPanel Margin="30,18,30,18">
+                                            <TextBlock Text="请输入验证码后点击提交"
+                                                       HorizontalAlignment="Stretch"
+                                                       TextAlignment="Center"
+                                                       Margin="0,10,0,0" />
+                                            <Image Width="150" Height="60"
+                                                   Stretch="Uniform"
+                                                   Source="{Binding QrCodeBitmapImage}"
+                                                   Margin="0,10,0,0" />
+                                            <TextBox HorizontalAlignment="Stretch"
+                                                     Margin="0,10,0,0"
+                                                     materialDesign:HintAssist.Hint="验证码"
+                                                     Text="{Binding CaptchaCode, UpdateSourceTrigger=PropertyChanged}" />
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center"
+                                                        Margin="0,14,0,0">
+                                                <Button Content="提交"
+                                                        Command="{Binding SubmitCaptchaCommand}"
+                                                        Margin="0,0,10,0" Width="90"
+                                                        ToolTip="提交验证码" />
+                                                <Button Content="取消"
+                                                        Click="BackToLoginPageButton_OnClick"
+                                                        Width="90"
+                                                        ToolTip="取消登录" />
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                    </materialDesign:TransitionerSlide>
                                 </materialDesign:Transitioner>
 
                             </materialDesign:Card>

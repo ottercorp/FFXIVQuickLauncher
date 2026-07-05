@@ -34,16 +34,18 @@ public partial class Launcher
     private readonly IUniqueIdCache uniqueIdCache;
     private readonly ISettings settings;
     private readonly HttpClient client;
-    private readonly HttpClient loginClient;
-    private readonly CookieContainer loginCookies;
     private readonly string frontierUrlTemplate;
+
+    /// <summary>SDO passport authentication. Owns its own login HttpClient/cookie jar (see SdoAuthClient).</summary>
+    public SdoAuthClient SdoAuth { get; }
 
     public Launcher(ISteam? steam, IUniqueIdCache uniqueIdCache, ISettings settings, string frontierUrl)
     {
         this.steam = steam;
         this.uniqueIdCache = uniqueIdCache;
         this.settings = settings;
-        this.loginCookies = new CookieContainer();
+        this.SdoAuth = new SdoAuthClient();
+        var clientCookies = new CookieContainer();
         //this.frontierUrlTemplate = frontierUrl ?? throw new Exception("Frontier URL template is null, this is now required");
 
         ServicePointManager.Expect100Continue = false;
@@ -69,30 +71,18 @@ public partial class Launcher
         var handler = new SocketsHttpHandler
         {
             UseCookies = true,
-            CookieContainer = loginCookies,
-            SslOptions = sslOptions,
-        };
-        var loginHandler = new SocketsHttpHandler
-        {
-            UseCookies = true,
-            CookieContainer = loginCookies,
+            CookieContainer = clientCookies,
             SslOptions = sslOptions,
         };
 #else
         var handler = new HttpClientHandler
         {
             UseCookies = true,
-            CookieContainer = loginCookies,
-        };
-        var loginHandler = new HttpClientHandler
-        {
-            UseCookies = true,
-            CookieContainer = loginCookies,
+            CookieContainer = clientCookies,
         };
 #endif
 
         this.client = new HttpClient(handler);
-        this.loginClient = new HttpClient(loginHandler);
     }
 
     public Launcher(byte[] overriddenSteamTicket, IUniqueIdCache uniqueIdCache, ISettings settings, string frontierUrl)
@@ -579,6 +569,8 @@ public partial class Launcher
         public string SndaId { get; set; }
         public string Password { get; set; }
         public string AutoLoginSessionKey { get; set; }
+        // ULSKLK-...: /authen/v2/fastInLogin 免密登录令牌（keepLoginFlag=1 时下发）。
+        public string KeepLoginKey { get; set; }
         public int Region { get; set; }
         public bool TermsAccepted { get; set; }
         public bool Playable { get; set; }

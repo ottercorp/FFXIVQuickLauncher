@@ -240,6 +240,8 @@ namespace XIVLauncher.Common.Game
                     queryParams.Add(item.Key, item.Value);
                 }
             }
+            // source=128: 抓包 (DcTraveler.xml) 下所有 ff14bjz 请求都携带此来源标识。
+            queryParams.Add("source", "128");
             uriBuilder.Query = queryParams.ToString();
             var tryNum = 3;
             while (tryNum-- > 0)

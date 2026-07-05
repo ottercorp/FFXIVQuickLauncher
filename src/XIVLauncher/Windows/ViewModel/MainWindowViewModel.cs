@@ -93,6 +93,7 @@ namespace XIVLauncher.Windows.ViewModel
             LoginForceQRCommand = new SyncCommand(GetLoginFunc(AfterLoginAction.ForceQR));
             InjectModeSwitchCommand = new SyncCommand(obj => { this.SwitchMode(); });
             InjectGameCommand = new SyncCommand(obj => { this.TryInjectGame(); });
+            SubmitCaptchaCommand = new SyncCommand(obj => { this.captchaTcs?.TrySetResult(this.CaptchaCode); });
             var frontierUrl = Updates.UpdateLease?.FrontierUrl;
 #if DEBUG || RELEASENOUPDATE
             // FALLBACK
@@ -327,7 +328,8 @@ namespace XIVLauncher.Windows.ViewModel
             Logining = 0,
             MainPage = 1,
             ScanQrCode = 2,
-            InjectMode = 3
+            InjectMode = 3,
+            Captcha = 4
         }
         public void SwitchCard(LoginCard i)
         {
@@ -629,9 +631,18 @@ namespace XIVLauncher.Windows.ViewModel
                     case LoginType.SdoSlide:
                         if (savedAccount != null && doingAutoLogin)
                         {
-                            serect = await AccountManager.Decrypt(savedAccount.AutoLoginSessionKey);
-                            //nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
-                            finalLoginType = LoginType.AutoLoginSession;
+                            // 优先用 keepLoginKey 走 /authen/v2/fastInLogin 免密续期；旧账号无 keepLoginKey 时回退 autoLoginSessionKey。
+                            if (!string.IsNullOrEmpty(savedAccount.KeepLoginKey))
+                            {
+                                serect = await AccountManager.Decrypt(savedAccount.KeepLoginKey);
+                                finalLoginType = LoginType.KeepLoginKeySession;
+                            }
+                            else
+                            {
+                                serect = await AccountManager.Decrypt(savedAccount.AutoLoginSessionKey);
+                                //nSessionId = await AccountManager.CredProvider.Decrypt(savedAccount.NSessionId);
+                                finalLoginType = LoginType.AutoLoginSession;
+                            }
                         }
                         if (serect.IsNullOrEmpty())
                         {
@@ -760,13 +771,28 @@ namespace XIVLauncher.Windows.ViewModel
                         //accountToSave.NSessionId = nSessionId;
 
                         accountToSave.AutoLoginSessionKey = await AccountManager.Encrypt(loginResult.OauthLogin.AutoLoginSessionKey);
+                        // keepLoginKey 与 autoLoginSessionKey 并存：优先用前者走 /authen/v2/fastInLogin 续期。
+                        var savedKeepLoginKey = loginResult.OauthLogin.KeepLoginKey;
+                        if (!string.IsNullOrEmpty(savedKeepLoginKey))
+                            accountToSave.KeepLoginKey = await AccountManager.Encrypt(savedKeepLoginKey);
                         if (this.dcTravelListener != null)
                         {
-                            this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
+                            if (!string.IsNullOrEmpty(savedKeepLoginKey))
                             {
-                                var newLoginResult = await this.Launcher.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
-                                return newLoginResult.OauthLogin.SessionId;
-                            };
+                                this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
+                                {
+                                    var newLoginResult = await this.Launcher.SdoAuth.LoginByKeepLoginKey(username, savedKeepLoginKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
+                                    return newLoginResult.OauthLogin.SessionId;
+                                };
+                            }
+                            else
+                            {
+                                this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
+                                {
+                                    var newLoginResult = await this.Launcher.SdoAuth.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
+                                    return newLoginResult.OauthLogin.SessionId;
+                                };
+                            }
                         }
                         if (finalLoginType == LoginType.SdoStatic)
                         {
@@ -792,7 +818,7 @@ namespace XIVLauncher.Windows.ViewModel
                             var savedToken = serect;
                             this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
                             {
-                                var newLoginResult = await this.Launcher.LoginByWeGameToken(username, savedToken, false, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
+                                var newLoginResult = await this.Launcher.SdoAuth.LoginByWeGameToken(username, savedToken, false, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
                                 return newLoginResult.OauthLogin.SessionId;
                             };
                         }
@@ -888,6 +914,37 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
+        /// <summary>
+        /// staticLogin captcha (nextAction=8) handler handed to the Common layer. Shows the captcha
+        /// image on the login card (reusing the QR image slot), waits for the user to type a code and
+        /// press submit, then returns it. Cancelling the login (loginCts) unblocks this with null so
+        /// the Common-layer retry loop stops.
+        /// </summary>
+        private async Task<string> SolveCaptchaAsync(byte[] image)
+        {
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+            this.captchaTcs = tcs;
+            using var registration = this.loginCts.Token.Register(() => tcs.TrySetResult(null));
+
+            _window.Dispatcher.Invoke(() =>
+            {
+                this.CaptchaCode = string.Empty;
+                this.QrCodeBitmapImage = ConvertByteArrayToBitmapImage(image);
+                this.LoginCardTransitionerIndex = (int)LoginCard.Captcha;
+            });
+
+            var code = await tcs.Task.ConfigureAwait(false);
+
+            _window.Dispatcher.Invoke(() =>
+            {
+                // Return to the spinner while the Common layer resubmits / finishes (unless cancelled).
+                if (!string.IsNullOrEmpty(code) && this.LoginCardTransitionerIndex == (int)LoginCard.Captcha)
+                    this.LoginCardTransitionerIndex = (int)LoginCard.Logining;
+            });
+
+            return code;
+        }
+
         private static BitmapImage ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             if (imageData == null || imageData.Length == 0) return null;
@@ -930,11 +987,24 @@ namespace XIVLauncher.Windows.ViewModel
                 if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
                     return checkResult;
 
+                if (type == LoginType.KeepLoginKeySession)
+                {
+                    try
+                    {
+                        return await this.Launcher.SdoAuth.LoginByKeepLoginKey(username, keepLoginKey: serect, dcTraveler).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error("LoginByKeepLoginKey failed, fallback to {fallbackLoginType}:{ex}", fallbackLoginType, e);
+                        type = fallbackLoginType;
+                    }
+                }
+
                 if (type == LoginType.AutoLoginSession)
                 {
                     try
                     {
-                        return await this.Launcher.LoginBySessionKey(username, autoLoginSessionKey: serect, dcTraveler).ConfigureAwait(false);
+                        return await this.Launcher.SdoAuth.LoginBySessionKey(username, autoLoginSessionKey: serect, dcTraveler).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -946,10 +1016,10 @@ namespace XIVLauncher.Windows.ViewModel
                 switch (type)
                 {
                     case LoginType.SdoStatic:
-                        return await Launcher.LoginBySdoStatic(username, password: serect, dcTraveler).ConfigureAwait(false);
+                        return await Launcher.SdoAuth.LoginBySdoStatic(username, password: serect, dcTraveler, this.SolveCaptchaAsync).ConfigureAwait(false);
 
                     case LoginType.SdoSlide:
-                        return await Launcher.LoginBySlide(username, autoLogin, this.loginCts, (code) =>
+                        return await Launcher.SdoAuth.LoginBySlide(username, autoLogin, this.loginCts, (code) =>
                         {
                             Log.Information($"叨鱼确认码:{code}");
                             this.LoginMessage = $"确认码: {code}";
@@ -958,7 +1028,7 @@ namespace XIVLauncher.Windows.ViewModel
                         ).ConfigureAwait(false);
 
                     case LoginType.SdoQrCode:
-                        return await Launcher.LoginByScanQrCode(autoLogin, this.loginCts, (qrBytes) =>
+                        return await Launcher.SdoAuth.LoginByScanQrCode(autoLogin, this.loginCts, (qrBytes) =>
                         {
                             this.QrCodeBitmapImage = ConvertByteArrayToBitmapImage(qrBytes);
                         },
@@ -966,10 +1036,10 @@ namespace XIVLauncher.Windows.ViewModel
                         ).ConfigureAwait(false);
 
                     case LoginType.WeGameToken:
-                        return await Launcher.LoginByWeGameToken(username, token: serect, autoLogin, dcTraveler).ConfigureAwait(false);
+                        return await Launcher.SdoAuth.LoginByWeGameToken(username, token: serect, autoLogin, dcTraveler).ConfigureAwait(false);
 
                     case LoginType.WeGameSid:
-                        return await Launcher.LoginBySid(username, sid: serect).ConfigureAwait(false);
+                        return await Launcher.SdoAuth.LoginBySid(username, sid: serect).ConfigureAwait(false);
 
                     default:
                         throw new Exception($"Known LoginType:{type}");
@@ -995,11 +1065,14 @@ namespace XIVLauncher.Windows.ViewModel
                         this.loginCts = null;
                         return null;
                     }
-                    if (sdoLoginEx.RemoveAutoLoginSessionKey)
+                    if (sdoLoginEx.RemoveAutoLoginSessionKey || sdoLoginEx.RemoveKeepLoginKey)
                     {
-                        Log.Information($"快速登录失败,清除SessionKey:{username}");
+                        Log.Information($"快速登录失败,清除登录凭据:{username}");
                         var account = this.AccountManager.Accounts.First(x => x.UserName == username);
-                        account.AutoLoginSessionKey = null;
+                        if (sdoLoginEx.RemoveAutoLoginSessionKey)
+                            account.AutoLoginSessionKey = null;
+                        if (sdoLoginEx.RemoveKeepLoginKey)
+                            account.KeepLoginKey = null;
                         this.AccountManager.Save(account);
                     }
 
@@ -2349,6 +2422,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         public ICommand InjectModeSwitchCommand { get; set; }
         public ICommand InjectGameCommand { get; set; }
+        public ICommand SubmitCaptchaCommand { get; set; }
 
         #endregion
 
@@ -2508,6 +2582,20 @@ namespace XIVLauncher.Windows.ViewModel
                 OnPropertyChanged(nameof(LoginMessage));
             }
         }
+
+        private string _captchaCode;
+        public string CaptchaCode
+        {
+            get => _captchaCode;
+            set
+            {
+                _captchaCode = value;
+                OnPropertyChanged(nameof(CaptchaCode));
+            }
+        }
+
+        // Completed by SubmitCaptchaCommand (or cancelled via loginCts) while a staticLogin captcha is shown.
+        private TaskCompletionSource<string> captchaTcs;
 
         private SolidColorBrush _worldStatusIconColor;
         public SolidColorBrush WorldStatusIconColor

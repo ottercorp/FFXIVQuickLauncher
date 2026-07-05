@@ -27,7 +27,8 @@ public enum SdoLoginCustomExpectionCode
     SLIDE_TIMEOUT_OR_CANCELED = 11451400,
     STATIC_NEED_CAPTCHA,
     SCAN_QRCODE_GET_ACCOUNT_FAIL,
-    SCAN_TIMEOUT_OR_CANCELED
+    SCAN_TIMEOUT_OR_CANCELED,
+    PASSPORT_ALL_HOSTS_FAILED
 }
 
 [Serializable]
@@ -36,6 +37,8 @@ public class SdoLoginException : Exception
     public int ErrorCode;
     //public string OauthErrorResult { get; private set; }
     public bool RemoveAutoLoginSessionKey;
+    // fastInLogin 的 keepLoginKey 失效时置位，通知上层清除已保存的 keepLoginKey。
+    public bool RemoveKeepLoginKey;
 
     public SdoLoginException(int errorCode,string message,bool removeAutoLoginSessionKey=false)
         : base(message)

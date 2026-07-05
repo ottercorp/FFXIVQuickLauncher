@@ -2,6 +2,9 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -129,6 +132,63 @@ namespace XIVLauncher.Common
             // 给盛趣一些MacBook和SteamDick震撼
             // 不会返回一个 张二狗的MacBook吧？实名上网？
             return Environment.MachineName;
+        }
+
+        // epIp: first up, non-loopback IPv4 (mirrors sdo_device.get_local_ip / the capture's epIp).
+        public static string GetLocalIp()
+        {
+            try
+            {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up) continue;
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    foreach (var addr in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (addr.Address.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(addr.Address))
+                            return addr.Address.ToString();
+                    }
+                }
+            }
+            catch
+            {
+                Log.Error("Failed to get LocalIp");
+            }
+            return string.Empty;
+        }
+
+        // staticLogin's `mac` field is DeviceInfo_BuildLocalGuid = MD5(dashedMac + rawDiskSerial + computerName),
+        // a single 32-hex-uppercase digest (verified against capture, e.g. 2A69943F66358ADAAED07684856B213B).
+        // NOTE: this is NOT MD5(mac) (that is deviceId's first segment); the inputs are concatenated then hashed once.
+        public static string BuildLocalGuid()
+        {
+            return GetMD5(Encoding.UTF8.GetBytes(GetMac() + GetDiskSerialRaw() + GetHostName()));
+        }
+
+        // Raw (un-hashed) system-disk serial, used by BuildLocalGuid. GetDiskSerialNumber() MD5s the same value.
+        private static string GetDiskSerialRaw()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return new DeviceIdBuilder().OnLinux(linux => linux.AddSystemDriveSerialNumber()).ToString();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return new DeviceIdBuilder().OnMac(mac => mac.AddSystemDriveSerialNumber()).ToString();
+
+            try
+            {
+                ManagementObjectSearcher getPartitionsOnDisk = new
+                    ManagementObjectSearcher("select * from Win32_DiskDrive");
+                foreach (ManagementObject mo in getPartitionsOnDisk.Get())
+                {
+                    if (mo["Index"].ToString() != "0") continue;
+                    return mo["SerialNumber"].ToString();
+                }
+            }
+            catch
+            {
+                Log.Error("Failed to get DiskSerialNumber (raw)");
+            }
+            return string.Empty;
         }
 
         private static string GetDiskSerialNumber()

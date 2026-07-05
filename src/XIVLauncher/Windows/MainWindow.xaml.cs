@@ -85,7 +85,7 @@ namespace XIVLauncher.Windows
 
             Model.ReloadHeadlines += () => Task.Run(SetupHeadlines);
 
-            LoginTypeSelection.ItemsSource = GuiLoginType.Get(App.Settings.ShowWeGameTokenLogin.GetValueOrDefault(false));
+            LoginTypeSelection.ItemsSource = GuiLoginType.Get();
             LoginTypeSelection.SelectedValue = App.Settings.SelectedLoginType.GetValueOrDefault(LoginType.SdoSlide);
             NewsListView.ItemsSource = new List<News>
             {

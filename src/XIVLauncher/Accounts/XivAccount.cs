@@ -115,6 +115,8 @@ namespace XIVLauncher.Accounts
 
         // Should be encrypted
         public string AutoLoginSessionKey { get; set; }
+        // Should be encrypted. ULSKLK-... 免密登录令牌，走 /authen/v2/fastInLogin 续期（与 AutoLoginSessionKey 并存）。
+        public string KeepLoginKey { get; set; }
         public string Password { get; set; }
         public string TestSID { get; set; }
         public string NSessionId { get; set; }
