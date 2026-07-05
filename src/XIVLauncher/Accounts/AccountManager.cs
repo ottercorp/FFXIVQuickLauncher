@@ -45,11 +45,51 @@ namespace XIVLauncher.Accounts
 
             _setting = setting;
 
+            MigrateLegacyWeGameSidAccounts();
+
             var credPath = Path.Combine(Paths.RoamingPath, "cred.json");
             this.CredData = new CredData("XIVLauncherCN", credPath);
 
             Accounts.CollectionChanged += Accounts_CollectionChanged;
             ChangeCredType(setting.CredType.GetValueOrDefault(CredType.WindowsCredManager));
+        }
+
+        /// <summary>
+        /// 旧版本的 WeGameSid 账号类型 (XivAccountType = 2) 已合并入 WeGame。
+        /// 把这些历史记录就地迁移为 WeGame: 回填 LoginAccount、重算 Id、更新 CurrentAccountId。
+        /// TestSID 保持不变, 迁移后即 IsSidLogin。
+        /// </summary>
+        private void MigrateLegacyWeGameSidAccounts()
+        {
+            const int legacyWeGameSid = 2;
+            var migrated = false;
+
+            foreach (var account in Accounts)
+            {
+                if ((int)account.AccountType != legacyWeGameSid)
+                    continue;
+
+                var oldId = account.Id;
+                account.AccountType = XivAccountType.WeGame;
+                if (string.IsNullOrEmpty(account.LoginAccount))
+                    account.LoginAccount = account.SndaId;
+                account.GenerateId();
+
+                if (_setting.CurrentAccountId == oldId)
+                    _setting.CurrentAccountId = account.Id;
+
+                // 用 index (真正的主键) 就地更新, 避免 Id 变化导致 Save() 误插入重复行。
+                lock (this.syncRoot)
+                {
+                    this.db.Update(account);
+                }
+
+                migrated = true;
+                Log.Information("迁移旧 WeGameSid 账号 {OldId} -> {NewId}", oldId, account.Id);
+            }
+
+            if (migrated)
+                Log.Information("旧 WeGameSid 账号迁移完成");
         }
 
         public async Task<string> Encrypt(string text)

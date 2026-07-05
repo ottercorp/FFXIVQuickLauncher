@@ -1,6 +1,5 @@
 using Castle.Core.Internal;
 using CheapLoc;
-using FfxivArgLauncher;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -175,59 +174,8 @@ namespace XIVLauncher.Windows.ViewModel
                         return;
                 }
 
-                TryLogin(this.GuiLoginType.LoginType, this.Username, this.Password, IsFastLogin, IsReadWegameInfo, action);
+                TryLogin(this.GuiLoginType.LoginType, this.Username, this.Password, IsFastLogin, action);
             };
-        }
-
-        private async Task<LoginData> ReadWegameInfo(string username, string targetAreaId)
-        {
-            try
-            {
-                Process.Start(new ProcessStartInfo()
-                {
-                    FileName = "wegame://StartFor=2000340",
-                    UseShellExecute = true,
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Could not Launch WeGame");
-            }
-
-            var pidList = AppUtil.GetGameProcessIds();
-            var argReader = new RemoteArgReader();
-            try { 
-                await argReader.Start(); 
-            }
-            catch (Win32Exception ex)
-            {
-                throw new Win32Exception($"{ex.Message}\n 请尝试手动打开{Path.Combine(AppContext.BaseDirectory, "XIVLauncher.ArgReader.exe")},如系统弹窗 Microsoft Defender SmartScreen 阻止了无法识别的应用启动。请选择仍要运行后，重新使用XIVLauncherCN。");
-            }
-            while (true)
-            {
-                if (loginCts.IsCancellationRequested)
-                {
-                    argReader.Stop(false);
-                    return null;
-                }
-                await Task.Delay(1000);
-                var newPidList = AppUtil.GetGameProcessIds().Except(pidList);
-                this.LoginMessage = $"请使用WeGame启动需要读取的FFXIV";
-#if DEBUG
-                newPidList = AppUtil.GetGameProcessIds();
-#endif
-                if (newPidList.Count() == 0)
-                    continue;
-                var pid = newPidList.First();
-                await argReader.OpenProcess(pid);
-                var data = await argReader.ReadArgs();
-#if DEBUG
-                this.LoginMessage = $"读取成功";
-#endif
-                argReader.Stop(true);
-                return data;
-
-            }
         }
 
         private Task<string> EnsureWeGameLauncherPathAsync()
@@ -347,14 +295,14 @@ namespace XIVLauncher.Windows.ViewModel
                 );
         }
 
-        public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
+        public void TryLogin(LoginType loginType, string username, string password, bool doingAutoLogin, AfterLoginAction action)
         {
             if (this.IsLoggingIn)
                 return;
             //if (username == null) username = string.Empty;
             if (_window.Dispatcher != Dispatcher.CurrentDispatcher)
             {
-                _window.Dispatcher.Invoke(() => TryLogin(loginType, username, password, doingAutoLogin, readWeGameInfo, action));
+                _window.Dispatcher.Invoke(() => TryLogin(loginType, username, password, doingAutoLogin, action));
                 return;
             }
 
@@ -371,7 +319,7 @@ namespace XIVLauncher.Windows.ViewModel
             {
                 try
                 {
-                    Login(loginType, username, password, doingAutoLogin, readWeGameInfo, action).Wait();
+                    Login(loginType, username, password, doingAutoLogin, action).Wait();
                 }
                 catch (Exception ex)
                 {
@@ -391,7 +339,7 @@ namespace XIVLauncher.Windows.ViewModel
 
         public DcTravelListener dcTravelListener { get; private set; } = null;
         public const string PresudoPassword = "********假的密码********";
-        private async Task Login(LoginType loginType, string username, string inputPassword, bool doingAutoLogin, bool readWeGameInfo, AfterLoginAction action)
+        private async Task Login(LoginType loginType, string username, string inputPassword, bool doingAutoLogin, AfterLoginAction action)
         {
             ProblemCheck.RunCheck(_window);
 
@@ -440,6 +388,25 @@ namespace XIVLauncher.Windows.ViewModel
 
             if (!doingAutoLogin) App.Settings.AutologinEnabled = IsAutoLogin;
             App.Settings.FastLogin = IsFastLogin;
+            App.Settings.EnableDcTravel = IsDcTravelEnabled;
+
+            // 使用SID: 手动登录看"使用SID"复选框; 自动登录传入 WeGameSid 表示复用已存 SID。
+            // 与"启用跨域传送"互斥, 用于决定登录后保存/复用的是 SID 还是 token。
+            var useSid = (loginType == LoginType.WeGameSid) || (loginType == LoginType.WeGameToken && IsUseSid);
+
+            if (action == AfterLoginAction.Start && App.Settings.EnableDcTravel && !App.Settings.InGameAddonEnabled && !useSid)
+            {
+                var enableDalamudForDcTravel = CustomMessageBox.Builder
+                    .NewFrom("检测到你启用了跨域传送，但未启用 Dalamud（游戏内插件）。\n跨域传送需要 Dalamud 才能使用，是否现在启用 Dalamud？")
+                    .WithButtons(MessageBoxButton.YesNo)
+                    .WithImage(MessageBoxImage.Question)
+                    .WithCaption("超域传送")
+                    .WithParentWindow(_window)
+                    .Show();
+
+                if (enableDalamudForDcTravel == MessageBoxResult.Yes)
+                    App.Settings.InGameAddonEnabled = true;
+            }
             // TODO: 太jb乱了，得重构
             var finalLoginType = loginType;
             var serect = string.Empty;
@@ -448,8 +415,7 @@ namespace XIVLauncher.Windows.ViewModel
 
             var accountType = loginType switch
             {
-                LoginType.WeGameSid => XivAccountType.WeGameSid,
-                LoginType.WeGameToken => XivAccountType.WeGame,
+                LoginType.WeGameSid or LoginType.WeGameToken => XivAccountType.WeGame,
                 LoginType.SdoStatic or LoginType.SdoSlide or LoginType.SdoQrCode => XivAccountType.Sdo
             };
 
@@ -473,75 +439,10 @@ namespace XIVLauncher.Windows.ViewModel
                         finalLoginType = LoginType.SdoStatic;
                         break;
                     case LoginType.WeGameSid:
-                        CustomMessageBox.Builder
-                                .NewFrom("WeGameSid功能即将移除，请选择WeGameToken登录。\n如果确实需要继续使用WeGameSid登录，请去QQ频道中反馈。")
-                                .WithImage(MessageBoxImage.Warning)
-                                .WithButtons(MessageBoxButton.OK)
-                                .WithYesButtonText("确认")
-                                .WithCaption("WeGame Token登录功能说明")
-                                .WithParentWindow(_window)
-                                .Show();
-                        if (!App.Settings.HasAgreeWeGameUsage.GetValueOrDefault(false))
-                        {
-                            var readWeGameUsageAsk = CustomMessageBox.Builder
-                                .NewFrom(
-                                """
-                        为保障您的账号安全，请在使用本功能前仔细阅读以下内容：
-                        🔐 功能原理说明
-                        本工具通过读取最终幻想14游戏中WeGame平台生成的会话密钥实现快速启动功能，不会对WeGame客户端进行任何修改，也不会获取您的WeGame账号密码等敏感信息。
-                        ⚠️ 注意事项
-                        会话密钥具有较长有效期，建议您：
-                        定期通过WeGame官方客户端登录以刷新密钥
-                        避免在公共/共享设备使用本功能
-                        发现异常登录时立即通过WeGame重置密钥
-                        本工具不会且无法主动更新会话密钥，密钥有效性完全依赖WeGame平台的生成机制
-
-                        点击【确认使用】即表示您已理解：妥善保管设备安全是密钥有效性的最终保障，建议每30天通过官方客户端完整登录一次以保持最佳安全性
-                        """)
-                                .WithImage(MessageBoxImage.Warning)
-                                .WithButtons(MessageBoxButton.YesNo)
-                                .WithYesButtonText("确认使用")
-                                .WithCaption("WeGame SID登录功能说明")
-                                .WithYesCountdown(15)
-                                .WithParentWindow(_window)
-                                .Show();
-
-                            if (readWeGameUsageAsk == MessageBoxResult.No)
-                            {
-                                App.Settings.HasAgreeWeGameUsage = false;
-                                return;
-                            }
-                            else
-                            {
-                                App.Settings.HasAgreeWeGameUsage = true;
-                            }
-                        }
-
-                        doingAutoLogin = true;
-                        if (!readWeGameInfo && savedAccount != null)
-                        {
-                            serect = await AccountManager.Decrypt(savedAccount.TestSID);
-                        }
-
-                        readWeGameInfo = username.IsNullOrEmpty() || serect.IsNullOrEmpty();
-
-                        if (readWeGameInfo)
-                        {
-                            var loginData = await ReadWegameInfo(username, Area.Areaid);
-                            if (loginData == null) { return; }
-                            if (loginData.SndaID.IsNullOrEmpty() || loginData.SessionId.IsNullOrEmpty())
-                            {
-                                throw new Exception("获取WeGame登录信息失败");
-                            }
-                            username = loginData.SndaID;
-                            serect = loginData.SessionId;
-                            var areaId = loginData.Args.Where(x => x.Contains("AreaID=")).Select(x => x.Split('=')[1]).First();
-                            Area = this.SdoAreas.FirstOrDefault(x => x.Areaid == areaId);
-                        }
-                        finalLoginType = LoginType.WeGameSid;
-                        break;
                     case LoginType.WeGameToken:
                     {
+                        // 合并后的 WeGame 登录: 一律从命名管道抓 token 换票登录, 不再从进程读取 SID。
+                        // useSid 决定登录后保存/复用的是换出的 SID(LoginBySid) 还是 token(LoginByWeGameToken)。
                         if (!App.Settings.HasAgreeWeGameUsage.GetValueOrDefault(false))
                         {
                             var readWeGameUsageAsk = CustomMessageBox.Builder
@@ -558,7 +459,7 @@ namespace XIVLauncher.Windows.ViewModel
                                 .WithImage(MessageBoxImage.Warning)
                                 .WithButtons(MessageBoxButton.YesNo)
                                 .WithYesButtonText("确认使用")
-                                .WithCaption("WeGame Token登录功能说明")
+                                .WithCaption("WeGame 登录功能说明")
                                 .WithYesCountdown(5)
                                 .WithParentWindow(_window)
                                 .Show();
@@ -568,17 +469,25 @@ namespace XIVLauncher.Windows.ViewModel
                                 App.Settings.HasAgreeWeGameUsage = false;
                                 return;
                             }
-                            else
+                            App.Settings.HasAgreeWeGameUsage = true;
+                        }
+
+                        // 1) 自动登录复用已存 SID: 直接 LoginBySid, 不抓包也不联网换票。
+                        //    SID 帐号以真实 SndaId 作为标识(LoginBySid 需要 SndaId)。
+                        if (loginType == LoginType.WeGameSid && savedAccount != null && !string.IsNullOrEmpty(savedAccount.TestSID))
+                        {
+                            serect = await AccountManager.Decrypt(savedAccount.TestSID);
+                            if (!string.IsNullOrEmpty(serect))
                             {
-                                App.Settings.HasAgreeWeGameUsage = true;
+                                username = savedAccount.SndaId;
+                                finalLoginType = LoginType.WeGameSid;
+                                break;
                             }
                         }
 
-                        // WeGameToken 走自动抓包, GUI 已隐藏 token 输入框, 这里不再支持手填 token。
-                        // 默认用保存的 token 走 LoginByWeGameToken 刷新出新的 session id;
-                        // 勾选 "强制重新抓包"(GUI 上复用 ReadWeGameInfoCheckBox) 则跳过这步, 直接重抓。
-                        // 注意: AutoLoginSessionKey 对 WeGameToken 登录方式无效, 不要回退到它。
-                        if (!readWeGameInfo && savedAccount?.Password != null)
+                        // 2) 抓包模式复用已存 token: 用 token 重新走 LoginByWeGameToken 刷新出新的 session id。
+                        //    注意: AutoLoginSessionKey 对 WeGame 登录方式无效, 不要回退到它。
+                        if (!useSid && savedAccount?.Password != null)
                         {
                             serect = await AccountManager.Decrypt(savedAccount.Password);
                             if (!string.IsNullOrEmpty(serect))
@@ -590,6 +499,8 @@ namespace XIVLauncher.Windows.ViewModel
                             }
                         }
 
+                        // 3) 抓包: 从命名管道抓 token, 一律走 LoginByWeGameToken 换票登录。
+                        //    使用SID模式也走这里换票, 成功后把换出的 SID 落盘(见保存块)。
                         var sdologinDir = await EnsureWeGameLauncherPathAsync().ConfigureAwait(false);
                         if (sdologinDir == null) return;
 
@@ -698,7 +609,7 @@ namespace XIVLauncher.Windows.ViewModel
                 if (loginResult.State == Launcher.LoginState.Ok)
                 //if (true)
                 {
-                    if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled && loginType != LoginType.WeGameSid)
+                    if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled && !useSid)
                     {
                         if (!App.Settings.HasAgreeDcTravelUsage.GetValueOrDefault(false))
                         {
@@ -750,22 +661,22 @@ namespace XIVLauncher.Windows.ViewModel
 
                     var accountToSave = new XivAccount()
                     {
-                        AutoLogin = loginType == LoginType.WeGameSid || doingAutoLogin,
-                        LoginAccount = loginResult.OauthLogin.InputUserId,
+                        AutoLogin = doingAutoLogin,
+                        // SID 帐号用真实 SndaId 作标识(LoginBySid 复用时需要); token 帐号用抓包得到的 thridUserId。
+                        LoginAccount = useSid ? loginResult.OauthLogin.SndaId : (loginResult.OauthLogin.InputUserId ?? username),
                         SndaId = loginResult.OauthLogin.SndaId,
                     };
 
                     accountToSave.AccountType = loginType switch
                     {
-                        LoginType.WeGameSid => XivAccountType.WeGameSid,
-                        LoginType.WeGameToken => XivAccountType.WeGame,
+                        LoginType.WeGameSid or LoginType.WeGameToken => XivAccountType.WeGame,
                         LoginType.SdoStatic or LoginType.SdoSlide or LoginType.SdoQrCode => XivAccountType.Sdo
                     };
 
                     accountToSave.AreaName = Area.AreaName;
 
-                    // AutoLoginSessionKey 仅对 Sdo 帐号有效; WeGame 帐号下次登录用保存的 token 重新刷新 session,
-                    // WeGameSid 用 TestSID。所以这里只给 Sdo 走 LoginBySessionKey 的快登/DcTravel 续期。
+                    // AutoLoginSessionKey 仅对 Sdo 帐号有效; WeGame 抓包帐号下次登录用保存的 token 重新刷新 session,
+                    // 使用SID模式则用保存的 TestSID。所以这里只给 Sdo 走 LoginBySessionKey 的快登/DcTravel 续期。
                     if (doingAutoLogin && accountToSave.AccountType == XivAccountType.Sdo)
                     {
                         //accountToSave.NSessionId = nSessionId;
@@ -777,36 +688,29 @@ namespace XIVLauncher.Windows.ViewModel
                             accountToSave.KeepLoginKey = await AccountManager.Encrypt(savedKeepLoginKey);
                         if (this.dcTravelListener != null)
                         {
-                            if (!string.IsNullOrEmpty(savedKeepLoginKey))
+                            this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
                             {
-                                this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
-                                {
-                                    var newLoginResult = await this.Launcher.SdoAuth.LoginByKeepLoginKey(username, savedKeepLoginKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
-                                    return newLoginResult.OauthLogin.SessionId;
-                                };
-                            }
-                            else
-                            {
-                                this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
-                                {
-                                    var newLoginResult = await this.Launcher.SdoAuth.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
-                                    return newLoginResult.OauthLogin.SessionId;
-                                };
-                            }
+                                // Prefer keepLoginKey (/authen/v2/fastInLogin) when present; fall back to autoLoginSessionKey.
+                                var newLoginResult = !string.IsNullOrEmpty(savedKeepLoginKey)
+                                    ? await this.Launcher.SdoAuth.LoginByKeepLoginKey(username, savedKeepLoginKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false)
+                                    : await this.Launcher.SdoAuth.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
+                                return newLoginResult.OauthLogin.SessionId;
+                            };
                         }
                         if (finalLoginType == LoginType.SdoStatic)
                         {
                             accountToSave.Password = await AccountManager.Encrypt(serect);
                         }
                     }
-                    if (accountToSave.AccountType == XivAccountType.WeGameSid)
+                    // 使用SID模式: "保存密码"勾选才把换出的 SID 落盘, 下次自动登录用 LoginBySid 直接复用。
+                    // 保存的是换出的 SessionId(即 SID); 复用时该 SessionId 与 serect 相同。
+                    if (useSid && doingAutoLogin)
                     {
-                        accountToSave.TestSID = await AccountManager.Encrypt(serect);
-                        //accountToSave.TestSID = await AccountManager.CredProvider.Encrypt("password");
+                        accountToSave.TestSID = await AccountManager.Encrypt(loginResult.OauthLogin.SessionId);
                     }
-                    // WeGameToken: 跟 SdoStatic 一样, "保存密码"(doingAutoLogin) 勾选才把抓到的 token 落盘,
+                    // 抓包模式: 跟 SdoStatic 一样, "保存密码"(doingAutoLogin) 勾选才把抓到的 token 落盘,
                     // 下次免抓包直接走 LoginByWeGameToken 复用。
-                    if (accountToSave.AccountType == XivAccountType.WeGame && doingAutoLogin)
+                    if (!useSid && accountToSave.AccountType == XivAccountType.WeGame && doingAutoLogin)
                     {
                         accountToSave.Password = await AccountManager.Encrypt(serect);
 
@@ -2450,14 +2354,37 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        private bool _isReadWegameInfo;
-        public bool IsReadWegameInfo
+        private bool _isDcTravelEnabled;
+        public bool IsDcTravelEnabled
         {
-            get => _isReadWegameInfo;
+            get => _isDcTravelEnabled;
             set
             {
-                _isReadWegameInfo = value;
-                OnPropertyChanged(nameof(IsReadWegameInfo));
+                _isDcTravelEnabled = value;
+                // 与"使用SID"互斥: 跨域传送需要用 token 反复刷新 session, 与直接复用 SID 不兼容。
+                if (value && _isUseSid)
+                {
+                    _isUseSid = false;
+                    OnPropertyChanged(nameof(IsUseSid));
+                }
+                OnPropertyChanged(nameof(IsDcTravelEnabled));
+            }
+        }
+
+        // "使用SID"登录: 抓 token 换票后保存/复用换出的 SID (LoginBySid), 与"启用跨域传送"互斥, 两者可都不选。
+        private bool _isUseSid;
+        public bool IsUseSid
+        {
+            get => _isUseSid;
+            set
+            {
+                _isUseSid = value;
+                if (value && _isDcTravelEnabled)
+                {
+                    _isDcTravelEnabled = false;
+                    OnPropertyChanged(nameof(IsDcTravelEnabled));
+                }
+                OnPropertyChanged(nameof(IsUseSid));
             }
         }
 

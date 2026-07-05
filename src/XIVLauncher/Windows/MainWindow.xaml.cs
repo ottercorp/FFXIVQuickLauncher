@@ -309,6 +309,7 @@ namespace XIVLauncher.Windows
             this.SetDefaults();
 
             Model.IsFastLogin = App.Settings.FastLogin;
+            Model.IsDcTravelEnabled = App.Settings.EnableDcTravel;
             //LoginPassword.IsEnabled = LoginPassword.IsVisible;
             //Model.EnableInjector = App.Settings.EnableInjector;
 
@@ -332,27 +333,15 @@ namespace XIVLauncher.Windows
             if (App.Settings.AutologinEnabled && savedAccount != null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
                 Log.Information("Engaging Autologin...");
-                if (savedAccount.AccountType == XivAccountType.WeGameSid)
+                if (savedAccount.AccountType == XivAccountType.WeGame)
                 {
+                    // WeGame 不能复用 AutoLoginSessionKey。IsSidLogin(TestSID 有值)走 LoginBySid 直接复用 SID;
+                    // 否则用保存的 token 重新走 LoginByWeGameToken。用 UserName 作标识以便 Login 内部命中已存账号。
                     Model.TryLogin(
-                        LoginType.WeGameSid,
-                        savedAccount.LoginAccount,
-                        savedAccount.TestSID,
-                        Model.IsFastLogin,
-                        Model.IsReadWegameInfo,
-                        MainWindowViewModel.AfterLoginAction.Start
-                    );
-                }
-                else if (savedAccount.AccountType == XivAccountType.WeGame)
-                {
-                    // WeGameToken 不能复用 AutoLoginSessionKey, 必须重新走 LoginByWeGameToken。
-                    // 传空密码, 让 TryLogin 内部从 savedAccount.Password 解出 token。
-                    Model.TryLogin(
-                        LoginType.WeGameToken,
-                        savedAccount.LoginAccount,
+                        savedAccount.IsSidLogin ? LoginType.WeGameSid : LoginType.WeGameToken,
+                        savedAccount.UserName,
                         null,
-                        Model.IsFastLogin,
-                        Model.IsReadWegameInfo,
+                        true,
                         MainWindowViewModel.AfterLoginAction.Start
                     );
                 }
@@ -363,7 +352,6 @@ namespace XIVLauncher.Windows
                         savedAccount.LoginAccount,
                         savedAccount.AutoLoginSessionKey,
                         Model.IsFastLogin,
-                        Model.IsReadWegameInfo,
                         MainWindowViewModel.AfterLoginAction.Start
                         );
                 }
@@ -538,7 +526,7 @@ namespace XIVLauncher.Windows
                 {
                     QuitMaintenanceQueueButton_OnClick(null, null);
 
-                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Password, Model.IsFastLogin, Model.IsReadWegameInfo, MainWindowViewModel.AfterLoginAction.Start);
+                    Model.TryLogin(Model.GuiLoginType.LoginType, Model.Username, LoginPassword.Password, Model.IsFastLogin, MainWindowViewModel.AfterLoginAction.Start);
                 });
 
                 Console.Beep(523, 150);
@@ -636,13 +624,12 @@ namespace XIVLauncher.Windows
                     break;
                 case XivAccountType.WeGame:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
+                    // TestSID 有值 = 使用SID登录; 恢复复选框状态(与启用跨域传送互斥)。
+                    Model.IsUseSid = account.IsSidLogin;
                     if (account.Password is not null)
                     {
                         LoginPassword.Password = MainWindowViewModel.PresudoPassword;
                     }
-                    break;
-                case XivAccountType.WeGameSid:
-                    LoginTypeSelection.SelectedValue = LoginType.WeGameSid;
                     break;
             }
         }
@@ -745,10 +732,8 @@ namespace XIVLauncher.Windows
             LoginPassword.Visibility = Visibility.Collapsed;
 
             FastLoginCheckBox.Visibility = Visibility.Visible;
-            ReadWeGameInfoCheckBox.Visibility = Visibility.Collapsed;
+            UseSidCheckBox.Visibility = Visibility.Collapsed;
             FastLoginCheckBox.Content = "快速登录";
-            ReadWeGameInfoCheckBox.Content = "读取登录信息";
-            ReadWeGameInfoCheckBox.ToolTip = "从WeGame版FFXIV中读取登录信息";
             LoginPassword.Password = string.Empty;
             HintAssist.SetHint(this.LoginUsername, "盛趣账号");
             HintAssist.SetHint(this.LoginPassword, "密码");
@@ -768,20 +753,13 @@ namespace XIVLauncher.Windows
                     //FastLoginCheckBox.Visibility = Visibility.Collapsed;
                     break;
                 case LoginType.WeGameToken:
-                    // WeGameToken 全自动抓包, 不再支持手填 token; 用户名留空时也会从抓包结果回填。
+                    // WeGame 全自动抓包, 不支持手填 token; 用户名留空时也会从抓包结果回填。
                     LoginPassword.Visibility = Visibility.Collapsed;
                     HintAssist.SetHint(this.LoginUsername, "SndaId (可留空, 自动抓取)");
-                    // 跟 SdoStatic 对齐: 勾选才把抓到的 token 持久化, 下次免抓包。
+                    // 跟 SdoStatic 对齐: 勾选才把抓到的 token/SID 持久化, 下次免抓包。
                     FastLoginCheckBox.Content = "保存密码";
-                    // 复用同一个 checkbox: WeGameSid 用它"读取登录信息", WeGameToken 用它"强制重新抓包"。
-                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
-                    ReadWeGameInfoCheckBox.Content = "强制重新抓包";
-                    ReadWeGameInfoCheckBox.ToolTip = "勾选后忽略已保存的 token, 强制重新启动 sdologin 抓包";
-                    break;
-                case LoginType.WeGameSid:
-                    FastLoginCheckBox.Visibility = Visibility.Collapsed;
-                    ReadWeGameInfoCheckBox.Visibility = Visibility.Visible;
-                    HintAssist.SetHint(this.LoginUsername, "从Wegame自动获取的账号");
+                    // "使用SID": 与"启用跨域传送"互斥, 决定登录后保存/复用 SID 还是 token。
+                    UseSidCheckBox.Visibility = Visibility.Visible;
                     break;
             }
         }

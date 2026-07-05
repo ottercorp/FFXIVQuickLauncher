@@ -41,10 +41,15 @@ namespace XIVLauncher.Common.Game
             "MS-RTC LM 8; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET CLR 1.1.4322; " +
             ".NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)";
 
-        public Func<string, DcTraveler> CreateDcTraveler;
-
         private readonly HttpClient loginClient;
         private readonly CookieContainer loginCookies;
+
+        // MAC / local IP / local-GUID are stable for a client's lifetime but individually expensive
+        // (P/Invoke adapter lookup, NIC enumeration, WMI disk query). GetSdoHttpRequestMessage runs once
+        // per second during QR/slide polling, so cache them per client instead of recomputing each request.
+        private readonly Lazy<string> cachedMac = new(SdoUtils.GetMac);
+        private readonly Lazy<string> cachedLocalIp = new(SdoUtils.GetLocalIp);
+        private readonly Lazy<string> cachedLocalGuid = new(SdoUtils.BuildLocalGuid);
 
         // runTimeId: one GUID per client instance (32 hex uppercase, no dashes), matching the capture
         // (e.g. 40A2BF590D23471A91B43F9AF0B29112) and sdo_login.py's uuid4().hex.upper() default.
@@ -137,7 +142,7 @@ namespace XIVLauncher.Common.Game
                 ("encryptFlag", 1),
                 ("inputUserId", encryptedUser),
                 ("password", encryptedPassword),
-                ("mac", SdoUtils.BuildLocalGuid()),
+                ("mac", this.cachedLocalGuid.Value),
                 ("guid", guid),
                 ("inputUserType", 0),
                 ("accountDomain", 1),
@@ -172,11 +177,7 @@ namespace XIVLauncher.Common.Game
 
             var sndaId = result.Data.SndaId;
             var tgt = result.Data.Tgt;
-            if (dcTraveler != null)
-            {
-                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
-                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
-            }
+            this.WireDcTraveler(dcTraveler, tgt, guid);
 
             var sessionId = await GetSessionId(tgt, guid);
 
@@ -184,7 +185,6 @@ namespace XIVLauncher.Common.Game
             {
                 SessionId = sessionId,
                 InputUserId = account,
-                //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = null,
                 MaxExpansion = Constants.MaxExpansion,
@@ -202,18 +202,13 @@ namespace XIVLauncher.Common.Game
         {
             var (guid, _) = await this.GetGuid();
             var (sndaId, tgt, autoLoginSessionKey) = await ThirdPartyLogin(account, token, autoLogin, AutoLoginKeepDays);
-            if (dcTraveler != null)
-            {
-                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
-                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
-            }
+            this.WireDcTraveler(dcTraveler, tgt, guid);
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new Launcher.OauthLoginResult
             {
                 SessionId = sessionId,
                 InputUserId = account,
-                //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
                 MaxExpansion = Constants.MaxExpansion,
@@ -250,18 +245,13 @@ namespace XIVLauncher.Common.Game
             if (autoLogin)
                 (tgt, autoLoginSessionKey) = await AccountGroupLogin(tgt, sndaId, AutoLoginKeepDays);
 
-            if (dcTraveler != null)
-            {
-                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
-                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
-            }
+            this.WireDcTraveler(dcTraveler, tgt, guid);
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new Launcher.OauthLoginResult
             {
                 SessionId = sessionId,
                 InputUserId = account,
-                //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
                 KeepLoginKey = autoLogin ? keepLoginKey : null,
@@ -282,19 +272,14 @@ namespace XIVLauncher.Common.Game
             await CancelPushMessageLogin(string.Empty, guid);
             var (pushMsgSerialNum, pushMsgSessionKey, expiration) = await SendPushMessage(account);
             showVerificationCode?.Invoke(pushMsgSerialNum);
-            var (sndaId, tgt, autoLoginSessionKey, keepLoginKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, pushMsgSerialNum, guid, expiration, cts, autoLogin, AutoLoginKeepDays);
-            if (dcTraveler != null)
-            {
-                dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
-                dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
-            }
+            var (sndaId, tgt, autoLoginSessionKey, keepLoginKey) = await WaitingForSlideOnDaoyuApp(pushMsgSessionKey, guid, expiration, cts, autoLogin, AutoLoginKeepDays);
+            this.WireDcTraveler(dcTraveler, tgt, guid);
             var sessionId = await GetSessionId(tgt, guid);
 
             var oath = new Launcher.OauthLoginResult
             {
                 SessionId = sessionId,
                 InputUserId = account,
-                //Password = password,
                 SndaId = sndaId,
                 AutoLoginSessionKey = autoLogin ? autoLoginSessionKey : null,
                 KeepLoginKey = autoLogin ? keepLoginKey : null,
@@ -327,17 +312,12 @@ namespace XIVLauncher.Common.Game
 
             try
             {
-                if (dcTraveler != null)
-                {
-                    dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
-                    dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
-                }
+                this.WireDcTraveler(dcTraveler, tgt, guid);
                 var sessionId = await GetSessionId(tgt, guid);
                 var oath = new Launcher.OauthLoginResult
                 {
                     SessionId = sessionId,
                     InputUserId = account,
-                    //Password = password,
                     SndaId = sndaId,
                     AutoLoginSessionKey = newAutoLoginSessionKey,
                     MaxExpansion = Constants.MaxExpansion,
@@ -349,19 +329,11 @@ namespace XIVLauncher.Common.Game
                     State = Launcher.LoginState.Ok,
                 };
             }
-            catch (Exception ex)
+            catch (SdoLoginException sdoEx)
             {
-                if (ex is SdoLoginException sdoEx)
-                {
-                    sdoEx.RemoveAutoLoginSessionKey = true;
-                    throw sdoEx;
-                }
-                else
-                {
-                    throw;
-                }
+                sdoEx.RemoveAutoLoginSessionKey = true;
+                throw;
             }
-
         }
 
         private async Task<SdoLoginResult> FastInLogin(string keepLoginKey)
@@ -392,11 +364,7 @@ namespace XIVLauncher.Common.Game
 
             try
             {
-                if (dcTraveler != null)
-                {
-                    dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
-                    dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
-                }
+                this.WireDcTraveler(dcTraveler, tgt, guid);
 
                 var sessionId = await GetSessionId(tgt, guid);
                 var oath = new Launcher.OauthLoginResult
@@ -415,37 +383,32 @@ namespace XIVLauncher.Common.Game
                     State = Launcher.LoginState.Ok,
                 };
             }
-            catch (Exception ex)
+            catch (SdoLoginException sdoEx)
             {
-                if (ex is SdoLoginException sdoEx)
-                {
-                    sdoEx.RemoveKeepLoginKey = true;
-                    throw sdoEx;
-                }
+                sdoEx.RemoveKeepLoginKey = true;
                 throw;
             }
         }
 
+        private void WireDcTraveler(DcTraveler dcTraveler, string tgt, string guid)
+        {
+            if (dcTraveler == null)
+                return;
+
+            dcTraveler.RefreshDcTravelSessionIdFunc = () => this.GetDcTravelSessionId(tgt, guid);
+            dcTraveler.RefreshGameSessionByGuidFunc = () => this.GetSessionId(tgt, guid);
+        }
+
         public async Task<string> GetSessionId(string tgt, string guid)
         {
-            var promotionResult = await GetPromotionInfo(tgt);
+            await GetPromotionInfo(tgt);
             return await SsoLogin(tgt, guid);
         }
 
         public async Task<string> GetDcTravelSessionId(string tgt, string guid)
         {
-            var promotionResult = await GetPromotionInfo(tgt, "https://ff14bjz.sdo.com/RegionKanTelepo");
+            await GetPromotionInfo(tgt, "https://ff14bjz.sdo.com/RegionKanTelepo");
             return await SsoLogin(tgt, guid);
-        }
-
-        public enum SdoLoginState
-        {
-            GotQRCode,
-            WaitingScanQRCode,
-            LoginSucess,
-            LoginFail,
-            WaitingConfirm,
-            OutTime
         }
 
         private async Task<(string guid, string dynamicKey)> GetGuid()
@@ -486,7 +449,7 @@ namespace XIVLauncher.Common.Game
 
             var result = await this.GetJsonAsSdoClient("sendPushMessage.json", new List<(string, object)>() { ("inputUserId", account) });
 
-            ///authen/sendPushMessage.json
+            // /authen/sendPushMessage.json
             //-14001710 请确保已安装叨鱼，并保持联网
             //-1602726  该账号首次在本设备上登录，不支持一键登录，请使用二维码登录
             //-10516808 用户未确认
@@ -501,7 +464,6 @@ namespace XIVLauncher.Common.Game
 
         private async Task<(string sndaId, string tgt, string AutoLoginSessionKey, string keepLoginKey)> WaitingForSlideOnDaoyuApp(
             string pushMsgSessionKey,
-            string pushMsgSerialNum,
             string guid,
             CancellationTokenSource slideExpiration,
             CancellationTokenSource userCancel,
@@ -571,7 +533,6 @@ namespace XIVLauncher.Common.Game
 
                 if (result.ReturnCode == ReturnCodeQrCodeNotScanned)
                 {
-                    //logEvent?.Invoke(SdoLoginState.WaitingScanQRCode, "等待用户扫码...");
                     await Task.Delay(1000).ConfigureAwait(false);
                     continue;
                 }
@@ -664,8 +625,6 @@ namespace XIVLauncher.Common.Game
 
         private async Task<(string sndaId, string tgt, string key)> ThirdPartyLogin(string thridUserId, string token, bool autoLogin, int autoLoginKeepDays)
         {
-            //Log.Error($"TOKEN:{token}");
-            //第三方登录
             var result = await this.GetJsonAsSdoClient("thirdPartyLogin",
                                                        new List<(string, object)>()
                                                        {
@@ -675,7 +634,8 @@ namespace XIVLauncher.Common.Game
                                                            ("token", token),
                                                            ("autoLoginFlag", autoLogin ? 1 : 0),
                                                            ("autoLoginKeepTime", autoLogin ? autoLoginKeepDays : 0),
-                                                       });
+                                                       },
+                                                       appId: GameAppId);
 
             if (result.ReturnCode != 0)
             {
@@ -701,12 +661,13 @@ namespace XIVLauncher.Common.Game
                 throw new SdoLoginException(result.ReturnCode, result.Data.FailReason);
             }
 
-            if (!result.Data.SndaIdArray.Contains(sndaId))
+            var index = result.Data.SndaIdArray.IndexOf(sndaId);
+            if (index < 0)
                 throw new SdoLoginException((int)SdoLoginCustomExpectionCode.SCAN_QRCODE_GET_ACCOUNT_FAIL, $"获取用户名失败");
 
             Log.Information($"getAccountGroup:{string.Join(",", result.Data.SndaIdArray)}");
 
-            return result.Data.SndaIdArray.Contains(sndaId) ? result.Data.AccountArray[result.Data.SndaIdArray.IndexOf(sndaId)] : null;
+            return result.Data.AccountArray[index];
         }
 
         #endregion
@@ -859,17 +820,22 @@ namespace XIVLauncher.Common.Game
             return Uri.EscapeDataString(s).Replace("%3A", ":");
         }
 
-        private async Task<HttpResponseMessage> SendSdoHttpRequestAsync(HttpMethod method, string endPoint, List<(string, object)> para, string tgt = null, int appId = BoxAppId)
+        // Shared main/backup host failover (mirrors the binary's hostName/hostName2 and sdo_login.py _fetch):
+        // try each candidate host, skipping on connection error, non-200, or (when readBody) a non-JSON body
+        // (a 403 edge page returns HTML/XML). The first host that passes becomes sticky for later requests.
+        private async Task<(HttpResponseMessage response, string body)> SendWithHostFailoverAsync(
+            HttpMethod method, string endPoint, List<(string, object)> para, string tgt, bool v2, int appId, bool readBody)
         {
-            // Raw failover for binary endpoints (e.g. the QR/codeKey image) where we also need the
-            // response headers. Fails over on connection error or non-200; JSON is not validated here.
             var attempts = new List<string>();
-            foreach (var host in this.CandidateHosts())
+            foreach (var host in this.CandidateHosts(v2))
             {
                 HttpResponseMessage response;
+                string body = null;
                 try
                 {
-                    response = await this.loginClient.SendAsync(this.GetSdoHttpRequestMessage(method, endPoint, para, host, tgt, v2: false, appId: appId));
+                    response = await this.loginClient.SendAsync(this.GetSdoHttpRequestMessage(method, endPoint, para, host, tgt, v2, appId));
+                    if (readBody)
+                        body = await response.Content.ReadAsStringAsync();
                 }
                 catch (HttpRequestException ex)
                 {
@@ -885,16 +851,32 @@ namespace XIVLauncher.Common.Game
                     continue;
                 }
 
+                if (readBody && !LooksJson(body))
+                {
+                    // 200 but the body isn't JSON — typically a 403/blocked HTML/XML page from the edge.
+                    attempts.Add($"{host}: 正文非JSON({body.Length}B)");
+                    Log.Warning($"SDO {endPoint} via {host} 正文非 JSON（疑似拦截页），尝试下一个域名");
+                    continue;
+                }
+
                 this.StickPreferredHost(host);
-                return response;
+                return (response, body);
             }
 
             throw new SdoLoginException((int)SdoLoginCustomExpectionCode.PASSPORT_ALL_HOSTS_FAILED, $"SDO 通行证主/备域名均失败 [{string.Join("; ", attempts)}]");
         }
 
+        private async Task<HttpResponseMessage> SendSdoHttpRequestAsync(HttpMethod method, string endPoint, List<(string, object)> para, string tgt = null, int appId = BoxAppId)
+        {
+            // Raw failover for binary endpoints (e.g. the QR/codeKey image) where we also need the
+            // response headers. Fails over on connection error or non-200; JSON is not validated here.
+            var (response, _) = await this.SendWithHostFailoverAsync(method, endPoint, para, tgt, v2: false, appId: appId, readBody: false);
+            return response;
+        }
+
         private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<(string Key, object Value)> para, string host, string tgt = null, bool v2 = false, int appId = BoxAppId)
         {
-            var mac = SdoUtils.GetMac();
+            var mac = this.cachedMac.Value;
             // Common params aligned to sdo_login.py + the 1.1.344.45 capture (bin/HTTPDebuggerSession.xml):
             // groupId=1 (after areaId) and channelId=0 (after runTimeId) are present on /authen/*.json; epIp is the
             // real LAN IP; runTimeId is a per-run GUID; productVersion is the passport-SDK version 1.1.344.45.
@@ -919,7 +901,7 @@ namespace XIVLauncher.Common.Game
                 ("deviceId", SdoUtils.GetDeviceId()),
                 ("thirdLoginExtern", 0),
                 ("macId", mac),
-                ("epIp", SdoUtils.GetLocalIp()),
+                ("epIp", this.cachedLocalIp.Value),
                 ("epName", SdoUtils.GetHostName()),
                 ("extendInfo", ""),
                 ("sdoVersion", ""),
@@ -950,60 +932,25 @@ namespace XIVLauncher.Common.Game
 
         private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<(string, object)> para, string tgt = null, bool v2 = false, int appId = BoxAppId)
         {
-            var attempts = new List<string>();
-            foreach (var host in this.CandidateHosts(v2))
+            var (_, reply) = await this.SendWithHostFailoverAsync(HttpMethod.Get, endPoint, para, tgt, v2, appId, readBody: true);
+
+            SdoLoginResult result;
+            try
             {
-                HttpResponseMessage response;
-                string reply;
-                try
-                {
-                    response = await this.loginClient.SendAsync(this.GetSdoHttpRequestMessage(HttpMethod.Get, endPoint, para, host, tgt, v2, appId));
-                    reply = await response.Content.ReadAsStringAsync();
-                }
-                catch (HttpRequestException ex)
-                {
-                    attempts.Add($"{host}: 连接失败 {ex.GetType().Name}");
-                    Log.Warning($"SDO {endPoint} via {host} 连接失败({ex.GetType().Name})，尝试下一个域名");
-                    continue;
-                }
-
-                if (response.StatusCode != HttpStatusCode.OK)
-                {
-                    attempts.Add($"{host}: HTTP {(int)response.StatusCode}");
-                    Log.Warning($"SDO {endPoint} via {host} 返回 HTTP {(int)response.StatusCode}，尝试下一个域名");
-                    continue;
-                }
-
-                if (!LooksJson(reply))
-                {
-                    // 200 but the body isn't JSON — typically a 403/blocked HTML/XML page from the edge.
-                    attempts.Add($"{host}: 正文非JSON({reply.Length}B)");
-                    Log.Warning($"SDO {endPoint} via {host} 正文非 JSON（疑似拦截页），尝试下一个域名");
-                    continue;
-                }
-
-                this.StickPreferredHost(host);
-
-                SdoLoginResult result;
-                try
-                {
-                    result = JsonConvert.DeserializeObject<SdoLoginResult>(reply) ?? new SdoLoginResult();
-                }
-                catch (JsonReaderException ex)
-                {
-                    // JSON-looking yet unparseable: a genuine content problem, not a host problem — surface it.
-                    throw new JsonReaderException($"{ex.Message}\n {reply}");
-                }
-
-                // Guarantee Data is non-null so downstream (which reads result.Data.*) never NREs on a sparse response.
-                result.Data ??= new SdoLoginResult.SdoLoginData();
-
-                Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
-                Log.Debug($"GetJsonAsSdoClient({endPoint}):\n{result.ToLog()}");
-                return result;
+                result = JsonConvert.DeserializeObject<SdoLoginResult>(reply) ?? new SdoLoginResult();
+            }
+            catch (JsonReaderException ex)
+            {
+                // JSON-looking yet unparseable: a genuine content problem, not a host problem — surface it.
+                throw new JsonReaderException($"{ex.Message}\n {reply}");
             }
 
-            throw new SdoLoginException((int)SdoLoginCustomExpectionCode.PASSPORT_ALL_HOSTS_FAILED, $"SDO 通行证主/备域名均失败 [{string.Join("; ", attempts)}]");
+            // Guarantee Data is non-null so downstream (which reads result.Data.*) never NREs on a sparse response.
+            result.Data ??= new SdoLoginResult.SdoLoginData();
+
+            Log.Information($"{endPoint}:ErrorType={result.ErrorType}:ReturnCode={result.ReturnCode}:FailReason:{result.Data.FailReason}:NextAction={result.Data.NextAction}");
+            Log.Debug($"GetJsonAsSdoClient({endPoint}):\n{result.ToLog()}");
+            return result;
         }
     }
 }

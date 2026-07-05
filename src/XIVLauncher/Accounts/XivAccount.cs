@@ -18,8 +18,8 @@ namespace XIVLauncher.Accounts
     public enum XivAccountType
     {
         Sdo,
-        WeGame,
-        WeGameSid
+        WeGame
+        // 注意: 旧版本存在 WeGameSid = 2, 已合并入 WeGame。AccountManager.Load() 会迁移旧记录。
     }
 
     public class XivAccount : IEquatable<XivAccount>
@@ -33,12 +33,10 @@ namespace XIVLauncher.Accounts
          * 盛趣账密     LoginAccount Password
          * 叨鱼扫码     LoginAccount AutoLoginSessionKey
          * 叨鱼滑动     LoginAccount AutoLoginSessionKey
-         * WG手动抓包   ThirdLoginAccount  Token
-         * WG抓SID     SndaId&AreaId SessionID
-         * 
-         * SndaId XivAccountType:WeGame ThirdLoginAccount (AutoLoginSessionKey)
-         * SndaId XivAccountType:WeGameSid AreaName (SessionID)
-         * SndaId XivAccountType:Sdo LoginAccount (AutoLoginSessionKey Password)
+         * WeGame抓包   LoginAccount Password(token) / TestSID(使用SID模式)
+         *
+         * XivAccountType:Sdo    LoginAccount (AutoLoginSessionKey Password)
+         * XivAccountType:WeGame LoginAccount + Password(token) 或 TestSID(SID); TestSID 有值即"使用SID"登录 (IsSidLogin)
          */
 
         [Unique]
@@ -54,21 +52,9 @@ namespace XIVLauncher.Accounts
             Debug.Assert(sndaId != null);
             newAccount.AccountType = accountType;
             newAccount.SndaId = sndaId;
-            switch (accountType)
-            {
-                case XivAccountType.WeGameSid:
-                    Debug.Assert(areaName != null);
-                    Debug.Assert(account == null);
-                    newAccount.SndaId = sndaId;
-                    newAccount.AreaName = areaName;
-                    newAccount.TestSID = sessionId;
-                    break;
-                case XivAccountType.Sdo:
-                case XivAccountType.WeGame:
-                    Debug.Assert(account != null);
-                    newAccount.LoginAccount = account;
-                    break;
-            }
+            newAccount.LoginAccount = account;
+            newAccount.AreaName = areaName;
+            newAccount.TestSID = sessionId;
             newAccount.GenerateId();
             return newAccount;
         }
@@ -98,10 +84,8 @@ namespace XIVLauncher.Accounts
         {
             get
             {
-                if (AccountType == XivAccountType.Sdo || AccountType == XivAccountType.WeGame)
-                    return LoginAccount;
-                else
-                    return SndaId.ToString();
+                // 迁移的旧 WeGameSid 记录可能没有 LoginAccount，用 SndaId 兜底。
+                return string.IsNullOrEmpty(LoginAccount) ? SndaId : LoginAccount;
             }
             private set { }
         }
@@ -123,6 +107,10 @@ namespace XIVLauncher.Accounts
 
         [Ignore]
         public bool IsWeGame => (this.AccountType != XivAccountType.Sdo);
+
+        // TestSID 有值即"使用SID"登录: 直接复用已换出的 SID (走 LoginBySid); 否则用 Password 里的 token 换票。
+        [Ignore]
+        public bool IsSidLogin => this.AccountType == XivAccountType.WeGame && !string.IsNullOrEmpty(this.TestSID);
         [Ignore]
         public string ThumbnailUrl { get; set; }
         [Ignore]

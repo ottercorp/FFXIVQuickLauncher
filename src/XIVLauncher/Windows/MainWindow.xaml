@@ -302,28 +302,38 @@
                                                 PasswordChanged="LoginPassword_OnPasswordChanged"
                                                 materialDesign:HintAssist.Hint="{Binding LoginPasswordLoc}" Cursor="IBeam" />
 
-                                            <CheckBox
-                                                Visibility="Visible"
-                                                DockPanel.Dock="Top"
-                                                Content="快速登录"
-                                                HorizontalAlignment="Stretch"
-                                                Margin="0,8,0,0"
-                                                VerticalAlignment="Top"
-                                                x:Name="FastLoginCheckBox"
-                                                Click="FastLoginCheckBox_OnClick"
-                                                ToolTip="缓存登录信息,类PC叨鱼快速登录"
-                                                IsChecked="{Binding IsFastLogin}" />
+                                            <StackPanel Orientation="Horizontal"
+                                                        DockPanel.Dock="Top"
+                                                        Margin="0,8,0,0">
+                                                <CheckBox
+                                                    Visibility="Visible"
+                                                    Content="快速登录"
+                                                    VerticalAlignment="Center"
+                                                    x:Name="FastLoginCheckBox"
+                                                    Click="FastLoginCheckBox_OnClick"
+                                                    ToolTip="缓存登录信息,类PC叨鱼快速登录"
+                                                    IsChecked="{Binding IsFastLogin}" />
+
+                                                <CheckBox
+                                                    Visibility="Visible"
+                                                    Content="启用跨域传送"
+                                                    VerticalAlignment="Center"
+                                                    Margin="16,0,0,0"
+                                                    x:Name="EnableDcTravelCheckBox"
+                                                    ToolTip="启用跨域传送,可以在登录大厅右键角色进行返回和传送。&#x0a;需要同时启用Dalamud,并安装DcTravel插件。"
+                                                    IsChecked="{Binding IsDcTravelEnabled}" />
+                                            </StackPanel>
 
                                             <CheckBox
-                                                Visibility="Hidden"
+                                                Visibility="Collapsed"
                                                 DockPanel.Dock="Top"
-                                                Content="读取登录信息"
+                                                Content="使用SID"
                                                 HorizontalAlignment="Stretch"
                                                 Margin="0,8,0,0"
                                                 VerticalAlignment="Top"
-                                                x:Name="ReadWeGameInfoCheckBox"
-                                                ToolTip="从WeGame版FFXIV中读取登录信息"
-                                                IsChecked="{Binding IsReadWegameInfo}" />
+                                                x:Name="UseSidCheckBox"
+                                                ToolTip="勾选后抓包换票登录并保存/复用换出的 SID(需勾选保存密码)。&#x0a;SID 有效期短、不支持跨域传送, 与启用跨域传送互斥。"
+                                                IsChecked="{Binding IsUseSid}" />
 
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"

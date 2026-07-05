@@ -108,8 +108,6 @@ namespace XIVLauncher.Windows
             EnableHooksCheckBox.IsChecked = App.Settings.InGameAddonEnabled;
             this.EnableHooksCheckBox.Checked += this.EnableHooksCheckBox_OnChecked;
 
-            this.EnableDcTravelCheckBox.IsChecked = App.Settings.EnableDcTravel;
-
             OtpServerCheckBox.IsChecked = App.Settings.OtpServerEnabled;
 
             LaunchArgsTextBox.Text = App.Settings.AdditionalLaunchArgs;
@@ -179,8 +177,6 @@ namespace XIVLauncher.Windows
 
             if (currentDalamudChannel != selectedDalamudChannel || currentDalamudStagingKey != selectedDalamudStagingKey)
                 App.DalamudUpdater.Run(Updates.HaveFeatureFlag(Updates.LeaseFeatureFlags.ForceProxyDalamudAndAssets));
-
-            App.Settings.EnableDcTravel = EnableDcTravelCheckBox.IsChecked == true;
 
             App.Settings.OtpServerEnabled = OtpServerCheckBox.IsChecked == true;
 

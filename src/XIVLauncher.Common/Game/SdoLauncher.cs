@@ -28,8 +28,7 @@ namespace XIVLauncher.Common.Game
                 new GuiLoginType { LoginType = LoginType.SdoSlide, DisplayName = "一键登录" },
                 new GuiLoginType { LoginType = LoginType.SdoQrCode, DisplayName = "扫码登录" },
                 new GuiLoginType { LoginType = LoginType.SdoStatic, DisplayName = "密码登录" },
-                new GuiLoginType { LoginType = LoginType.WeGameSid, DisplayName = "WeGame SID"},
-                new GuiLoginType { LoginType = LoginType.WeGameToken, DisplayName = "WeGame抓包" }
+                new GuiLoginType { LoginType = LoginType.WeGameToken, DisplayName = "WeGame" }
             };
             return types;
         }
@@ -40,6 +39,7 @@ namespace XIVLauncher.Common.Game
         SdoSlide,
         SdoQrCode,
         WeGameToken,
+        // WeGame 抓包合并后，WeGameSid 不再出现在 GUI 上，仅用于"使用SID"模式复用已存 SID（LoginBySid）。
         WeGameSid,
         // 仅在内部使用，不出现在GUI上
         AutoLoginSession,
