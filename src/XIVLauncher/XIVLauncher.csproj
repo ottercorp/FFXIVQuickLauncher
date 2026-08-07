@@ -3,7 +3,7 @@
         <Product>XIVLauncherCN</Product>
         <AssemblyTitle>XIVLauncherCN</AssemblyTitle>
         <Description>Custom launcher for the most critically acclaimed MMO's CN server.</Description>
-        <VersionPrefix>6.8.0-2</VersionPrefix>
+        <VersionPrefix>6.8.1-0</VersionPrefix>
     </PropertyGroup>
 
     <PropertyGroup>

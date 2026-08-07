@@ -740,11 +740,25 @@ namespace XIVLauncher.Windows.ViewModel
             await AccountManager.CredProvider.ClearCache();
             serect = null;
             //return;
-            if (await TryProcessLoginResult(loginResult, false, action).ConfigureAwait(false))
+            bool shouldExitLauncher;
+            try
             {
-                if (App.Settings.ExitLauncherAfterGameExit ?? true)
-                    Environment.Exit(0);
+                shouldExitLauncher = await TryProcessLoginResult(loginResult, false, action).ConfigureAwait(false);
             }
+            finally
+            {
+                try
+                {
+                    this.dcTravelListener?.Stop();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Could not shut down DcTraveler");
+                }
+            }
+
+            if (shouldExitLauncher && (App.Settings.ExitLauncherAfterGameExit ?? true))
+                Environment.Exit(0);
         }
 
         private async Task<bool> CheckGateStatus()
@@ -2069,15 +2083,6 @@ namespace XIVLauncher.Windows.ViewModel
             catch (Exception ex)
             {
                 Log.Error(ex, "Could not shut down Steam");
-            }
-
-            try
-            {
-                this.dcTravelListener?.Stop();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Could not shut down DcTraveler");
             }
 
             return gameProcess;
