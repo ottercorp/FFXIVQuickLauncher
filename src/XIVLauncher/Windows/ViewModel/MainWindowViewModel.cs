@@ -391,13 +391,13 @@ namespace XIVLauncher.Windows.ViewModel
             App.Settings.EnableDcTravel = IsDcTravelEnabled;
 
             // 使用SID: 手动登录看"使用SID"复选框; 自动登录传入 WeGameSid 表示复用已存 SID。
-            // 与"启用跨域传送"互斥, 用于决定登录后保存/复用的是 SID 还是 token。
+            // 与"启用超域传送"互斥, 用于决定登录后保存/复用的是 SID 还是 token。
             var useSid = (loginType == LoginType.WeGameSid) || (loginType == LoginType.WeGameToken && IsUseSid);
 
             if (action == AfterLoginAction.Start && App.Settings.EnableDcTravel && !App.Settings.InGameAddonEnabled && !useSid)
             {
                 var enableDalamudForDcTravel = CustomMessageBox.Builder
-                    .NewFrom("检测到你启用了跨域传送，但未启用 Dalamud（游戏内插件）。\n跨域传送需要 Dalamud 才能使用，是否现在启用 Dalamud？")
+                    .NewFrom("检测到你启用了超域传送，但未启用 Dalamud（游戏内插件）。\n超域传送需要 Dalamud 才能使用，是否现在启用 Dalamud？")
                     .WithButtons(MessageBoxButton.YesNo)
                     .WithImage(MessageBoxImage.Question)
                     .WithCaption("超域传送")
@@ -2367,7 +2367,7 @@ namespace XIVLauncher.Windows.ViewModel
             set
             {
                 _isDcTravelEnabled = value;
-                // 与"使用SID"互斥: 跨域传送需要用 token 反复刷新 session, 与直接复用 SID 不兼容。
+                // 与"使用SID"互斥: 超域传送需要用 token 反复刷新 session, 与直接复用 SID 不兼容。
                 if (value && _isUseSid)
                 {
                     _isUseSid = false;
@@ -2377,7 +2377,7 @@ namespace XIVLauncher.Windows.ViewModel
             }
         }
 
-        // "使用SID"登录: 抓 token 换票后保存/复用换出的 SID (LoginBySid), 与"启用跨域传送"互斥, 两者可都不选。
+        // "使用SID"登录: 抓 token 换票后保存/复用换出的 SID (LoginBySid), 与"启用超域传送"互斥, 两者可都不选。
         private bool _isUseSid;
         public bool IsUseSid
         {

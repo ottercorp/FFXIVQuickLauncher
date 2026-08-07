@@ -633,7 +633,7 @@ namespace XIVLauncher.Windows
                     break;
                 case XivAccountType.WeGame:
                     LoginTypeSelection.SelectedValue = LoginType.WeGameToken;
-                    // TestSID 有值 = 使用SID登录; 恢复复选框状态(与启用跨域传送互斥)。
+                    // TestSID 有值 = 使用SID登录; 恢复复选框状态(与启用超域传送互斥)。
                     Model.IsUseSid = account.IsSidLogin;
                     if (account.Password is not null)
                     {
@@ -767,7 +767,7 @@ namespace XIVLauncher.Windows
                     HintAssist.SetHint(this.LoginUsername, "SndaId (可留空, 自动抓取)");
                     // 跟 SdoStatic 对齐: 勾选才把抓到的 token/SID 持久化, 下次免抓包。
                     FastLoginCheckBox.Content = "保存密码";
-                    // "使用SID": 与"启用跨域传送"互斥, 决定登录后保存/复用 SID 还是 token。
+                    // "使用SID": 与"启用超域传送"互斥, 决定登录后保存/复用 SID 还是 token。
                     UseSidCheckBox.Visibility = Visibility.Visible;
                     break;
             }

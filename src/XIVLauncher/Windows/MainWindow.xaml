@@ -316,11 +316,11 @@
 
                                                 <CheckBox
                                                     Visibility="Visible"
-                                                    Content="启用跨域传送"
+                                                    Content="启用超域传送"
                                                     VerticalAlignment="Center"
                                                     Margin="16,0,0,0"
                                                     x:Name="EnableDcTravelCheckBox"
-                                                    ToolTip="启用跨域传送,可以在登录大厅右键角色进行返回和传送。&#x0a;需要同时启用Dalamud,并安装DcTravel插件。"
+                                                    ToolTip="启用超域传送,可以在登录大厅右键角色进行返回和传送。&#x0a;需要同时启用Dalamud,并安装DcTravel插件。"
                                                     IsChecked="{Binding IsDcTravelEnabled}" />
                                             </StackPanel>
 
@@ -332,7 +332,7 @@
                                                 Margin="0,8,0,0"
                                                 VerticalAlignment="Top"
                                                 x:Name="UseSidCheckBox"
-                                                ToolTip="勾选后抓包换票登录并保存/复用换出的 SID(需勾选保存密码)。&#x0a;SID 有效期短、不支持跨域传送, 与启用跨域传送互斥。"
+                                                ToolTip="勾选后抓包换票登录并保存/复用换出的 SID(需勾选保存密码)。&#x0a;SID 有效期短、不支持超域传送, 与启用超域传送互斥。"
                                                 IsChecked="{Binding IsUseSid}" />
 
                                             <StackPanel Orientation="Horizontal"
