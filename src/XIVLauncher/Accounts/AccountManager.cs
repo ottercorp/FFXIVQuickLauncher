@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -16,11 +17,21 @@ using System.Windows;
 using XIVLauncher.Windows;
 namespace XIVLauncher.Accounts
 {
+    public sealed class AccountCredentialInitializationException : Exception
+    {
+        public AccountCredentialInitializationException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
     public class AccountManager
     {
         private readonly object syncRoot = new();
 
-        private SQLiteConnection? db;
+        private SQLiteConnection db;
+        private readonly string databasePath;
+        private readonly Task credentialInitializationTask;
 
         public ObservableCollection<XivAccount> Accounts;
 
@@ -41,55 +52,32 @@ namespace XIVLauncher.Accounts
 
         public AccountManager(ILauncherSettingsV3 setting)
         {
-            Load();
-
             _setting = setting;
 
-            MigrateLegacyWeGameSidAccounts();
+            var migration = AccountDatabaseMigrator.Prepare(
+                Paths.RoamingPath,
+                setting.CurrentAccountId);
+            if (setting.CurrentAccountId != migration.CurrentAccountId)
+                setting.CurrentAccountId = migration.CurrentAccountId;
 
+            this.databasePath = migration.DatabasePath;
+            Load();
             var credPath = Path.Combine(Paths.RoamingPath, "cred.json");
-            this.CredData = new CredData("XIVLauncherCN", credPath);
-
-            Accounts.CollectionChanged += Accounts_CollectionChanged;
-            ChangeCredType(setting.CredType.GetValueOrDefault(CredType.WindowsCredManager));
-        }
-
-        /// <summary>
-        /// 旧版本的 WeGameSid 账号类型 (XivAccountType = 2) 已合并入 WeGame。
-        /// 把这些历史记录就地迁移为 WeGame: 回填 LoginAccount、重算 Id、更新 CurrentAccountId。
-        /// TestSID 保持不变, 迁移后即 IsSidLogin。
-        /// </summary>
-        private void MigrateLegacyWeGameSidAccounts()
-        {
-            const int legacyWeGameSid = 2;
-            var migrated = false;
-
-            foreach (var account in Accounts)
+            try
             {
-                if ((int)account.AccountType != legacyWeGameSid)
-                    continue;
-
-                var oldId = account.Id;
-                account.AccountType = XivAccountType.WeGame;
-                if (string.IsNullOrEmpty(account.LoginAccount))
-                    account.LoginAccount = account.SndaId;
-                account.GenerateId();
-
-                if (_setting.CurrentAccountId == oldId)
-                    _setting.CurrentAccountId = account.Id;
-
-                // 用 index (真正的主键) 就地更新, 避免 Id 变化导致 Save() 误插入重复行。
-                lock (this.syncRoot)
-                {
-                    this.db.Update(account);
-                }
-
-                migrated = true;
-                Log.Information("迁移旧 WeGameSid 账号 {OldId} -> {NewId}", oldId, account.Id);
+                this.CredData = new CredData("XIVLauncherCN", credPath);
+            }
+            catch (Exception ex)
+            {
+                throw new AccountCredentialInitializationException(
+                    "账号凭据元数据读取失败，旧账号数据库和凭据文件均未被修改。",
+                    ex);
             }
 
-            if (migrated)
-                Log.Information("旧 WeGameSid 账号迁移完成");
+            Accounts.CollectionChanged += Accounts_CollectionChanged;
+            this.credentialInitializationTask = InitializeCredentialProviderAsync(
+                setting.CredType.GetValueOrDefault(CredType.WindowsCredManager),
+                migration.NeedsCredentialValidation);
         }
 
         public async Task<string> Encrypt(string text)
@@ -99,6 +87,7 @@ namespace XIVLauncher.Accounts
                 if (text is null)
                     return null;
 
+                await this.credentialInitializationTask;
                 if (this.CredProvider == null)
                 {
                     throw new Exception("CredProvider is null");
@@ -122,6 +111,7 @@ namespace XIVLauncher.Accounts
                 if (text is null)
                     return null;
 
+                await this.credentialInitializationTask;
                 if (this.CredProvider == null)
                 {
                     throw new Exception("CredProvider is null");
@@ -138,84 +128,200 @@ namespace XIVLauncher.Accounts
             return null;
         }
 
-
-        public async void ChangeCredType(CredType? type)
+        public async Task ClearCredentialCache()
         {
+            await this.credentialInitializationTask;
+            await this.CredProvider.ClearCache();
+        }
+
+        public async Task ChangeCredType(CredType? type)
+        {
+            await this.credentialInitializationTask;
+
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
             if (type == this.CurrentCredType)
                 return;
+
             var oldCred = this.CredProvider;
             var newCred = GetCredProvider(type.Value);
-            var isSupported = await newCred.IsSupported();
-            if (!isSupported)
-            {
-                throw new Exception($"Cred type: {type} not supported");
-            }
-
-            if (oldCred != null)
-            {
-                var testText = EncryptionHelper.GetRandomHexString(32);
-                var encrypted = await newCred.Encrypt(testText);
-                var decrypted = await newCred.Decrypt(encrypted);
-                if (testText != decrypted)
-                {
-                    throw new Exception($"Cred type: {type} test failed");
-                }
-            }
-
-            if (oldCred == null)
-            {
-                this.CurrentCredType = type;
-                this.CredProvider = newCred;
-                return;
-            }
+            await ValidateCredentialProviderAsync(newCred, type.Value);
 
             Log.Information($"Change cred type from {this.CurrentCredType} to {type}");
+            var convertedCredentials = new List<(XivAccount Account, CredentialValues Values)>();
+            var originalCredentials = new List<(XivAccount Account, CredentialValues Values)>();
             foreach (var item in Accounts)
             {
-                if (item.AutoLoginSessionKey != null)
-                {
-                    try
+                originalCredentials.Add((item, GetCredentialValues(item)));
+                convertedCredentials.Add((
+                    item,
+                    new CredentialValues
                     {
-                        var sessionKey = await oldCred.Decrypt(item.AutoLoginSessionKey);
-                        item.AutoLoginSessionKey = await newCred.Encrypt(sessionKey);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, $"Failed to change {item.Id}.AutoLoginSessionKey");
-                    }
-                }
+                        AutoLoginSessionKey = await ReencryptAsync(oldCred, newCred, item.AutoLoginSessionKey),
+                        KeepLoginKey = await ReencryptAsync(oldCred, newCred, item.KeepLoginKey),
+                        Password = await ReencryptAsync(oldCred, newCred, item.Password),
+                        TestSID = await ReencryptAsync(oldCred, newCred, item.TestSID),
+                        NSessionId = await ReencryptAsync(oldCred, newCred, item.NSessionId),
+                    }));
+            }
 
-                if (item.TestSID != null)
-                {
-                    try
-                    {
-                        var testSid = await oldCred.Decrypt(item.TestSID);
-                        item.TestSID = await newCred.Encrypt(testSid);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, $"Failed to change {item.Id}.TestSID");
-                    }
-                }
+            foreach (var converted in convertedCredentials)
+            {
+                converted.Account.AutoLoginSessionKey = converted.Values.AutoLoginSessionKey;
+                converted.Account.KeepLoginKey = converted.Values.KeepLoginKey;
+                converted.Account.Password = converted.Values.Password;
+                converted.Account.TestSID = converted.Values.TestSID;
+                converted.Account.NSessionId = converted.Values.NSessionId;
+            }
 
-                if (item.NSessionId != null)
-                {
-                    try
-                    {
-                        var nSessionId = await oldCred.Decrypt(item.NSessionId);
-                        item.NSessionId = await newCred.Encrypt(nSessionId);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, $"Failed to change {item.Id}.NSessionId");
-                    }
-                }
+            try
+            {
+                Save();
+            }
+            catch
+            {
+                foreach (var original in originalCredentials)
+                    ApplyCredentialValues(original.Account, original.Values);
+                throw;
             }
 
             this.CurrentCredType = type;
             this.CredProvider = newCred;
-            Log.Information($"Changed cred type from {this.CurrentCredType} to {type} successfully");
-            Save();
+            Log.Information($"Changed cred type to {type} successfully");
+        }
+
+        private async Task InitializeCredentialProviderAsync(
+            CredType type,
+            bool validateMigratedCredentials)
+        {
+            var credentialProvider = GetCredProvider(type);
+            await ValidateCredentialProviderAsync(credentialProvider, type);
+            this.CurrentCredType = type;
+            this.CredProvider = credentialProvider;
+
+            if (validateMigratedCredentials)
+                await ValidateMigratedCredentialsAsync();
+        }
+
+        private static async Task ValidateCredentialProviderAsync(
+            ICredProvider credentialProvider,
+            CredType type)
+        {
+            if (!await credentialProvider.IsSupported())
+                throw new Exception($"Cred type: {type} not supported");
+
+            var testText = EncryptionHelper.GetRandomHexString(32);
+            var encrypted = await credentialProvider.Encrypt(testText);
+            var decrypted = await credentialProvider.Decrypt(encrypted);
+            if (testText != decrypted)
+                throw new Exception($"Cred type: {type} test failed");
+        }
+
+        private async Task ValidateMigratedCredentialsAsync()
+        {
+            var changed = false;
+
+            foreach (var account in Accounts)
+            {
+                var autoLoginSessionKey = await ValidateCredentialAsync(
+                    account.Id,
+                    nameof(account.AutoLoginSessionKey),
+                    account.AutoLoginSessionKey);
+                var keepLoginKey = await ValidateCredentialAsync(
+                    account.Id,
+                    nameof(account.KeepLoginKey),
+                    account.KeepLoginKey);
+                var password = await ValidateCredentialAsync(
+                    account.Id,
+                    nameof(account.Password),
+                    account.Password);
+                var testSid = await ValidateCredentialAsync(
+                    account.Id,
+                    nameof(account.TestSID),
+                    account.TestSID);
+                var nSessionId = await ValidateCredentialAsync(
+                    account.Id,
+                    nameof(account.NSessionId),
+                    account.NSessionId);
+
+                changed |= account.AutoLoginSessionKey != autoLoginSessionKey
+                           || account.KeepLoginKey != keepLoginKey
+                           || account.Password != password
+                           || account.TestSID != testSid
+                           || account.NSessionId != nSessionId;
+
+                account.AutoLoginSessionKey = autoLoginSessionKey;
+                account.KeepLoginKey = keepLoginKey;
+                account.Password = password;
+                account.TestSID = testSid;
+                account.NSessionId = nSessionId;
+            }
+
+            if (changed)
+                Save();
+
+            AccountDatabaseMigrator.MarkCredentialValidationCompleted(this.databasePath);
+            Log.Information("Migrated account credential validation completed");
+        }
+
+        private async Task<string> ValidateCredentialAsync(
+            string accountId,
+            string fieldName,
+            string encryptedValue)
+        {
+            if (encryptedValue == null)
+                return null;
+
+            try
+            {
+                var decrypted = await this.CredProvider.Decrypt(encryptedValue);
+                if (decrypted == null)
+                    throw new InvalidDataException("Credential provider returned an empty result.");
+                return encryptedValue;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(
+                    ex,
+                    "Clearing invalid migrated credential {AccountId}.{FieldName}",
+                    accountId,
+                    fieldName);
+                return null;
+            }
+        }
+
+        private static async Task<string> ReencryptAsync(
+            ICredProvider oldCredentialProvider,
+            ICredProvider newCredentialProvider,
+            string encryptedValue)
+        {
+            if (encryptedValue == null)
+                return null;
+
+            var decrypted = await oldCredentialProvider.Decrypt(encryptedValue);
+            return await newCredentialProvider.Encrypt(decrypted);
+        }
+
+        private static CredentialValues GetCredentialValues(XivAccount account)
+        {
+            return new CredentialValues
+            {
+                AutoLoginSessionKey = account.AutoLoginSessionKey,
+                KeepLoginKey = account.KeepLoginKey,
+                Password = account.Password,
+                TestSID = account.TestSID,
+                NSessionId = account.NSessionId,
+            };
+        }
+
+        private static void ApplyCredentialValues(XivAccount account, CredentialValues values)
+        {
+            account.AutoLoginSessionKey = values.AutoLoginSessionKey;
+            account.KeepLoginKey = values.KeepLoginKey;
+            account.Password = values.Password;
+            account.TestSID = values.TestSID;
+            account.NSessionId = values.NSessionId;
         }
 
         private ICredProvider GetCredProvider(CredType type)
@@ -252,12 +358,33 @@ namespace XIVLauncher.Accounts
             {
                 Log.Verbose("Updating account...");
                 existingAccount.Id = account.Id;
-                existingAccount.Password = account.Password;
                 existingAccount.AutoLogin = account.AutoLogin;
-                existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey;
-                existingAccount.TestSID = account.TestSID;
                 existingAccount.AreaName = account.AreaName;
                 existingAccount.NSessionId = account.NSessionId;
+
+                if (!account.AutoLogin)
+                {
+                    existingAccount.Password = null;
+                    existingAccount.AutoLoginSessionKey = null;
+                    existingAccount.KeepLoginKey = null;
+                    existingAccount.TestSID = null;
+                }
+                else if (account.AccountType == XivAccountType.WeGame)
+                {
+                    existingAccount.Password = account.Password;
+                    existingAccount.TestSID = account.TestSID;
+                    existingAccount.AutoLoginSessionKey = null;
+                    existingAccount.KeepLoginKey = null;
+                }
+                else
+                {
+                    if (account.Password != null)
+                        existingAccount.Password = account.Password;
+                    existingAccount.AutoLoginSessionKey = account.AutoLoginSessionKey
+                                                          ?? existingAccount.AutoLoginSessionKey;
+                    existingAccount.KeepLoginKey = account.KeepLoginKey
+                                                   ?? existingAccount.KeepLoginKey;
+                }
                 return;
             }
             else
@@ -287,8 +414,6 @@ namespace XIVLauncher.Accounts
 
         #region SaveLoad
 
-        private static readonly string DatabasePath = Path.Combine(Paths.RoamingPath, "accounts.db");
-
         public void Save(XivAccount account)
         {
             lock (this.syncRoot)
@@ -312,35 +437,32 @@ namespace XIVLauncher.Accounts
 
         public void Save()
         {
-            foreach (var item in Accounts)
+            lock (this.syncRoot)
             {
-                this.Save(item);
+                this.db.RunInTransaction(() =>
+                {
+                    foreach (var item in Accounts)
+                    {
+                        var record = this.db.Table<XivAccount>().FirstOrDefault(a => a.Id == item.Id);
+                        if (record == null)
+                            this.db.Insert(item);
+                        else
+                            this.db.Update(item);
+                    }
+                });
             }
         }
 
         public void SetupDb()
         {
-            this.db = new SQLiteConnection(DatabasePath,
-                   SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.FullMutex);
+            this.db = new SQLiteConnection(this.databasePath,
+                   SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.FullMutex);
             this.db.CreateTable<XivAccount>();
         }
 
         public void Load()
         {
-            try
-            {
-                this.SetupDb();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to load VFS database, starting fresh");
-
-                if (File.Exists(DatabasePath))
-                    File.Delete(DatabasePath);
-
-                this.SetupDb();
-
-            }
+            this.SetupDb();
 
             // If the file is corrupted, this will be null anyway
             Accounts ??= new ObservableCollection<XivAccount>(this.db.Table<XivAccount>());
@@ -356,5 +478,14 @@ namespace XIVLauncher.Accounts
         }
 
         #endregion
+
+        private sealed class CredentialValues
+        {
+            public string AutoLoginSessionKey { get; init; }
+            public string KeepLoginKey { get; init; }
+            public string Password { get; init; }
+            public string TestSID { get; init; }
+            public string NSessionId { get; init; }
+        }
     }
 }

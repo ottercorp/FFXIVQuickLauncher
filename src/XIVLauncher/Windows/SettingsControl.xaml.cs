@@ -125,7 +125,7 @@ namespace XIVLauncher.Windows
             AccountStorageEncryptCombox.SelectedIndex = (int)App.Settings.CredType.GetValueOrDefault(CredType.WindowsCredManager);
         }
 
-        private void AcceptButton_Click(object sender, RoutedEventArgs e)
+        private async void AcceptButton_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.GamePath == ViewModel.PatchPath)
             {
@@ -189,8 +189,23 @@ namespace XIVLauncher.Windows
             App.Settings.SpeedLimitBytes = (long)(SpeedLimiterUpDown.Value * BYTES_TO_MB);
 
             App.Settings.IsFt = this.IsFreeTrialCheckbox.IsChecked == true;
-            App.Settings.CredType = (CredType)AccountStorageEncryptCombox.SelectedIndex;
-            App.AccountManager.ChangeCredType(App.Settings.CredType);
+            var requestedCredType = (CredType)AccountStorageEncryptCombox.SelectedIndex;
+            try
+            {
+                await App.AccountManager.ChangeCredType(requestedCredType);
+                App.Settings.CredType = requestedCredType;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not change account credential storage");
+                CustomMessageBox.Show(
+                    "切换账号加密方式失败，原有凭据未被修改。\n\n" + ex.Message,
+                    "XIVLauncherCN",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error,
+                    parentWindow: Window.GetWindow(this));
+                return;
+            }
 
             Transitioner.MoveNextCommand.Execute(null, null);
         }

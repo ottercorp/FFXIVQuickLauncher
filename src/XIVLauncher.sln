@@ -26,6 +26,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FfxivArgLauncher", "FfxivAr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XIVLauncher.ArgReader", "XIVLauncher.ArgReader\XIVLauncher.ArgReader.csproj", "{8235B28A-F162-4E75-8CAA-A60C047F9E92}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XIVLauncher.Accounts.Tests", "XIVLauncher.Accounts.Tests\XIVLauncher.Accounts.Tests.csproj", "{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +181,24 @@ Global
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|x86.Build.0 = Release|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|Any CPU.ActiveCfg = Debug|Any CPU
 		{8235B28A-F162-4E75-8CAA-A60C047F9E92}.ReleaseNoUpdate|Any CPU.Build.0 = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Debug|x64.Build.0 = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Debug|x86.Build.0 = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Release|x64.ActiveCfg = Release|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Release|x64.Build.0 = Release|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Release|x86.ActiveCfg = Release|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.Release|x86.Build.0 = Release|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.ReleaseNoUpdate|Any CPU.ActiveCfg = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.ReleaseNoUpdate|Any CPU.Build.0 = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.ReleaseNoUpdate|x64.ActiveCfg = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.ReleaseNoUpdate|x64.Build.0 = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.ReleaseNoUpdate|x86.ActiveCfg = Debug|Any CPU
+		{83EA5A2B-4ED3-407D-B9D1-D8D7367065D7}.ReleaseNoUpdate|x86.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

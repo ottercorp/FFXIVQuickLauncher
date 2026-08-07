@@ -85,8 +85,17 @@ namespace XIVLauncher.Windows
 
             Model.ReloadHeadlines += () => Task.Run(SetupHeadlines);
 
-            LoginTypeSelection.ItemsSource = GuiLoginType.Get();
-            LoginTypeSelection.SelectedValue = App.Settings.SelectedLoginType.GetValueOrDefault(LoginType.SdoSlide);
+            var guiLoginTypes = GuiLoginType.Get();
+            LoginTypeSelection.ItemsSource = guiLoginTypes;
+            var selectedLoginType = App.Settings.SelectedLoginType.GetValueOrDefault(LoginType.SdoSlide);
+            if (guiLoginTypes.All(x => x.LoginType != selectedLoginType))
+            {
+                selectedLoginType = selectedLoginType == LoginType.WeGameSid
+                    ? LoginType.WeGameToken
+                    : LoginType.SdoSlide;
+                App.Settings.SelectedLoginType = selectedLoginType;
+            }
+            LoginTypeSelection.SelectedValue = selectedLoginType;
             NewsListView.ItemsSource = new List<News>
             {
                 new News
@@ -348,10 +357,10 @@ namespace XIVLauncher.Windows
                 else
                 {
                     Model.TryLogin(
-                        LoginType.AutoLoginSession,
+                        LoginType.SdoSlide,
                         savedAccount.LoginAccount,
-                        savedAccount.AutoLoginSessionKey,
-                        Model.IsFastLogin,
+                        null,
+                        true,
                         MainWindowViewModel.AfterLoginAction.Start
                         );
                 }

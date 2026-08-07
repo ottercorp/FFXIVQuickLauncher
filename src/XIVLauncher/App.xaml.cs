@@ -400,7 +400,32 @@ namespace XIVLauncher
                 File.Delete(GetConfigPath("launcher"));
                 SetupSettings();
             }
-            AccountManager = new AccountManager(Settings);
+            try
+            {
+                AccountManager = new AccountManager(Settings);
+            }
+            catch (AccountDatabaseMigrationException ex)
+            {
+                Log.Error(ex, "Account database migration failed");
+                MessageBox.Show(
+                    "账号数据升级失败。旧版账号数据库没有被修改，可以继续使用旧版启动器。\n\n" + ex.Message,
+                    "XIVLauncherCN",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown(-1);
+                return;
+            }
+            catch (AccountCredentialInitializationException ex)
+            {
+                Log.Error(ex, "Account credential initialization failed");
+                MessageBox.Show(
+                    "账号凭据初始化失败。旧账号数据库和凭据文件均未被修改。\n\n" + ex.Message,
+                    "XIVLauncherCN",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                Shutdown(-1);
+                return;
+            }
 #if !XL_LOC_FORCEFALLBACKS
             try
             {

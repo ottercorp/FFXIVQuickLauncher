@@ -19,9 +19,10 @@ namespace XIVLauncher.Accounts
     {
         Sdo,
         WeGame
-        // 注意: 旧版本存在 WeGameSid = 2, 已合并入 WeGame。AccountManager.Load() 会迁移旧记录。
+        // 注意: 旧版本存在 WeGameSid = 2, 已合并入 WeGame。AccountDatabaseMigrator 会迁移旧记录。
     }
 
+    [Table(AccountDatabaseMigrator.AccountTableName)]
     public class XivAccount : IEquatable<XivAccount>
     {
         //public string Id => $"{UserName}-{UseOtp}-{UseSteamServiceAccount}";

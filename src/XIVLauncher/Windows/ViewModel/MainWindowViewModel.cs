@@ -416,7 +416,12 @@ namespace XIVLauncher.Windows.ViewModel
             var accountType = loginType switch
             {
                 LoginType.WeGameSid or LoginType.WeGameToken => XivAccountType.WeGame,
-                LoginType.SdoStatic or LoginType.SdoSlide or LoginType.SdoQrCode => XivAccountType.Sdo
+                LoginType.SdoStatic
+                    or LoginType.SdoSlide
+                    or LoginType.SdoQrCode
+                    or LoginType.AutoLoginSession
+                    or LoginType.KeepLoginKeySession => XivAccountType.Sdo,
+                _ => throw new ArgumentOutOfRangeException(nameof(loginType), loginType, null),
             };
 
             try
@@ -667,11 +672,7 @@ namespace XIVLauncher.Windows.ViewModel
                         SndaId = loginResult.OauthLogin.SndaId,
                     };
 
-                    accountToSave.AccountType = loginType switch
-                    {
-                        LoginType.WeGameSid or LoginType.WeGameToken => XivAccountType.WeGame,
-                        LoginType.SdoStatic or LoginType.SdoSlide or LoginType.SdoQrCode => XivAccountType.Sdo
-                    };
+                    accountToSave.AccountType = accountType;
 
                     accountToSave.AreaName = Area.AreaName;
 
@@ -737,7 +738,7 @@ namespace XIVLauncher.Windows.ViewModel
                         loginResult.State,
                         loginResult.PendingPatches?.Length,
                         loginResult.OauthLogin?.Playable);
-            await AccountManager.CredProvider.ClearCache();
+            await AccountManager.ClearCredentialCache();
             serect = null;
             //return;
             bool shouldExitLauncher;
