@@ -49,7 +49,7 @@ namespace XIVLauncher.Common.Game
 
     public partial class Launcher
     {
-        public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, int dcTravelPort, string areaId, string lobbyHost, string gmHost, string dbHost, string areasInfo,
+        public Process? LaunchGameSdo(IGameRunner runner, string sessionId, string sndaId, int dcTravelPort, int dcLoginPort, string areaId, string lobbyHost, string gmHost, string dbHost, string areasInfo,
                                       string additionalArguments, DirectoryInfo gamePath, bool encryptArguments, DpiAwareness dpiAwareness)
         {
             Log.Information(
@@ -69,8 +69,13 @@ namespace XIVLauncher.Common.Game
                                   .Append("DEV.MaxEntitledExpansionID", "1")
                                   .Append("DEV.TestSID", sessionId)
                                   .Append("XL.SndaId", sndaId)
-                                  .Append("XL.LobbyHosts", $"{areasInfo}")
-                                  .Append("XL.DcTraveler", $"{dcTravelPort}");
+                                  .Append("XL.LobbyHosts", $"{areasInfo}");
+
+            if (dcTravelPort > 0)
+                argumentBuilder.Append("XL.DcTraveler", $"{dcTravelPort}");
+
+            if (dcLoginPort > 0)
+                argumentBuilder.Append("XL.DcLogin", $"{dcLoginPort}");
             // This is a bit of a hack; ideally additionalArguments would be a dictionary or some KeyValue structure
             if (!string.IsNullOrEmpty(additionalArguments))
             {

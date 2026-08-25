@@ -31,12 +31,13 @@ namespace XIVLauncher.Common.Http
         private WebServer webServer;
         private Dictionary<string, MethodInfo> rpcMethodCache = new();
         public DcTraveler DcTraveler;
+        private readonly bool ownsDcTraveler;
 
         private readonly byte[] key;
         private readonly byte[] iv;
         private readonly bool useEncrypt;
 
-        public DcTravelListener(DcTraveler dcTraveler, int port, bool useEncrypt = true)
+        public DcTravelListener(DcTraveler dcTraveler, int port, bool useEncrypt = true, bool exposeTravelApi = true, bool ownsDcTraveler = true)
         {
             if (useEncrypt)
             {
@@ -48,8 +49,9 @@ namespace XIVLauncher.Common.Http
             }
 
             this.useEncrypt = useEncrypt;
+            this.ownsDcTraveler = ownsDcTraveler;
             this.DcTraveler = dcTraveler ?? throw new ArgumentNullException(nameof(dcTraveler));
-            CacheRpcMethods();
+            CacheRpcMethods(exposeTravelApi);
 
             webServer = new WebServer(o => o
                     .WithUrlPrefix($"http://127.0.0.1:{port}")
@@ -110,8 +112,11 @@ namespace XIVLauncher.Common.Http
         public void Stop()
         {
             _listenerCts.Cancel();
-            DcTraveler.KeepAliveCts.Cancel();
-            DcTraveler?.Logout().Wait();
+            if (ownsDcTraveler)
+            {
+                DcTraveler.KeepAliveCts.Cancel();
+                DcTraveler?.Logout().Wait();
+            }
 
             if (webServer != null)
             {
@@ -120,7 +125,7 @@ namespace XIVLauncher.Common.Http
             }
         }
 
-        private void CacheRpcMethods()
+        private void CacheRpcMethods(bool exposeTravelApi)
         {
             var methods = typeof(DcTraveler)
                 .GetMethods(BindingFlags.Public | BindingFlags.Instance)
@@ -128,6 +133,9 @@ namespace XIVLauncher.Common.Http
 
             foreach (var method in methods)
             {
+                if (!exposeTravelApi && method.Name != nameof(DcTraveler.RefreshGameSessionId))
+                    continue;
+
                 rpcMethodCache[method.Name] = method;
             }
         }

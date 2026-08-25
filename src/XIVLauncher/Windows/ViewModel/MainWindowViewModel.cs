@@ -338,6 +338,7 @@ namespace XIVLauncher.Windows.ViewModel
         }
 
         public DcTravelListener dcTravelListener { get; private set; } = null;
+        public DcTravelListener dcLoginListener { get; private set; } = null;
         public const string PresudoPassword = "********假的密码********";
         private async Task Login(LoginType loginType, string username, string inputPassword, bool doingAutoLogin, AfterLoginAction action)
         {
@@ -614,6 +615,7 @@ namespace XIVLauncher.Windows.ViewModel
                 if (loginResult.State == Launcher.LoginState.Ok)
                 //if (true)
                 {
+                    var dcTravelReady = false;
                     if (App.Settings.EnableDcTravel && App.Settings.InGameAddonEnabled && !useSid)
                     {
                         if (!App.Settings.HasAgreeDcTravelUsage.GetValueOrDefault(false))
@@ -649,19 +651,47 @@ namespace XIVLauncher.Windows.ViewModel
                         if (App.Settings.HasAgreeDcTravelUsage.GetValueOrDefault(false))
                         {
                             Log.Information($"[DcTravel] 正在开启......");
-                            await dcTraveler.GetValidCookie();
-                            dcTraveler.KeepCookieAlive();
-                            //var nSessionId = dcTraveler.GetNSessionIdFromCookie();
+                            try
+                            {
+                                dcTravelReady = await dcTraveler.GetValidCookie();
+                                if (dcTravelReady)
+                                    dcTraveler.KeepCookieAlive();
+                                else
+                                    Log.Warning("[DcTravel] 超域传送页面初始化失败，大区选择仍可用，但超域传送暂不可用");
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Warning(ex, "[DcTravel] 超域传送初始化失败，大区选择仍可用，但超域传送暂不可用");
+                            }
+                        }
+                    }
+
+                    // 大区选择只需要刷新通用游戏登录票据，不依赖超域传送页面。始终为 Dalamud
+                    // 提供独立的登录 RPC；超域 API 维护时也允许插件切换大区并重新登录。
+                    if (App.Settings.InGameAddonEnabled && !useSid)
+                    {
 #if !DEBUG
-                            var encrypt = false;
+                        var encrypt = false;
 #else
-                            var encrypt = false;
+                        var encrypt = false;
 #endif
+                        if (dcTravelReady)
+                        {
                             loginResult.DcTravelPort = ApiHelpers.GetAvailablePort();
-                            this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt);
+                            this.dcTravelListener = new DcTravelListener(dcTraveler, loginResult.DcTravelPort, encrypt, exposeTravelApi: true, ownsDcTraveler: true);
                             Log.Information($"[DcTravel] use port:{loginResult.DcTravelPort}");
                             this.dcTravelListener.StartAsync();
                         }
+
+                        loginResult.DcLoginPort = ApiHelpers.GetAvailablePort();
+                        this.dcLoginListener = new DcTravelListener(
+                            dcTraveler,
+                            loginResult.DcLoginPort,
+                            encrypt,
+                            exposeTravelApi: false,
+                            ownsDcTraveler: !dcTravelReady);
+                        Log.Information($"[DcLogin] use port:{loginResult.DcLoginPort}");
+                        this.dcLoginListener.StartAsync();
                     }
 
                     var accountToSave = new XivAccount()
@@ -677,7 +707,7 @@ namespace XIVLauncher.Windows.ViewModel
                     accountToSave.AreaName = Area.AreaName;
 
                     // AutoLoginSessionKey 仅对 Sdo 帐号有效; WeGame 抓包帐号下次登录用保存的 token 重新刷新 session,
-                    // 使用SID模式则用保存的 TestSID。所以这里只给 Sdo 走 LoginBySessionKey 的快登/DcTravel 续期。
+                    // 使用SID模式则用保存的 TestSID。所以这里只给 Sdo 走 LoginBySessionKey 的快登/登录票据续期。
                     if (doingAutoLogin && accountToSave.AccountType == XivAccountType.Sdo)
                     {
                         //accountToSave.NSessionId = nSessionId;
@@ -687,17 +717,14 @@ namespace XIVLauncher.Windows.ViewModel
                         var savedKeepLoginKey = loginResult.OauthLogin.KeepLoginKey;
                         if (!string.IsNullOrEmpty(savedKeepLoginKey))
                             accountToSave.KeepLoginKey = await AccountManager.Encrypt(savedKeepLoginKey);
-                        if (this.dcTravelListener != null)
+                        dcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
                         {
-                            this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
-                            {
-                                // Prefer keepLoginKey (/authen/v2/fastInLogin) when present; fall back to autoLoginSessionKey.
-                                var newLoginResult = !string.IsNullOrEmpty(savedKeepLoginKey)
-                                    ? await this.Launcher.SdoAuth.LoginByKeepLoginKey(username, savedKeepLoginKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false)
-                                    : await this.Launcher.SdoAuth.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
-                                return newLoginResult.OauthLogin.SessionId;
-                            };
-                        }
+                            // Prefer keepLoginKey (/authen/v2/fastInLogin) when present; fall back to autoLoginSessionKey.
+                            var newLoginResult = !string.IsNullOrEmpty(savedKeepLoginKey)
+                                ? await this.Launcher.SdoAuth.LoginByKeepLoginKey(username, savedKeepLoginKey, dcTraveler).ConfigureAwait(false)
+                                : await this.Launcher.SdoAuth.LoginBySessionKey(username, loginResult.OauthLogin.AutoLoginSessionKey, dcTraveler).ConfigureAwait(false);
+                            return newLoginResult.OauthLogin.SessionId;
+                        };
                         if (finalLoginType == LoginType.SdoStatic)
                         {
                             accountToSave.Password = await AccountManager.Encrypt(serect);
@@ -715,18 +742,15 @@ namespace XIVLauncher.Windows.ViewModel
                     {
                         accountToSave.Password = await AccountManager.Encrypt(serect);
 
-                        // 游戏内 DcTravel 续期: 复用本次的 token 重新走 LoginByWeGameToken
+                        // 游戏内登录票据续期: 复用本次的 token 重新走 LoginByWeGameToken
                         // 拉一份新的 tgt+session, 等价于 Sdo 的 LoginBySessionKey 续期。
                         // 把 token 复制到独立局部, 避免被本方法末尾的 serect=null 清掉。
-                        if (this.dcTravelListener != null)
+                        var savedToken = serect;
+                        dcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
                         {
-                            var savedToken = serect;
-                            this.dcTravelListener.DcTraveler.RefreshGameSessionIdByAutoLoginFunc = async () =>
-                            {
-                                var newLoginResult = await this.Launcher.SdoAuth.LoginByWeGameToken(username, savedToken, false, this.dcTravelListener.DcTraveler).ConfigureAwait(false);
-                                return newLoginResult.OauthLogin.SessionId;
-                            };
-                        }
+                            var newLoginResult = await this.Launcher.SdoAuth.LoginByWeGameToken(username, savedToken, false, dcTraveler).ConfigureAwait(false);
+                            return newLoginResult.OauthLogin.SessionId;
+                        };
                     }
                     accountToSave.GenerateId();
                     AccountManager.AddAccount(accountToSave);
@@ -755,6 +779,15 @@ namespace XIVLauncher.Windows.ViewModel
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Could not shut down DcTraveler");
+                }
+
+                try
+                {
+                    this.dcLoginListener?.Stop();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Could not shut down DcLogin listener");
                 }
             }
 
@@ -2013,6 +2046,7 @@ namespace XIVLauncher.Windows.ViewModel
                                                        loginResult.OauthLogin.SessionId,
                                                        loginResult.OauthLogin.SndaId,
                                                        loginResult.DcTravelPort,
+                                                       loginResult.DcLoginPort,
                                                        Area.Areaid,
                                                        Area.AreaLobby,
                                                        Area.AreaGm,

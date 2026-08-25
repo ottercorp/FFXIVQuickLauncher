@@ -123,6 +123,7 @@ public partial class Launcher
         public SdoArea? Area { get; set; }
         public SdoArea[]? Areas { get; set; }
         public int DcTravelPort { get; set; } = 0;
+        public int DcLoginPort { get; set; } = 0;
     }
 
     public async Task<LoginResult> Login(string userName, string password, string otp, bool isSteam, bool useCache, DirectoryInfo gamePath, bool forceBaseVersion, bool isFreeTrial)

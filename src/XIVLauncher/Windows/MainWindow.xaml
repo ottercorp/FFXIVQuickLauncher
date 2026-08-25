@@ -320,7 +320,7 @@
                                                     VerticalAlignment="Center"
                                                     Margin="16,0,0,0"
                                                     x:Name="EnableDcTravelCheckBox"
-                                                    ToolTip="启用超域传送,可以在登录大厅右键角色进行返回和传送。&#x0a;需要同时启用Dalamud,并安装DcTravel插件。"
+                                                    ToolTip="启用超域传送,可以在登录大厅右键角色进行返回和传送。&#x0a;需要同时启用Dalamud,并安装DcTravel插件。大区选择不依赖此开关。"
                                                     IsChecked="{Binding IsDcTravelEnabled}" />
                                             </StackPanel>
 

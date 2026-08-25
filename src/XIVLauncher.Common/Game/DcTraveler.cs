@@ -119,12 +119,13 @@ namespace XIVLauncher.Common.Game
         }
 
         #region 初始化 认证
-        public async Task GetValidCookie()
+        public async Task<bool> GetValidCookie()
         {
             if (await this.InitTravelPage())
             {
                 Log.Information("[DcTravel] Successfully initialized travel page.");
                 isInitialized = true;
+                return true;
             }
             else
             {
@@ -135,8 +136,11 @@ namespace XIVLauncher.Common.Game
                 {
                     Log.Information("[DcTravel] Successfully initialized travel page.");
                     isInitialized = true;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         public async Task KeepCookieAlive()
