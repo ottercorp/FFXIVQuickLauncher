@@ -940,9 +940,9 @@ namespace XIVLauncher.Windows.ViewModel
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, false, gamePath, true, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
                 //else
                 //    return await this.Launcher.LoginSdo(username, password, otp, isSteam, enableUidCache, gamePath, false, App.Settings.IsFt.GetValueOrDefault(false)).ConfigureAwait(false);
-                //var checkResult = await Launcher.CheckGameUpdate(Area, gamePath, action == AfterLoginAction.Repair);
-                //if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
-                //    return checkResult;
+                var checkResult = await Launcher.CheckGameUpdate(Area, gamePath, action == AfterLoginAction.Repair);
+                if (checkResult.State == Launcher.LoginState.NeedsPatchGame || action == AfterLoginAction.UpdateOnly)
+                    return checkResult;
 
                 if (type == LoginType.AutoLoginSession)
                 {
