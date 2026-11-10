@@ -595,10 +595,28 @@ namespace XIVLauncher.Common.Game
 
         private async Task<string> SsoLogin(string tgt, string guid)
         {
-            // /authen/ssoLogin.json 抓包的ticket=SID
-            // scene=V3Launcher + appId=GameAppId(100001900): 抓包 (DcTraveler.xml, sdologin.exe 1.1.344.45) 用此 scene
-            // 从通行证 tgt 换取 FFXIV 游戏票据 (ULS21-...); 同一张票据既是游戏 SID, 也用于 ff14bjz validateTicket。
-            var result = await this.GetJsonAsSdoClient("ssoLogin.json", new List<(string, object)>() { ("tgt", tgt), ("guid", guid), ("scene", "V3Launcher") }, tgt, appId: GameAppId);
+            // The first-party V3 launcher exchanges the passport TGT for a short-lived authorization,
+            // then exchanges that authorization for the FFXIV game ticket (SID).
+            var authorizationResult = await this.GetJsonAsSdoClient(
+                "getSsoAuthorization",
+                new List<(string, object)>() { ("tgt", tgt), ("guid", guid), ("scene", "V3Launcher") },
+                appId: GameAppId,
+                groupId: -1);
+
+            if (authorizationResult.ReturnCode != 0)
+                throw new SdoLoginException(authorizationResult.ReturnCode, authorizationResult.Data.FailReason);
+            if (string.IsNullOrEmpty(authorizationResult.Data.Authorization))
+                throw new OauthLoginException("获取游戏登录授权失败");
+
+            var result = await this.GetJsonAsSdoClient(
+                "ssoAuthorizationLogin",
+                new List<(string, object)>()
+                {
+                    ("authorization", authorizationResult.Data.Authorization),
+                    ("scene", "V3Launcher"),
+                },
+                appId: GameAppId,
+                groupId: null);
 
             if (result.ReturnCode != 0)
                 throw new SdoLoginException(result.ReturnCode, result.Data.FailReason);
@@ -722,6 +740,10 @@ namespace XIVLauncher.Common.Game
                 public string DynamicKey;
 
                 [JsonConverter(typeof(MaskMiddleConverter))]
+                [JsonProperty("authorization")]
+                public string Authorization;
+
+                [JsonConverter(typeof(MaskMiddleConverter))]
                 [JsonProperty("ticket")]
                 public string Ticket;
 
@@ -824,7 +846,7 @@ namespace XIVLauncher.Common.Game
         // try each candidate host, skipping on connection error, non-200, or (when readBody) a non-JSON body
         // (a 403 edge page returns HTML/XML). The first host that passes becomes sticky for later requests.
         private async Task<(HttpResponseMessage response, string body)> SendWithHostFailoverAsync(
-            HttpMethod method, string endPoint, List<(string, object)> para, string tgt, bool v2, int appId, bool readBody)
+            HttpMethod method, string endPoint, List<(string, object)> para, string tgt, bool v2, int appId, bool readBody, int? groupId)
         {
             var attempts = new List<string>();
             foreach (var host in this.CandidateHosts(v2))
@@ -833,7 +855,7 @@ namespace XIVLauncher.Common.Game
                 string body = null;
                 try
                 {
-                    response = await this.loginClient.SendAsync(this.GetSdoHttpRequestMessage(method, endPoint, para, host, tgt, v2, appId));
+                    response = await this.loginClient.SendAsync(this.GetSdoHttpRequestMessage(method, endPoint, para, host, tgt, v2, appId, groupId));
                     if (readBody)
                         body = await response.Content.ReadAsStringAsync();
                 }
@@ -870,11 +892,11 @@ namespace XIVLauncher.Common.Game
         {
             // Raw failover for binary endpoints (e.g. the QR/codeKey image) where we also need the
             // response headers. Fails over on connection error or non-200; JSON is not validated here.
-            var (response, _) = await this.SendWithHostFailoverAsync(method, endPoint, para, tgt, v2: false, appId: appId, readBody: false);
+            var (response, _) = await this.SendWithHostFailoverAsync(method, endPoint, para, tgt, v2: false, appId: appId, readBody: false, groupId: 1);
             return response;
         }
 
-        private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<(string Key, object Value)> para, string host, string tgt = null, bool v2 = false, int appId = BoxAppId)
+        private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<(string Key, object Value)> para, string host, string tgt = null, bool v2 = false, int appId = BoxAppId, int? groupId = 1)
         {
             var mac = this.cachedMac.Value;
             // Common params aligned to sdo_login.py + the 1.1.344.45 capture (bin/HTTPDebuggerSession.xml):
@@ -888,8 +910,8 @@ namespace XIVLauncher.Common.Game
             };
             // /authen/v2/* (fastInLogin 等) 抓包实测不带 groupId（sdo_login.py include_group_id=False）；
             // 其余 /authen/*.json 在 areaId 之后紧跟 groupId=1。
-            if (!v2)
-                commonParas.Add(("groupId", 1));
+            if (!v2 && groupId.HasValue)
+                commonParas.Add(("groupId", groupId.Value));
             commonParas.AddRange(new List<(string, object)>() {
                 ("appIdSite", appId),
                 ("locale", "zh_CN"),
@@ -930,9 +952,9 @@ namespace XIVLauncher.Common.Game
         }
 
 
-        private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<(string, object)> para, string tgt = null, bool v2 = false, int appId = BoxAppId)
+        private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<(string, object)> para, string tgt = null, bool v2 = false, int appId = BoxAppId, int? groupId = 1)
         {
-            var (_, reply) = await this.SendWithHostFailoverAsync(HttpMethod.Get, endPoint, para, tgt, v2, appId, readBody: true);
+            var (_, reply) = await this.SendWithHostFailoverAsync(HttpMethod.Get, endPoint, para, tgt, v2, appId, readBody: true, groupId: groupId);
 
             SdoLoginResult result;
             try
