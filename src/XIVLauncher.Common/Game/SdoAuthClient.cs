@@ -451,7 +451,13 @@ namespace XIVLauncher.Common.Game
             var slideExpiration = new CancellationTokenSource();
             slideExpiration.CancelAfter(SlideExpirationTime);
 
-            var result = await this.GetJsonAsSdoClient("sendPushMessage.json", new List<(string, object)>() { ("inputUserId", account) });
+            var result = await this.GetJsonAsSdoClient(
+                "sendPushMessage.json",
+                new List<(string, object)>()
+                {
+                    ("inputUserId", account),
+                    ("scene", "pc_pushmsglogin"),
+                });
 
             // /authen/sendPushMessage.json
             //-14001710 请确保已安装叨鱼，并保持联网
@@ -632,7 +638,11 @@ namespace XIVLauncher.Common.Game
         {
             // /authen/getPromotion.json 激活ticket的登录权限
             var paras = new List<(string, object)>() { ("tgt", tgt) };
-            if (serviceUrl != null)
+            if (serviceUrl == null)
+            {
+                paras.Add(("promotionFlag", 1));
+            }
+            else
             {
                 paras.Add(("serviceUrl", serviceUrl));
             }
