@@ -34,12 +34,18 @@ namespace XIVLauncher.Common.Game
         private const int ReturnCodePushMessageNotConfirmed = -10516808; // 一键登录：用户尚未在叨鱼确认
         private const int ReturnCodeQrCodeNotScanned = -10515805;        // 扫码登录：二维码尚未被扫码确认
 
-        // sdo_login.py USER_AGENT (MSIE 8.0 form). NOTE: the live 1.1.344.45 capture actually sends
-        // "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Trident/7.0; rv:11.0) like Gecko sdologin-Launcher".
-        private const string UserAgent =
+        private const string PassportUserAgent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Trident/7.0; rv:11.0) like Gecko sdologin-Launcher";
+        private const string SsoAuthorizationUserAgent =
             "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; InfoPath.2; .NET CLR 2.0.50727; " +
             "MS-RTC LM 8; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022; .NET CLR 1.1.4322; " +
             ".NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)";
+
+        private enum RequestProfile
+        {
+            Passport,
+            SsoAuthorization,
+        }
 
         private readonly HttpClient loginClient;
         private readonly CookieContainer loginCookies;
@@ -81,15 +87,13 @@ namespace XIVLauncher.Common.Game
 
             var loginHandler = new SocketsHttpHandler
             {
-                UseCookies = true,
-                CookieContainer = loginCookies,
+                UseCookies = false,
                 SslOptions = sslOptions,
             };
 #else
             var loginHandler = new HttpClientHandler
             {
-                UseCookies = true,
-                CookieContainer = loginCookies,
+                UseCookies = false,
             };
 #endif
 
@@ -616,7 +620,8 @@ namespace XIVLauncher.Common.Game
                     ("scene", "V3Launcher"),
                 },
                 appId: GameAppId,
-                groupId: null);
+                groupId: null,
+                requestProfile: RequestProfile.SsoAuthorization);
 
             if (result.ReturnCode != 0)
                 throw new SdoLoginException(result.ReturnCode, result.Data.FailReason);
@@ -631,7 +636,7 @@ namespace XIVLauncher.Common.Game
             {
                 paras.Add(("serviceUrl", serviceUrl));
             }
-            var result = await this.GetJsonAsSdoClient("getPromotionInfo.json", paras, tgt);
+            var result = await this.GetJsonAsSdoClient("getPromotionInfo.json", paras);
             if (result.ReturnCode != 0)
                 throw new SdoLoginException(result.ReturnCode, result.Data.FailReason);
             return result;
@@ -804,7 +809,7 @@ namespace XIVLauncher.Common.Game
 
         // 抓包 (bin/HTTPDebuggerSession.xml / DcTraveler.xml / out_session.json) 的双 appId 模型（对齐 sdo_login.py
         // BOX_APP_ID / GAME_APP_ID）：登录态端点 (getGuid/staticLogin/pushMessageLogin/fastInLogin/getPromotionInfo…)
-        // 走通行证登录框 appId=791000814；仅 ssoLogin 出 FFXIV 游戏票据时切到游戏 appId=100001900。appIdSite 同 appId。
+        // 走通行证登录框 appId=791000814；游戏授权与换票端点切到游戏 appId=100001900。appIdSite 同 appId。
         private const int BoxAppId = 791000814;
         private const int GameAppId = 100001900;
 
@@ -846,7 +851,14 @@ namespace XIVLauncher.Common.Game
         // try each candidate host, skipping on connection error, non-200, or (when readBody) a non-JSON body
         // (a 403 edge page returns HTML/XML). The first host that passes becomes sticky for later requests.
         private async Task<(HttpResponseMessage response, string body)> SendWithHostFailoverAsync(
-            HttpMethod method, string endPoint, List<(string, object)> para, string tgt, bool v2, int appId, bool readBody, int? groupId)
+            HttpMethod method,
+            string endPoint,
+            List<(string, object)> para,
+            bool v2,
+            int appId,
+            bool readBody,
+            int? groupId,
+            RequestProfile requestProfile)
         {
             var attempts = new List<string>();
             foreach (var host in this.CandidateHosts(v2))
@@ -855,7 +867,8 @@ namespace XIVLauncher.Common.Game
                 string body = null;
                 try
                 {
-                    response = await this.loginClient.SendAsync(this.GetSdoHttpRequestMessage(method, endPoint, para, host, tgt, v2, appId, groupId));
+                    response = await this.loginClient.SendAsync(
+                        this.GetSdoHttpRequestMessage(method, endPoint, para, host, v2, appId, groupId, requestProfile));
                     if (readBody)
                         body = await response.Content.ReadAsStringAsync();
                 }
@@ -881,6 +894,7 @@ namespace XIVLauncher.Common.Game
                     continue;
                 }
 
+                this.CaptureResponseCookies(response);
                 this.StickPreferredHost(host);
                 return (response, body);
             }
@@ -888,21 +902,67 @@ namespace XIVLauncher.Common.Game
             throw new SdoLoginException((int)SdoLoginCustomExpectionCode.PASSPORT_ALL_HOSTS_FAILED, $"SDO 通行证主/备域名均失败 [{string.Join("; ", attempts)}]");
         }
 
-        private async Task<HttpResponseMessage> SendSdoHttpRequestAsync(HttpMethod method, string endPoint, List<(string, object)> para, string tgt = null, int appId = BoxAppId)
+        private void CaptureResponseCookies(HttpResponseMessage response)
+        {
+            if (response.RequestMessage?.RequestUri == null
+                || !response.Headers.TryGetValues("Set-Cookie", out var cookieHeaders))
+                return;
+
+            foreach (var cookieHeader in cookieHeaders)
+            {
+                try
+                {
+                    this.loginCookies.SetCookies(response.RequestMessage.RequestUri, cookieHeader);
+                }
+                catch (CookieException ex)
+                {
+                    Log.Warning(ex, "Could not retain SDO response cookie");
+                }
+            }
+        }
+
+        private string GetSsoAuthorizationCookieHeader(Uri requestUri)
+        {
+            return string.Join(
+                "; ",
+                this.loginCookies.GetCookies(requestUri)
+                    .Cast<Cookie>()
+                    .Where(cookie => cookie.Name is "CASCID" or "SECURE_CASCID")
+                    .Select(cookie => $"{cookie.Name}={cookie.Value}"));
+        }
+
+        private async Task<HttpResponseMessage> SendSdoHttpRequestAsync(HttpMethod method, string endPoint, List<(string, object)> para, int appId = BoxAppId)
         {
             // Raw failover for binary endpoints (e.g. the QR/codeKey image) where we also need the
             // response headers. Fails over on connection error or non-200; JSON is not validated here.
-            var (response, _) = await this.SendWithHostFailoverAsync(method, endPoint, para, tgt, v2: false, appId: appId, readBody: false, groupId: 1);
+            var (response, _) = await this.SendWithHostFailoverAsync(
+                method,
+                endPoint,
+                para,
+                v2: false,
+                appId: appId,
+                readBody: false,
+                groupId: 1,
+                requestProfile: RequestProfile.Passport);
             return response;
         }
 
-        private HttpRequestMessage GetSdoHttpRequestMessage(HttpMethod method, string endPoint, List<(string Key, object Value)> para, string host, string tgt = null, bool v2 = false, int appId = BoxAppId, int? groupId = 1)
+        private HttpRequestMessage GetSdoHttpRequestMessage(
+            HttpMethod method,
+            string endPoint,
+            List<(string Key, object Value)> para,
+            string host,
+            bool v2 = false,
+            int appId = BoxAppId,
+            int? groupId = 1,
+            RequestProfile requestProfile = RequestProfile.Passport)
         {
             var mac = this.cachedMac.Value;
+            var isSsoAuthorization = requestProfile == RequestProfile.SsoAuthorization;
             // Common params aligned to sdo_login.py + the 1.1.344.45 capture (bin/HTTPDebuggerSession.xml):
             // groupId=1 (after areaId) and channelId=0 (after runTimeId) are present on /authen/*.json; epIp is the
             // real LAN IP; runTimeId is a per-run GUID; productVersion is the passport-SDK version 1.1.344.45.
-            // appId 默认走登录框 BoxAppId；仅 ssoLogin 传入 GameAppId（详见 BoxAppId/GameAppId 注释），appIdSite 同 appId。
+            // appId 默认走登录框 BoxAppId；游戏授权与换票端点传入 GameAppId，appIdSite 同 appId。
             var commonParas = new List<(string, object)>() {
                 ("authenSource", 1),
                 ("appId", appId),
@@ -923,13 +983,16 @@ namespace XIVLauncher.Common.Game
                 ("deviceId", SdoUtils.GetDeviceId()),
                 ("thirdLoginExtern", 0),
                 ("macId", mac),
-                ("epIp", this.cachedLocalIp.Value),
+                ("epIp", isSsoAuthorization ? "" : this.cachedLocalIp.Value),
                 ("epName", SdoUtils.GetHostName()),
                 ("extendInfo", ""),
                 ("sdoVersion", ""),
-                ("runTimeId", this.runTimeId),
-                ("channelId", 0),
-                ("productVersion", "1.1.344.45"),
+                ("runTimeId", isSsoAuthorization ? "" : this.runTimeId),
+            });
+            if (!isSsoAuthorization)
+                commonParas.Add(("channelId", 0));
+            commonParas.AddRange(new List<(string, object)>() {
+                ("productVersion", isSsoAuthorization ? "1.9.7.10" : "1.1.344.45"),
                 ("tag", 0),
             });
             // Don't mutate the caller's list: the failover loop calls this once per candidate host.
@@ -937,24 +1000,41 @@ namespace XIVLauncher.Common.Game
             allParams.AddRange(commonParas);
             var query = string.Join("&", allParams.Select(p => $"{p.Key}={EscapeValue(p.Value)}"));
             var request = new HttpRequestMessage(method, $"https://{host}/authen/{endPoint}?{query}");
-            // The real client (bin/HTTPDebuggerSession.xml) sends only Host + User-Agent + Accept on /authen/*.
-            // Cache-Control / CASCID / SECURE_CASCID / CAS_LOGIN_STATE do NOT exist in SdoBaseClient.dll, so we
-            // don't fabricate them (the server issues CASCID via Set-Cookie itself). Accept: */* is WinINet's default.
             request.Headers.AddWithoutValidation("Host", host);
-            request.Headers.AddWithoutValidation("User-Agent", UserAgent);
-            request.Headers.AddWithoutValidation("Accept", "*/*");
-            if (endPoint is "ssoLogin.json")
+            if (isSsoAuthorization)
             {
-                // CASTGC=<tgt> is the only cookie the binary builds, and only for the CAS SSO step (ssoLogin.json).
-                request.Headers.AddWithoutValidation("Cookie", $"CASTGC={tgt}");
+                request.Headers.AddWithoutValidation("User-Agent", SsoAuthorizationUserAgent);
+                request.Headers.AddWithoutValidation("Cache-Control", "no-cache");
+                var cookieHeader = this.GetSsoAuthorizationCookieHeader(request.RequestUri);
+                if (!string.IsNullOrEmpty(cookieHeader))
+                    request.Headers.AddWithoutValidation("Cookie", cookieHeader);
+            }
+            else
+            {
+                request.Headers.AddWithoutValidation("User-Agent", PassportUserAgent);
+                request.Headers.AddWithoutValidation("Accept", "*/*");
             }
             return request;
         }
 
 
-        private async Task<SdoLoginResult> GetJsonAsSdoClient(string endPoint, List<(string, object)> para, string tgt = null, bool v2 = false, int appId = BoxAppId, int? groupId = 1)
+        private async Task<SdoLoginResult> GetJsonAsSdoClient(
+            string endPoint,
+            List<(string, object)> para,
+            bool v2 = false,
+            int appId = BoxAppId,
+            int? groupId = 1,
+            RequestProfile requestProfile = RequestProfile.Passport)
         {
-            var (_, reply) = await this.SendWithHostFailoverAsync(HttpMethod.Get, endPoint, para, tgt, v2, appId, readBody: true, groupId: groupId);
+            var (_, reply) = await this.SendWithHostFailoverAsync(
+                HttpMethod.Get,
+                endPoint,
+                para,
+                v2,
+                appId,
+                readBody: true,
+                groupId: groupId,
+                requestProfile: requestProfile);
 
             SdoLoginResult result;
             try
