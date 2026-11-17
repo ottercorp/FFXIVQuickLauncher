@@ -329,7 +329,52 @@ namespace XIVLauncher.Windows
                 App.Settings.AutologinEnabled = false;
             }
 
-            if (App.Settings.AutologinEnabled && savedAccount != null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            var autoLogin = App.Settings.AutologinEnabled && savedAccount != null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            if (!autoLogin && (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || bool.Parse(Environment.GetEnvironmentVariable("XL_NOAUTOLOGIN") ?? "false")))
+            {
+                App.Settings.AutologinEnabled = false;
+                //AutoLoginCheckBox.IsChecked = false;
+            }
+
+            if (App.Settings.GamePath?.Exists != true)
+            {
+                var setup = new FirstTimeSetup();
+                setup.ShowDialog();
+
+                // If the user didn't reach the end of the setup, we should quit
+                if (!setup.WasCompleted)
+                {
+                    Environment.Exit(0);
+                    return;
+                }
+
+                SettingsControl.ReloadSettings();
+            }
+            if (!autoLogin)
+                ShowLoginWindow();
+
+            _ = InitializeLoginAsync(savedAccount, autoLogin);
+        }
+
+        private async Task InitializeLoginAsync(XivAccount savedAccount, bool autoLogin)
+        {
+            try
+            {
+                await SetupServers();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Could not load the server list");
+                if (autoLogin)
+                    ShowLoginWindow();
+                return;
+            }
+
+            if (savedAccount != null)
+                SwitchAccount(savedAccount, false);
+
+            if (autoLogin)
             {
                 Log.Information("Engaging Autologin...");
                 if (savedAccount.AccountType == XivAccountType.WeGameSid)
@@ -369,40 +414,13 @@ namespace XIVLauncher.Windows
                 }
                 return;
             }
-            else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || bool.Parse(Environment.GetEnvironmentVariable("XL_NOAUTOLOGIN") ?? "false"))
-            {
-                App.Settings.AutologinEnabled = false;
-                //AutoLoginCheckBox.IsChecked = false;
-            }
 
-            if (App.Settings.GamePath?.Exists != true)
-            {
-                var setup = new FirstTimeSetup();
-                setup.ShowDialog();
+            await SetupHeadlines();
+            Troubleshooting.LogTroubleshooting();
+        }
 
-                // If the user didn't reach the end of the setup, we should quit
-                if (!setup.WasCompleted)
-                {
-                    Environment.Exit(0);
-                    return;
-                }
-
-                SettingsControl.ReloadSettings();
-            }
-            Task.Run(async () =>
-            {
-                SetupServers().Wait();
-                Dispatcher.Invoke(() =>
-                {
-                    if (savedAccount != null)
-                        SwitchAccount(savedAccount, false); ;
-                });
-
-                await SetupHeadlines();
-                Troubleshooting.LogTroubleshooting(); ;
-            });
-
-
+        private void ShowLoginWindow()
+        {
             Log.Information("MainWindow initialized.");
 
             Show();
