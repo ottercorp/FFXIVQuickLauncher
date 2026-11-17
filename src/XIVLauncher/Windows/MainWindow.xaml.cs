@@ -359,10 +359,10 @@ namespace XIVLauncher.Windows
                 else
                 {
                     Model.TryLogin(
-                        LoginType.AutoLoginSession,
+                        LoginType.SdoSlide,
                         savedAccount.LoginAccount,
-                        savedAccount.AutoLoginSessionKey,
-                        Model.IsFastLogin,
+                        null,
+                        true,
                         Model.IsReadWegameInfo,
                         MainWindowViewModel.AfterLoginAction.Start
                         );
