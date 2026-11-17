@@ -416,7 +416,7 @@ namespace XIVLauncher.Windows
             }
 
             await SetupHeadlines();
-            Troubleshooting.LogTroubleshooting();
+            await Task.Run(Troubleshooting.LogTroubleshooting);
         }
 
         private void ShowLoginWindow()
